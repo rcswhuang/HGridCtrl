@@ -4,10 +4,68 @@
 #include <QObject>
 #include <QWidget>
 #include <QColor>
+#include <QRgb>
 #include <QFont>
 #include <QSize>
+#include <QMap>
 typedef unsigned int HWPARAM;
 typedef qlonglong HLPARAM; //统一64位平台
+
+//颜色定义 参考windos系统
+/*
+ * 基础颜色参考windows系统，防止与windows已有定义冲突，所有在原定义前面加入Q
+*/
+const Q_DECL_UNUSED QRgb  QCLR_NONE                         = 0xFFFFFFFFL; //no
+const Q_DECL_UNUSED QRgb  QCLR_DEFAULT                      = 0xFF000000L; //no
+const Q_DECL_UNUSED QRgb  QCOLOR_SCROLLBAR                  = 0xC0C0C0;    // Scrollbar
+const Q_DECL_UNUSED QRgb  QCOLOR_BACKGROUND                 = 0x008080;    //Background
+const Q_DECL_UNUSED QRgb  QCOLOR_ACTIVECAPTION              = 0x000080;    //ActiveTitle
+const Q_DECL_UNUSED QRgb  QCOLOR_INACTIVECAPTION            = 0x808080;    //InactiveTitle
+const Q_DECL_UNUSED QRgb  QCOLOR_MENU                       = 0xC0C0C0;    //Menu
+const Q_DECL_UNUSED QRgb  QCOLOR_WINDOW                     = 0xFFFFFF;    //Window
+const Q_DECL_UNUSED QRgb  QCOLOR_WINDOWFRAME                = 0x000000;    //WindowFrame
+const Q_DECL_UNUSED QRgb  QCOLOR_MENUTEXT                   = 0xC0C0C0;    //MenuText
+const Q_DECL_UNUSED QRgb  QCOLOR_WINDOWTEXT                 = 0x000000;    //WindowText
+const Q_DECL_UNUSED QRgb  QCOLOR_CAPTIONTEXT                = 0xFFFFFF;    //TitleText
+const Q_DECL_UNUSED QRgb  QCOLOR_ACTIVEBORDER               = 0xC0C0C0;    //ActiveBorder
+const Q_DECL_UNUSED QRgb  QCOLOR_INACTIVEBORDER             = 0xC0C0C0;    //InactiveBorder
+const Q_DECL_UNUSED QRgb  QCOLOR_APPWORKSPACE               = 0x808080;    //AppWorkspace
+const Q_DECL_UNUSED QRgb  QCOLOR_HIGHLIGHT                  = 0x000080;    //Highlight
+const Q_DECL_UNUSED QRgb  QCOLOR_HIGHLIGHTTEXT              = 0xFFFFFF;    //HighlightText
+const Q_DECL_UNUSED QRgb  QCOLOR_BTNFACE                    = 0xC0C0C0;    //ButtonFace
+const Q_DECL_UNUSED QRgb  QCOLOR_BTNSHADOW                  = 0x808080;    //ButtonShadow
+const Q_DECL_UNUSED QRgb  QCOLOR_GRAYTEXT                   = 0x808080;    //GrayText
+const Q_DECL_UNUSED QRgb  QCOLOR_BTNTEXT                    = 0x000000;    //ButtonText
+const Q_DECL_UNUSED QRgb  QCOLOR_INACTIVECAPTIONTEXT        = 0xC0C0C0;    //InactiveTitleText
+const Q_DECL_UNUSED QRgb  QCOLOR_BTNHIGHLIGHT               = 0xFFFFFF;    //ButtonHighlight
+const Q_DECL_UNUSED QRgb  QCOLOR_3DDKSHADOW                 = 0x000000;    //ButtonDkShadow
+const Q_DECL_UNUSED QRgb  QCOLOR_3DLIGHT                    = 0xC0C0C0;    //ButtonLight
+const Q_DECL_UNUSED QRgb  QCOLOR_INFOTEXT                   = 0x000000;    //InfoText
+const Q_DECL_UNUSED QRgb  QCOLOR_INFOBK                     = 0xFFFFFF;    //InfoWindow
+const Q_DECL_UNUSED QRgb  QCOLOR_HOTLIGHT                   = 0x0000FF;    //HotTrackingColor
+const Q_DECL_UNUSED QRgb  QCOLOR_GRADIENTACTIVECAPTION      = 0x000080;    //GradientActiveTitle
+const Q_DECL_UNUSED QRgb  QCOLOR_GRADIENTINACTIVECAPTION    = 0x808080;    //GradientInactiveTitle
+const Q_DECL_UNUSED QRgb  QCOLOR_MENUHILIGHT                = 0xFF9933;    //MenuHilight
+const Q_DECL_UNUSED QRgb  QCOLOR_MENUBAR                    = 0xF0F0F0;    //MenuBar
+
+
+enum eMouseModes { MOUSE_NOTHING, MOUSE_SELECT_ALL, MOUSE_SELECT_COL, MOUSE_SELECT_ROW,
+                   MOUSE_SELECT_CELLS, MOUSE_SCROLLING_CELLS,
+                   MOUSE_OVER_ROW_DIVIDE, MOUSE_SIZING_ROW,
+                   MOUSE_OVER_COL_DIVIDE, MOUSE_SIZING_COL,
+                   MOUSE_PREPARE_EDIT,
+#ifndef GRIDCONTROL_NO_DRAGDROP
+                   MOUSE_PREPARE_DRAG, MOUSE_DRAGGING
+#endif
+};
+
+//比较函数
+typedef int (CALLBACK *QPFNLVCOMPARE)(HLPARAM, HLPARAM, HLPARAM);
+//相关列表定义
+typedef  QList<QImage*>  QImageList;
+
+
+
 
 // Cell states
 #define GVIS_FOCUSED            0x0001
@@ -108,8 +166,8 @@ typedef struct tagGV_CACHEHINT {
 } GV_CACHEHINT;
 
 // storage typedef for each row in the grid
-typedef CTypedPtrArray<CObArray, CGridCellBase*> GRID_ROW;
-
+//typedef CTypedPtrArray<CObArray, CGridCellBase*> GRID_ROW;
+//typedef QList<HGridCellBase*> GRID_ROW;
 // For virtual mode callback
 typedef BOOL (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 
@@ -137,12 +195,12 @@ typedef BOOL (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 #define GVNI_FIXED              0x0010
 #define GVNI_MODIFIED           0x0020
 
-#define GVNI_ABOVE              LVNI_ABOVE
-#define GVNI_BELOW              LVNI_BELOW
-#define GVNI_TOLEFT             LVNI_TOLEFT
-#define GVNI_TORIGHT            LVNI_TORIGHT
-#define GVNI_ALL                (LVNI_BELOW|LVNI_TORIGHT|LVNI_TOLEFT)
-#define GVNI_AREA               (LVNI_BELOW|LVNI_TORIGHT)
+#define GVNI_ABOVE              0x0100
+#define GVNI_BELOW              0x0200
+#define GVNI_TOLEFT             0x0400
+#define GVNI_TORIGHT            0x0800
+#define GVNI_ALL                (GVNI_BELOW|GVNI_TORIGHT|GVNI_TOLEFT)
+#define GVNI_AREA               (GVNI_BELOW|GVNI_TORIGHT)
 
 // Hit test values (not yet implemented)
 #define GVHT_DATA               0x0000

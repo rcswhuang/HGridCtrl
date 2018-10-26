@@ -101,16 +101,16 @@ public:
 
 
     //设置网格类型
-	virtual void    SetCellType(int nType)                =0;  
-    virtual void    SetCellTypeEx(long nType)             =0;  	
-    virtual int     GetCellType()              const      =0;
-    virtual long    GetCellTypeEx()            const      =0;
-    virtual	BOOL    IsPropertySet(long flag)              =0;
-	virtual	long    GetPropertyFlags()                    =0;
-	virtual short   GetBorderStyle()           const      =0;
+    virtual void    setCellType(int nType)                =0;
+    virtual void    setCellTypeEx(long nType)             =0;
+    virtual int     getCellType()              const      =0;
+    virtual long    getCellTypeEx()            const      =0;
+    virtual	BOOL    isPropertySet(long flag)              =0;
+    virtual	long    getPropertyFlags()                    =0;
+    virtual short   getBorderStyle()           const      =0;
 
 public:
-   virtual HGridCellBase* GetDefaultCell() const;
+   virtual HGridCellBase* getDefaultCell() const;
 
 // Operators
 public:
@@ -159,15 +159,15 @@ public:
 	virtual bool IsShow() ;
 	virtual CCellRange GetMergeRange();
 	virtual bool IsMergeWithOthers();
-	virtual CCellID GetMergeCellID();
-	virtual void SetMergeCellID(CCellID cell);*/
+	virtual HCellID GetMergeCellID();
+	virtual void SetMergeCellID(HCellID cell);*/
 protected:
     quint32    m_nState;      // Cell state (selected/focus etc)
 private:
 /*
 	CCellRange m_MergeRange;
 	bool m_IsMergeWithOthers;
-	CCellID m_MergeCellID;
+	HCellID m_MergeCellID;
 	bool m_Hide;
     */
 };

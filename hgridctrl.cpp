@@ -2,252 +2,81 @@
 //
 // MFC Grid Control v2.24
 //
-// Written by Chris Maunder <cmaunder@mail.com>
-// Copyright (c) 1998-2002. All Rights Reserved.
-//
-// The code contained in this file was based on the original
-// WorldCom Grid control written by Joe Willcoxson,
-//        mailto:chinajoe@aol.com
-//        http://users.aol.com/chinajoe
-// (These addresses may be out of date) The code has gone through 
-// so many modifications that I'm not sure if there is even a single 
-// original line of code. In any case Joe's code was a great 
-// framework on which to build.
-//
-// This code may be used in compiled form in any way you desire. This
-// file may be redistributed unmodified by any means PROVIDING it is 
-// not sold for profit without the authors written consent, and 
-// providing that this notice and the authors name and all copyright 
-// notices remains intact. 
-//
-// An email letting me know how you are using it would be nice as well. 
-//
-// This file is provided "as is" with no expressed or implied warranty.
-// The author accepts no liability for any damage/loss of business that
-// this product may cause.
-//
-// Expect bugs!
-// 
-// Please use and enjoy, and let me know of any bugs/mods/improvements 
-// that you have found/implemented and I will fix/incorporate them into 
-// this file. 
-//
-//  History:
-//  --------
-//  This control is constantly evolving, sometimes due to new features that I
-//  feel are necessary, and sometimes due to existing bugs. Where possible I
-//  have credited the changes to those who contributed code corrections or
-//  enhancements (names in brackets) or code suggestions (suggested by...)
-//
-//          1.0 - 1.13   20 Feb 1998 - 6 May 1999
-//                          First release version. Progressed from being a basic
-//                          grid based on the original WorldCom Grid control
-//                          written by Joe Willcoxson (mailto:chinajoe@aol.com,
-//                          http://users.aol.com/chinajoe) to something a little
-//                          more feature rich. Rewritten so many times I doubt
-//                          there is a single line of Joe's code left. Many, many,
-//                          MANY people sent in bug reports and fixes. Thank you
-//                          all.
-//
-//          2.0         1 Feb 2000
-//                          Rewritten to make the grid more object oriented, in
-//                          that the CGridCell class now takes care of cell-specific
-//                          tasks. This makes the code more robust, but more
-//                          importantly it allows the simple insertion of other
-//                          types of cells.
-//                          
-//          2.10       11 Mar 2000 - Ken Bertelson and Chris Maunder
-//                          - Additions for virtual CGridCell support of embedded tree 
-//                            & cell buttons implementation
-//                          - Optional WYSIWYG printing
-//                          - Awareness of hidden (0 width/height) rows and columns for 
-//                            key movements,  cut, copy, paste, and autosizing
-//                          - CGridCell can make title tips display any text rather than 
-//                            cell text only
-//                          - Minor vis bug fixes
-//                          - CGridCtrl now works with CGridCellBase instead of CGridCell
-//                            This is a taste of things to come.
-//
-//          2.20       30 Jul 2000 - Chris Maunder
-//                          - Font storage optimised (suggested by Martin Richter)
-//                          - AutoSizeColumn works on either column header, data or both
-//                          - EnsureVisible. The saga continues... (Ken)
-//                          - Rewrote exception handling
-//                          - Added TrackFocusCell and FrameFocusCell properties, as well as
-//                            ExpandLastColumn (suggested by Bruce E. Stemplewski).
-//                          - InsertColumn now allows you to insert columns at the end of the
-//                            column range (David Weibel)
-//                          - Shift-cell-selection more intuitive
-//                          - API change: Set/GetGridColor now Set/GetGridLineColor
-//                          - API change: Set/GetBkColor now Set/GetGridBkColor
-//                          - API change: Set/GetTextColor, Set/GetTextBkColor depricated 
-//                          - API change: Set/GetFixedTextColor, Set/GetFixedBkColor depricated 
-//                          - Stupid DDX_GridControl workaround removed.
-//                          - Added "virtual mode" via Set/GetVirtualMode
-//                          - Added SetCallbackFunc to allow callback functions in virtual mode
-//                          - Added Set/GetAutoSizeStyle
-//                          - AutoSize() bug fixed
-//                          - added GVIS_FIXEDROW, GVIS_FIXEDCOL states
-//                          - added Get/SetFixed[Row|Column]Selection
-//                          - cell "Get" methods now const'd. Sorry folks...
-//                          - GetMouseScrollLines now uses win98/W2K friendly code
-//                          - WS_EX_CLIENTEDGE style now implicit
-//
-//                          [ Only the latest version and major version changes will be shown ]
-//
-//          2.24       13 Jul 2002 - Chris Maunder
-//                          - Optimised OnDraw for invisible cells.
-//
-// TODO:   1) Implement sparse grids (super easy now)
-//         2) Fix it so that as you drag select, the speed of selection increases
-//            with time.
-//         3) Scrolling is still a little dodgy (too much grey area). I know there
-//            is a simple fix but it's been a low priority
-//         4) Get some sleep
-//
-// ISSUES: 2) WindowFromPoint seems to do weird things in W2K. Causing problems for
-//            the rigt-click-on-titletip code.
 //
 /////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "MemDC.h"
-#include "GridCtrl.h"
-
-// OLE stuff for clipboard operations
-#include <afxadv.h>            // For CSharedFile
-#include <afxconv.h>           // For LPTSTR -> LPSTR macros
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
-// Spit out some messages as a sanity check for programmers
-#ifdef GRIDCONTROL_NO_TITLETIPS
-#pragma message(" -- CGridCtrl: No titletips for cells with large data")
-#endif
-#ifdef GRIDCONTROL_NO_DRAGDROP
-#pragma message(" -- CGridCtrl: No OLE drag and drop")
-#endif
-#ifdef GRIDCONTROL_NO_CLIPBOARD
-#pragma message(" -- CGridCtrl: No clipboard support")
-#endif
-#ifdef GRIDCONTROL_NO_PRINTING
-#pragma message(" -- CGridCtrl: No printing support")
-#endif
-
-
-IMPLEMENT_DYNCREATE(CGridCtrl, CWnd)
-
-
-// Get the number of lines to scroll with each mouse wheel notch
-// Why doesn't windows give us this function???
-UINT GetMouseScrollLines()
+#include "hgridctrl.h"
+UINT getMouseScrollLines()
 {
     int nScrollLines = 3;            // reasonable default
-
-#ifndef _WIN32_WCE
-    // Do things the hard way in win95
-    OSVERSIONINFO VersionInfo;
-    VersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    if (!GetVersionEx(&VersionInfo) || 
-        (VersionInfo.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS && VersionInfo.dwMinorVersion == 0))
-    {
-        HKEY hKey;
-        if (RegOpenKeyEx(HKEY_CURRENT_USER,  _T("Control Panel\\Desktop"),
-            0, KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS)
-        {
-            TCHAR szData[128];
-            DWORD dwKeyDataType;
-            DWORD dwDataBufSize = sizeof(szData);
-            
-            if (RegQueryValueEx(hKey, _T("WheelScrollLines"), NULL, &dwKeyDataType,
-                (LPBYTE) &szData, &dwDataBufSize) == ERROR_SUCCESS)
-            {
-                nScrollLines = _tcstoul(szData, NULL, 10);
-            }
-            RegCloseKey(hKey);
-        }
-    }
-    // win98 or greater
-    else
-           SystemParametersInfo (SPI_GETWHEELSCROLLLINES, 0, &nScrollLines, 0);
+#ifdef WIN32 //如果Windows系统就用API函数，其他系统默认
+    SystemParametersInfo (SPI_GETWHEELSCROLLLINES, 0, &nScrollLines, 0);
 #endif
-
     return nScrollLines;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl
-
-CGridCtrl::CGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
+HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
 {
-    RegisterWindowClass();
-
-#if !defined(GRIDCONTROL_NO_DRAGDROP) || !defined(GRIDCONTROL_NO_CLIPBOARD)
-    _AFX_THREAD_STATE* pState = AfxGetThreadState();
-    if (!pState->m_bNeedTerm && !AfxOleInit())
-        AfxMessageBox(_T("OLE initialization failed. Make sure that the OLE libraries are the correct version"));
-#endif
-
     // Store the system colours in case they change. The gridctrl uses
     // these colours, and in OnSysColorChange we can check to see if
     // the gridctrl colours have been changed from the system colours.
     // If they have, then leave them, otherwise change them to reflect
     // the new system colours.
-    m_crWindowText        = ::GetSysColor(COLOR_WINDOWTEXT);
-    m_crWindowColour      = ::GetSysColor(COLOR_WINDOW);
-    m_cr3DFace            = ::GetSysColor(COLOR_3DFACE);
-    m_crShadow            = ::GetSysColor(COLOR_3DSHADOW);
-    m_crGridLineColour    = RGB(192,192,192);
+    m_crWindowText        = QColor(QCOLOR_WINDOWTEXT);
+    m_crWindowColour      = QColor(QCOLOR_WINDOW);
+    m_cr3DFace            = QColor(QCOLOR_3DFACE);
+    m_crShadow            = QColor(QCOLOR_3DSHADOW);
+    m_crGridLineColour    = QColor(192,192,192);
 
     m_nRows               = 0;
     m_nCols               = 0;
     m_nFixedRows          = 0;
     m_nFixedCols          = 0;
 
-    m_bVirtualMode        = FALSE;
+    m_bVirtualMode        = false;
     m_pfnCallback         = NULL;
 
     m_nVScrollMax         = 0;          // Scroll position
     m_nHScrollMax         = 0;
-    m_nRowsPerWheelNotch  = GetMouseScrollLines(); // Get the number of lines
+    m_nRowsPerWheelNotch  = getMouseScrollLines(); // Get the number of lines
                                                    // per mouse wheel notch to scroll
     m_nBarState           = GVL_NONE;
     m_MouseMode           = MOUSE_NOTHING;
     m_nGridLines          = GVL_BOTH;
-    m_bEditable           = TRUE;
-    m_bListMode           = FALSE;
-    m_bSingleRowSelection = FALSE;
-    m_bSingleColSelection = FALSE;
-    m_bLMouseButtonDown   = FALSE;
-    m_bRMouseButtonDown   = FALSE;
-    m_bAllowDraw          = TRUE;       // allow draw updates
-    m_bEnableSelection    = TRUE;
-    m_bFixedColumnSelection = TRUE;
-    m_bFixedRowSelection  = TRUE;
-    m_bAllowRowResize     = TRUE;
-    m_bAllowColumnResize  = TRUE;
-    m_bSortOnClick        = FALSE;      // Sort on header row click
-    m_bHandleTabKey       = TRUE;
+    m_bEditable           = true;
+    m_bListMode           = false;
+    m_bSingleRowSelection = false;
+    m_bSingleColSelection = false;
+    m_bLMouseButtonDown   = false;
+    m_bRMouseButtonDown   = false;
+    m_bAllowDraw          = true;       // allow draw updates
+    m_bEnableSelection    = true;
+    m_bFixedColumnSelection = true;
+    m_bFixedRowSelection  = true;
+    m_bAllowRowResize     = true;
+    m_bAllowColumnResize  = true;
+    m_bSortOnClick        = false;      // Sort on header row click
+    m_bHandleTabKey       = true;
+    /*
 #ifdef _WIN32_WCE
     m_bDoubleBuffer       = FALSE;      // Use double buffering to avoid flicker?
 #else
-    m_bDoubleBuffer       = TRUE;       // Use double buffering to avoid flicker?
-#endif
-    m_bTitleTips          = TRUE;       // show cell title tips
+    m_bDoubleBuffer       = true;       // Use double buffering to avoid flicker?
+#endif*/
 
-    m_bWysiwygPrinting    = FALSE;      // use size-to-width printing
+    m_bTitleTips          = true;       // show cell title tips
 
-    m_bHiddenColUnhide    = TRUE;       // 0-width columns can be expanded via mouse
-    m_bHiddenRowUnhide    = TRUE;       // 0-Height rows can be expanded via mouse
+    m_bWysiwygPrinting    = false;      // use size-to-width printing
 
-    m_bAllowColHide       = TRUE;       // Columns can be contracted to 0-width via mouse
-    m_bAllowRowHide       = TRUE;       // Rows can be contracted to 0-height via mouse
+    m_bHiddenColUnhide    = true;       // 0-width columns can be expanded via mouse
+    m_bHiddenRowUnhide    = true;       // 0-Height rows can be expanded via mouse
 
-    m_bAscending          = TRUE;       // sorting stuff
+    m_bAllowColHide       = true;       // Columns can be contracted to 0-width via mouse
+    m_bAllowRowHide       = true;       // Rows can be contracted to 0-height via mouse
+
+    m_bAscending          = true;       // sorting stuff
     m_nSortColumn         = -1;
 	m_pfnCompare		  = NULL;
 
@@ -259,40 +88,60 @@ CGridCtrl::CGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
                                         // within +/-3 pixels of the dividing line for
                                         // resizing to be possible
     m_pImageList          = NULL;       // Images in the grid
-    m_bAllowDragAndDrop   = FALSE;      // for drag and drop - EFW - off by default
-    m_bTrackFocusCell     = TRUE;       // Track Focus cell?
-    m_bFrameFocus         = TRUE;       // Frame the selected cell?
+    m_bAllowDragAndDrop   = false;      // for drag and drop - EFW - off by default
+    m_bTrackFocusCell     = true;       // Track Focus cell?
+    m_bFrameFocus         = true;       // Frame the selected cell?
 
-    m_pRtcDefault = RUNTIME_CLASS(CGridCell);
+    //m_pRtcDefault = RUNTIME_CLASS(CGridCell);
 
-    SetupDefaultCells();
-    SetGridBkColor(m_crShadow);
+    setupDefaultCells();
+    setGridBkColor(m_crShadow);
 
-    // Set up the initial grid size
-    SetRowCount(nRows);
-    SetColumnCount(nCols);
-    SetFixedRowCount(nFixedRows);
-    SetFixedColumnCount(nFixedCols);
+    //初始化单元格行列
+    setRowCount(nRows);
+    setColumnCount(nCols);
+    setFixedRowCount(nFixedRows);
+    setFixedColumnCount(nFixedCols);
 
-    SetTitleTipTextClr(CLR_DEFAULT);  //FNA
-    SetTitleTipBackClr(CLR_DEFAULT); 
+    setTitleTipTextClr(QCLR_DEFAULT);  //FNA
+    setTitleTipBackClr(QCLR_DEFAULT);
 
     // set initial selection range (ie. none)
-    m_SelectedCellMap.RemoveAll();
-    m_PrevSelectedCellMap.RemoveAll();
+    m_SelectedCellMap.clear();
+    m_PrevSelectedCellMap.clear();
 
 #if !defined(_WIN32_WCE_NO_PRINTING) && !defined(GRIDCONTROL_NO_PRINTING)
     // EFW - Added to support shaded/unshaded printout and
     // user-definable margins.
-    m_bShadedPrintOut = TRUE;
-    SetPrintMarginInfo(2, 2, 4, 4, 1, 1, 1);
+    m_bShadedPrintOut = true;
+    setPrintMarginInfo(2, 2, 4, 4, 1, 1, 1);
 #endif
+
+    //TRY
+    {
+        m_arRowHeights.resize(m_nRows);    // initialize row heights
+        m_arColWidths.resize(m_nCols);     // initialize column widths
+    }
+    /*CATCH (CMemoryException, e)
+    {
+        e->ReportError();
+        return FALSE;
+    }
+    END_CATCH*/
+
+    int i;
+    for (i = 0; i < m_nRows; i++)
+        m_arRowHeights[i] = m_cellDefault.height();
+    for (i = 0; i < m_nCols; i++)
+        m_arColWidths[i] = m_cellDefault.width();
 }
 
-CGridCtrl::~CGridCtrl()
+//no
+HGridCtrl::~HGridCtrl()
 {
-    DeleteAllItems();
+    //deleteAllItems();
 
+    /*
 #ifndef GRIDCONTROL_NO_TITLETIPS
     if (m_bTitleTips && ::IsWindow(m_TitleTip.GetSafeHwnd())) 
         m_TitleTip.DestroyWindow();
@@ -306,260 +155,32 @@ CGridCtrl::~CGridCtrl()
     if(pSource)
         COleDataSource::FlushClipboard();
 #endif
+*/
 }
 
-// Register the window class if it has not already been registered.
-BOOL CGridCtrl::RegisterWindowClass()
+//ok
+void HGridCtrl::setupDefaultCells()
 {
-    WNDCLASS wndcls;
-    HINSTANCE hInst = AfxGetInstanceHandle();
-    //HINSTANCE hInst = AfxGetResourceHandle();
+    m_cellDefault.setGrid(this);            // Normal editable cell
+    m_cellFixedColDef.setGrid(this);        // Cell for fixed columns
+    m_cellFixedRowDef.setGrid(this);        // Cell for fixed rows
+    m_cellFixedRowColDef.setGrid(this);     // Cell for area overlapped by fixed columns/rows
 
-    if (!(::GetClassInfo(hInst, GRIDCTRL_CLASSNAME, &wndcls)))
-    {
-        // otherwise we need to register a new class
-        wndcls.style            = CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW;
-        wndcls.lpfnWndProc      = ::DefWindowProc;
-        wndcls.cbClsExtra       = wndcls.cbWndExtra = 0;
-        wndcls.hInstance        = hInst;
-        wndcls.hIcon            = NULL;
-#ifndef _WIN32_WCE_NO_CURSOR
-        wndcls.hCursor          = AfxGetApp()->LoadStandardCursor(IDC_ARROW);
-#else
-        wndcls.hCursor          = 0;
-#endif
-        wndcls.hbrBackground    = (HBRUSH) (COLOR_3DFACE + 1);
-        wndcls.lpszMenuName     = NULL;
-        wndcls.lpszClassName    = GRIDCTRL_CLASSNAME;
-
-        if (!AfxRegisterClass(&wndcls))
-        {
-            AfxThrowResourceException();
-            return FALSE;
-        }
-    }
-
-    return TRUE;
+    m_cellDefault.setTextClr(m_crWindowText);
+    m_cellDefault.setBackClr(m_crWindowColour);
+    m_cellFixedColDef.setTextClr(m_crWindowText);
+    m_cellFixedColDef.setBackClr(m_cr3DFace);
+    m_cellFixedRowDef.setTextClr(m_crWindowText);
+    m_cellFixedRowDef.setBackClr(m_cr3DFace);
+    m_cellFixedRowColDef.setTextClr(m_crWindowText);
+    m_cellFixedRowColDef.setBackClr(m_cr3DFace);
 }
-
-BOOL CGridCtrl::Initialise()
-{
-    // Stop re-entry problems
-    static BOOL bInProcedure = FALSE;
-    if (bInProcedure)
-        return FALSE;
-    bInProcedure = TRUE;
-
-#ifndef GRIDCONTROL_NO_TITLETIPS
-    m_TitleTip.SetParentWnd(this);
-#endif
-
-	// This would be a good place to register the droptarget but
-	// unfortunately this causes problems if you are using the 
-	// grid in a view. 
-	// Moved from OnSize.
-//#ifndef GRIDCONTROL_NO_DRAGDROP
-//    m_DropTarget.Register(this);
-//#endif
-
-    if (::IsWindow(m_hWnd))
-        ModifyStyleEx(0, WS_EX_CLIENTEDGE);
-
-	// Kludge: Make sure the client edge shows
-	// This is so horrible it makes my eyes water.
-	CRect rect;
-	GetWindowRect(rect);
-	CWnd* pParent = GetParent();
-	if (pParent != NULL)
-		pParent->ScreenToClient(rect);
-	rect.InflateRect(1,1);	MoveWindow(rect);
-	rect.DeflateRect(1,1);  MoveWindow(rect);
- 
-    bInProcedure = FALSE;
-    return TRUE;
-}
-
-// creates the control - use like any other window create control
-BOOL CGridCtrl::Create(const RECT& rect, CWnd* pParentWnd, UINT nID, DWORD dwStyle)
-{
-    ASSERT(pParentWnd->GetSafeHwnd());
-
-    if (!CWnd::Create(GRIDCTRL_CLASSNAME, NULL, dwStyle, rect, pParentWnd, nID))
-        return FALSE;
-
-    //Initialise(); - called in PreSubclassWnd
-
-    // The number of rows and columns will only be non-zero if the constructor
-    // was called with non-zero initialising parameters. If this window was created
-    // using a dialog template then the number of rows and columns will be 0 (which
-    // means that the code below will not be needed - which is lucky 'cause it ain't
-    // gonna get called in a dialog-template-type-situation.
-
-    TRY
-    {
-        m_arRowHeights.SetSize(m_nRows);    // initialize row heights
-        m_arColWidths.SetSize(m_nCols);     // initialize column widths
-    }
-    CATCH (CMemoryException, e)
-    {
-        e->ReportError();
-        return FALSE;
-    }
-    END_CATCH
-
-    int i;
-    for (i = 0; i < m_nRows; i++)
-        m_arRowHeights[i] = m_cellDefault.GetHeight();
-    for (i = 0; i < m_nCols; i++)
-        m_arColWidths[i] = m_cellDefault.GetWidth();
-
-    return TRUE;
-}
-
-void CGridCtrl::SetupDefaultCells()
-{
-    m_cellDefault.SetGrid(this);            // Normal editable cell
-    m_cellFixedColDef.SetGrid(this);        // Cell for fixed columns
-    m_cellFixedRowDef.SetGrid(this);        // Cell for fixed rows
-    m_cellFixedRowColDef.SetGrid(this);     // Cell for area overlapped by fixed columns/rows
-
-    m_cellDefault.SetTextClr(m_crWindowText);   
-    m_cellDefault.SetBackClr(m_crWindowColour); 
-    m_cellFixedColDef.SetTextClr(m_crWindowText);
-    m_cellFixedColDef.SetBackClr(m_cr3DFace);
-    m_cellFixedRowDef.SetTextClr(m_crWindowText);
-    m_cellFixedRowDef.SetBackClr(m_cr3DFace);
-    m_cellFixedRowColDef.SetTextClr(m_crWindowText);
-    m_cellFixedRowColDef.SetBackClr(m_cr3DFace);
-}
-
-void CGridCtrl::PreSubclassWindow()
-{
-    CWnd::PreSubclassWindow();
-
-    //HFONT hFont = ::CreateFontIndirect(m_cellDefault.GetFont());
-    //OnSetFont((LPARAM)hFont, 0);
-    //DeleteObject(hFont);
-
-    Initialise();
-}
-
-// Sends a message to the parent in the form of a WM_NOTIFY message with
-// a NM_GRIDVIEW structure attached
-LRESULT CGridCtrl::SendMessageToParent(int nRow, int nCol, int nMessage) const
-{
-    if (!IsWindow(m_hWnd))
-        return 0;
-
-    NM_GRIDVIEW nmgv;
-    nmgv.iRow         = nRow;
-    nmgv.iColumn      = nCol;
-    nmgv.hdr.hwndFrom = m_hWnd;
-    nmgv.hdr.idFrom   = GetDlgCtrlID();
-    nmgv.hdr.code     = nMessage;
-
-    CWnd *pOwner = GetOwner();
-    if (pOwner && IsWindow(pOwner->m_hWnd))
-        return pOwner->SendMessage(WM_NOTIFY, nmgv.hdr.idFrom, (LPARAM)&nmgv);
-    else
-        return 0;
-}
-
-// Send a request to the parent to return information on a given cell
-LRESULT CGridCtrl::SendDisplayRequestToParent(GV_DISPINFO* pDisplayInfo) const
-{
-    if (!IsWindow(m_hWnd))
-        return 0;
-
-    // Fix up the message headers
-    pDisplayInfo->hdr.hwndFrom = m_hWnd;
-    pDisplayInfo->hdr.idFrom   = GetDlgCtrlID();
-    pDisplayInfo->hdr.code     = GVN_GETDISPINFO;
-
-    // Send the message
-    CWnd *pOwner = GetOwner();
-    if (pOwner && IsWindow(pOwner->m_hWnd))
-        return pOwner->SendMessage(WM_NOTIFY, pDisplayInfo->hdr.idFrom, (LPARAM)pDisplayInfo);
-    else
-        return 0;
-}
-
-// Send a hint to the parent about caching information
-LRESULT CGridCtrl::SendCacheHintToParent(const CCellRange& range) const
-{
-    if (!IsWindow(m_hWnd))
-        return 0;
-
-    GV_CACHEHINT CacheHint;
-
-    // Fix up the message headers
-    CacheHint.hdr.hwndFrom = m_hWnd;
-    CacheHint.hdr.idFrom   = GetDlgCtrlID();
-    CacheHint.hdr.code     = GVN_ODCACHEHINT;
-
-    CacheHint.range = range;
-
-    // Send the message
-    CWnd *pOwner = GetOwner();
-    if (pOwner && IsWindow(pOwner->m_hWnd))
-        return pOwner->SendMessage(WM_NOTIFY, CacheHint.hdr.idFrom, (LPARAM)&CacheHint);
-    else
-        return 0;
-}
-
-BEGIN_MESSAGE_MAP(CGridCtrl, CWnd)
-//EFW - Added ON_WM_RBUTTONUP
-//{{AFX_MSG_MAP(CGridCtrl)
-    ON_WM_PAINT()
-    ON_WM_HSCROLL()
-    ON_WM_VSCROLL()
-    ON_WM_SIZE()
-    ON_WM_LBUTTONUP()
-    ON_WM_LBUTTONDOWN()
-    ON_WM_MOUSEMOVE()
-    ON_WM_TIMER()
-    ON_WM_GETDLGCODE()
-    ON_WM_KEYDOWN()
-    ON_WM_CHAR()
-    ON_WM_LBUTTONDBLCLK()
-    ON_WM_ERASEBKGND()
-    ON_UPDATE_COMMAND_UI(ID_EDIT_SELECT_ALL, OnUpdateEditSelectAll)
-    ON_COMMAND(ID_EDIT_SELECT_ALL, OnEditSelectAll)
-    ON_WM_SYSKEYDOWN()
-//}}AFX_MSG_MAP
-#ifndef _WIN32_WCE_NO_CURSOR
-    ON_WM_SETCURSOR()
-#endif
-#ifndef _WIN32_WCE
-    ON_WM_RBUTTONUP()
-    ON_WM_SYSCOLORCHANGE()
-    ON_WM_CAPTURECHANGED()
-#endif
-#ifndef GRIDCONTROL_NO_CLIPBOARD
-    ON_COMMAND(ID_EDIT_COPY, OnEditCopy)
-    ON_UPDATE_COMMAND_UI(ID_EDIT_COPY, OnUpdateEditCopy)
-    ON_COMMAND(ID_EDIT_CUT, OnEditCut)
-    ON_UPDATE_COMMAND_UI(ID_EDIT_CUT, OnUpdateEditCut)
-    ON_COMMAND(ID_EDIT_PASTE, OnEditPaste)
-    ON_UPDATE_COMMAND_UI(ID_EDIT_PASTE, OnUpdateEditPaste)
-#endif
-#if (_WIN32_WCE >= 210)
-    ON_WM_SETTINGCHANGE()
-#endif
-#if !defined(_WIN32_WCE) && (_MFC_VER >= 0x0421)
-    ON_WM_MOUSEWHEEL()
-#endif
-    ON_MESSAGE(WM_SETFONT, OnSetFont)
-    ON_MESSAGE(WM_GETFONT, OnGetFont)
-    ON_MESSAGE(WM_IME_CHAR, OnImeChar)
-    ON_NOTIFY(GVN_ENDLABELEDIT, IDC_INPLACE_CONTROL, OnEndInPlaceEdit)
-END_MESSAGE_MAP()
 
 
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl message handlers
 
-void CGridCtrl::OnPaint()
+void HGridCtrl::OnPaint()
 {
     CPaintDC dc(this);      // device context for painting
 
@@ -572,16 +193,13 @@ void CGridCtrl::OnPaint()
         OnDraw(&dc);
 }
 
-BOOL CGridCtrl::OnEraseBkgnd(CDC* /*pDC*/)
-{
-    return TRUE;    // Don't erase the background.
-}
+
 
 // Custom background erasure. This gets called from within the OnDraw function,
 // since we will (most likely) be using a memory DC to stop flicker. If we just
 // erase the background normally through OnEraseBkgnd, and didn't fill the memDC's
 // selected bitmap with colour, then all sorts of vis problems would occur
-void CGridCtrl::EraseBkgnd(CDC* pDC)
+void HGridCtrl::EraseBkgnd(CDC* pDC)
 {
     CRect  VisRect, ClipRect, rect;
     CBrush FixedRowColBack(GetDefaultCell(TRUE, TRUE)->GetBackClr()),
@@ -639,7 +257,166 @@ void CGridCtrl::EraseBkgnd(CDC* pDC)
                       &Back);
 }
 
-void CGridCtrl::OnSize(UINT nType, int cx, int cy)
+bool HGridCtrl::setRowCount(int nRows)
+{
+    BOOL bResult = TRUE;
+
+    ASSERT(nRows >= 0);
+    if (nRows == rowCount())
+        return bResult;
+
+    // Force recalculation
+    m_idTopLeftCell.col = -1;
+
+    if (nRows < m_nFixedRows)
+        m_nFixedRows = nRows;
+
+    if (m_idCurrentCell.row >= nRows)
+        SetFocusCell(-1, - 1);
+
+    int addedRows = nRows - rowCount();
+
+    // If we are about to lose rows, then we need to delete the GridCell objects
+    // in each column within each row
+    if (addedRows < 0)
+    {
+        if (!GetVirtualMode())
+        {
+            for (int row = nRows; row < m_nRows; row++)
+            {
+                // Delete cells
+                for (int col = 0; col < m_nCols; col++)
+                    DestroyCell(row, col);
+
+                // Delete rows
+                GRID_ROW* pRow = m_RowData[row];
+                if (pRow)
+                    delete pRow;
+            }
+        }
+        m_nRows = nRows;
+    }
+
+    TRY
+    {
+        m_arRowHeights.SetSize(nRows);
+
+        if (GetVirtualMode())
+        {
+            m_nRows = nRows;
+            if (addedRows > 0)
+            {
+                int startRow = nRows - addedRows;
+                for (int row = startRow; row < nRows; row++)
+                    m_arRowHeights[row] = m_cellDefault.GetHeight();
+            }
+        }
+        else
+        {
+            // Change the number of rows.
+            m_RowData.SetSize(nRows);
+
+            // If we have just added rows, we need to construct new elements for each cell
+            // and set the default row height
+            if (addedRows > 0)
+            {
+                // initialize row heights and data
+                int startRow = nRows - addedRows;
+                for (int row = startRow; row < nRows; row++)
+                {
+                    m_arRowHeights[row] = m_cellDefault.GetHeight();
+
+                    m_RowData[row] = new GRID_ROW;
+                    m_RowData[row]->SetSize(m_nCols);
+                    for (int col = 0; col < m_nCols; col++)
+                    {
+                        GRID_ROW* pRow = m_RowData[row];
+                        if (pRow && !GetVirtualMode())
+                            pRow->SetAt(col, CreateCell(row, col));
+                    }
+                    m_nRows++;
+                }
+            }
+        }
+    }
+    CATCH (CMemoryException, e)
+    {
+        e->ReportError();
+        bResult = FALSE;
+    }
+    END_CATCH
+
+    SetModified();
+    ResetScrollBars();
+    Refresh();
+
+    return bResult;
+}
+
+
+HCellID HGridCtrl::setFocusCell(HCellID cell)
+{
+    if (cell == m_idCurrentCell)
+        return m_idCurrentCell;
+
+    HCellID idPrev = m_idCurrentCell;
+
+    // EFW - Bug Fix - Force focus to be in a non-fixed cell
+    if (cell.row != -1 && cell.row < fixedRowCount())
+        cell.row = fixedRowCount();
+    if (cell.col != -1 && cell.col < fixedColumnCount())
+        cell.col = fixedColumnCount();
+
+    m_idCurrentCell = cell;
+/*
+    if (IsValid(idPrev))
+    {
+        SetItemState(idPrev.row, idPrev.col,
+            GetItemState(idPrev.row, idPrev.col) & ~GVIS_FOCUSED);
+        RedrawCell(idPrev); // comment to reduce flicker
+
+        if (GetTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
+            for (int row = 0; row < m_nFixedRows; row++)
+                RedrawCell(row, idPrev.col);
+        if (GetTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
+            for (int col = 0; col < m_nFixedCols; col++)
+                RedrawCell(idPrev.row, col);
+    }
+
+    if (IsValid(m_idCurrentCell))
+    {
+        SetItemState(m_idCurrentCell.row, m_idCurrentCell.col,
+            GetItemState(m_idCurrentCell.row, m_idCurrentCell.col) | GVIS_FOCUSED);
+
+        RedrawCell(m_idCurrentCell); // comment to reduce flicker
+
+        if (GetTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
+            for (int row = 0; row < m_nFixedRows; row++)
+                RedrawCell(row, m_idCurrentCell.col);
+        if (GetTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
+            for (int col = 0; col < m_nFixedCols; col++)
+                RedrawCell(m_idCurrentCell.row, col);
+
+        // EFW - New addition.  If in list mode, make sure the selected
+        // row highlight follows the cursor.
+        // Removed by C Maunder 27 May
+        //if (m_bListMode)
+        //{
+        //    m_PrevSelectedCellMap.RemoveAll();
+        //    m_MouseMode = MOUSE_SELECT_ROW;
+        //    OnSelecting(m_idCurrentCell);
+
+            // Leave this off so that you can still drag the highlight around
+            // without selecting rows.
+            // m_MouseMode = MOUSE_NOTHING;
+        //}
+
+    }*/
+
+    return idPrev;
+}
+/*
+void HGridCtrl::OnSize(UINT nType, int cx, int cy)
 {  
     static BOOL bAlreadyInsideThisProcedure = FALSE;
     if (bAlreadyInsideThisProcedure)
@@ -664,7 +441,7 @@ void CGridCtrl::OnSize(UINT nType, int cx, int cy)
     bAlreadyInsideThisProcedure = FALSE;
 }
 
-UINT CGridCtrl::OnGetDlgCode()
+UINT HGridCtrl::OnGetDlgCode()
 {
     UINT nCode = DLGC_WANTARROWS | DLGC_WANTCHARS; // DLGC_WANTALLKEYS; //
 
@@ -676,7 +453,7 @@ UINT CGridCtrl::OnGetDlgCode()
 
 #ifndef _WIN32_WCE
 // If system colours change, then redo colours
-void CGridCtrl::OnSysColorChange()
+void HGridCtrl::OnSysColorChange()
 {
     CWnd::OnSysColorChange();
 
@@ -712,7 +489,7 @@ void CGridCtrl::OnSysColorChange()
 
 #ifndef _WIN32_WCE_NO_CURSOR
 // If we are drag-selecting cells, or drag and dropping, stop now
-void CGridCtrl::OnCaptureChanged(CWnd *pWnd)
+void HGridCtrl::OnCaptureChanged(CWnd *pWnd)
 {
     if (pWnd->GetSafeHwnd() == GetSafeHwnd())
         return;
@@ -734,7 +511,7 @@ void CGridCtrl::OnCaptureChanged(CWnd *pWnd)
 
 #if (_MFC_VER >= 0x0421) || (_WIN32_WCE >= 210)
 // If system settings change, then redo colours
-void CGridCtrl::OnSettingChange(UINT uFlags, LPCTSTR lpszSection)
+void HGridCtrl::OnSettingChange(UINT uFlags, LPCTSTR lpszSection)
 {
     CWnd::OnSettingChange(uFlags, lpszSection);
 
@@ -772,7 +549,7 @@ void CGridCtrl::OnSettingChange(UINT uFlags, LPCTSTR lpszSection)
 
 // For drag-selection. Scrolls hidden cells into view
 // TODO: decrease timer interval over time to speed up selection over time
-void CGridCtrl::OnTimer(UINT nIDEvent)
+void HGridCtrl::OnTimer(UINT nIDEvent)
 {
     ASSERT(nIDEvent == WM_LBUTTONDOWN);
     if (nIDEvent != WM_LBUTTONDOWN)
@@ -851,7 +628,7 @@ void CGridCtrl::OnTimer(UINT nIDEvent)
 }
 
 // move about with keyboard
-void CGridCtrl::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void HGridCtrl::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
     if (!IsValid(m_idCurrentCell))
     {
@@ -1223,12 +1000,12 @@ void CGridCtrl::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
     }
 }
 
-void CGridCtrl::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+void HGridCtrl::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
     CWnd::OnKeyUp(nChar, nRepCnt, nFlags);
 }
 
-void CGridCtrl::OnSysKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void HGridCtrl::OnSysKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 #ifdef GRIDCONTROL_USE_TITLETIPS
     m_TitleTip.Hide();  // hide any titletips
@@ -1238,7 +1015,7 @@ void CGridCtrl::OnSysKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 }
 
 // Instant editing of cells when keys are pressed
-void CGridCtrl::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
+void HGridCtrl::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
     // EFW - BUG FIX
     if (!IsCTRLpressed() && m_MouseMode == MOUSE_NOTHING && nChar != VK_ESCAPE)
@@ -1251,7 +1028,7 @@ void CGridCtrl::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 }
 
 // Added by KiteFly
-LRESULT CGridCtrl::OnImeChar(WPARAM wCharCode, LPARAM)
+LRESULT HGridCtrl::OnImeChar(WPARAM wCharCode, LPARAM)
 {
     // EFW - BUG FIX
     if (!IsCTRLpressed() && m_MouseMode == MOUSE_NOTHING && wCharCode != VK_ESCAPE) 
@@ -1262,7 +1039,7 @@ LRESULT CGridCtrl::OnImeChar(WPARAM wCharCode, LPARAM)
 // Callback from any CInPlaceEdits that ended. This just calls OnEndEditCell,
 // refreshes the edited cell and moves onto next cell if the return character
 // from the edit says we should.
-void CGridCtrl::OnEndInPlaceEdit(NMHDR* pNMHDR, LRESULT* pResult)
+void HGridCtrl::OnEndInPlaceEdit(NMHDR* pNMHDR, LRESULT* pResult)
 {
     GV_DISPINFO *pgvDispInfo = (GV_DISPINFO *)pNMHDR;
     GV_ITEM     *pgvItem = &pgvDispInfo->item;
@@ -1293,7 +1070,7 @@ void CGridCtrl::OnEndInPlaceEdit(NMHDR* pNMHDR, LRESULT* pResult)
 }
 
 // Handle horz scrollbar notifications
-void CGridCtrl::OnHScroll(UINT nSBCode, UINT /*nPos*/, CScrollBar* /*pScrollBar*/)
+void HGridCtrl::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
     EndEditing();
 
@@ -1413,7 +1190,7 @@ void CGridCtrl::OnHScroll(UINT nSBCode, UINT /*nPos*/, CScrollBar* /*pScrollBar*
 }
 
 // Handle vert scrollbar notifications
-void CGridCtrl::OnVScroll(UINT nSBCode, UINT /*nPos*/, CScrollBar* /*pScrollBar*/)
+void HGridCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
     EndEditing();
 
@@ -1533,8 +1310,7 @@ void CGridCtrl::OnVScroll(UINT nSBCode, UINT /*nPos*/, CScrollBar* /*pScrollBar*
 
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl implementation functions
-
-void CGridCtrl::OnDraw(CDC* pDC)
+void HGridCtrl::OnDraw(CDC* pDC)
 {
     if (!m_bAllowDraw)
         return;
@@ -1817,8 +1593,8 @@ void CGridCtrl::OnDraw(CDC* pDC)
 				}
 			}
         }
-    }
-/*
+    }*/
+/*  already
     // draw top-left cells 0..m_nFixedRows-1, 0..m_nFixedCols-1
     rect.bottom = -1;
     for (row = 0; row < m_nFixedRows; row++)
@@ -1846,7 +1622,7 @@ void CGridCtrl::OnDraw(CDC* pDC)
     }
 */
 	// draw top-left cells 0..m_nFixedRows-1, 0..m_nFixedCols-1
-	rect.bottom = -1;
+    /*rect.bottom = -1;
 	for (row = 0; row < m_nFixedRows; row++)
 	{
 		if (GetRowHeight(row) <= 0) continue;
@@ -1862,12 +1638,13 @@ void CGridCtrl::OnDraw(CDC* pDC)
 			rect.left = rect.right+1;
 			rect.right = rect.left + GetColumnWidth(col)-1;
 
-			pCell = GetCell(row, col);
-			/* if (pCell)
+            pCell = GetCell(row, col);*/
+            /* if (pCell)  already ---huangw
 			{
 			pCell->SetCoords(row,col);
 			pCell->Draw(pDC, row, col, rect, FALSE);
 			}*/
+/*
 			if (pCell)
 			{
 				//Used for merge cells by Huang Wei
@@ -1924,19 +1701,19 @@ void CGridCtrl::OnDraw(CDC* pDC)
 
 // Is a given cell designation valid (ie within the bounds of our number
 // of columns/rows)?
-BOOL CGridCtrl::IsValid(int nRow, int nCol) const
+BOOL HGridCtrl::IsValid(int nRow, int nCol) const
 {
     return (nRow >= 0 && nRow < m_nRows && nCol >= 0 && nCol < m_nCols);
 }
 
-BOOL CGridCtrl::IsValid(const CCellID& cell) const
+BOOL HGridCtrl::IsValid(const CCellID& cell) const
 {
     return IsValid(cell.row, cell.col);
 }
 
 // Is a given cell range valid (ie within the bounds of our number
 // of columns/rows)?
-BOOL CGridCtrl::IsValid(const CCellRange& range) const
+BOOL HGridCtrl::IsValid(const CCellRange& range) const
 {
     return (range.GetMinRow() >= 0 && range.GetMinCol() >= 0 &&
         range.GetMaxRow() >= 0 && range.GetMaxCol() >= 0 &&
@@ -1946,7 +1723,7 @@ BOOL CGridCtrl::IsValid(const CCellRange& range) const
 
 // Enables/Disables redraw for certain operations like columns auto-sizing etc,
 // but not for user caused things such as selection changes.
-void CGridCtrl::SetRedraw(BOOL bAllowDraw, BOOL bResetScrollBars /* = FALSE */)
+void HGridCtrl::SetRedraw(BOOL bAllowDraw, BOOL bResetScrollBars  )
 {
 //    TRACE(_T("%s: Setting redraw to %s\n"),
 //             GetRuntimeClass()->m_lpszClassName, bAllowDraw? _T("TRUE") : _T("FALSE"));
@@ -1964,12 +1741,12 @@ void CGridCtrl::SetRedraw(BOOL bAllowDraw, BOOL bResetScrollBars /* = FALSE */)
 
 // Forces a redraw of a cell immediately (using a direct DC construction,
 // or the supplied dc)
-BOOL CGridCtrl::RedrawCell(const CCellID& cell, CDC* pDC /* = NULL */)
+BOOL HGridCtrl::RedrawCell(const CCellID& cell, CDC* pDC )
 {
     return RedrawCell(cell.row, cell.col, pDC);
 }
 
-BOOL CGridCtrl::RedrawCell(int nRow, int nCol, CDC* pDC /* = NULL */)
+BOOL HGridCtrl::RedrawCell(int nRow, int nCol, CDC* pDC )
 {
     BOOL bResult = TRUE;
     BOOL bMustReleaseDC = FALSE;
@@ -2031,7 +1808,7 @@ BOOL CGridCtrl::RedrawCell(int nRow, int nCol, CDC* pDC /* = NULL */)
 }
 
 // redraw a complete row
-BOOL CGridCtrl::RedrawRow(int row)
+BOOL HGridCtrl::RedrawRow(int row)
 {
     BOOL bResult = TRUE;
 
@@ -2045,7 +1822,7 @@ BOOL CGridCtrl::RedrawRow(int row)
 }
 
 // redraw a complete column
-BOOL CGridCtrl::RedrawColumn(int col)
+BOOL HGridCtrl::RedrawColumn(int col)
 {
     BOOL bResult = TRUE;
 
@@ -2060,84 +1837,24 @@ BOOL CGridCtrl::RedrawColumn(int col)
 
 
 // Sets the currently selected cell, returning the previous current cell
-CCellID CGridCtrl::SetFocusCell(int nRow, int nCol)
+CCellID HGridCtrl::SetFocusCell(int nRow, int nCol)
 {
     return SetFocusCell(CCellID(nRow, nCol));
 }
 
-CCellID CGridCtrl::SetFocusCell(CCellID cell)
-{
-    if (cell == m_idCurrentCell)
-        return m_idCurrentCell;
 
-    CCellID idPrev = m_idCurrentCell;
-
-    // EFW - Bug Fix - Force focus to be in a non-fixed cell
-    if (cell.row != -1 && cell.row < GetFixedRowCount())
-        cell.row = GetFixedRowCount();
-    if (cell.col != -1 && cell.col < GetFixedColumnCount())
-        cell.col = GetFixedColumnCount();
-
-    m_idCurrentCell = cell;
-
-    if (IsValid(idPrev))
-    {
-        SetItemState(idPrev.row, idPrev.col,
-            GetItemState(idPrev.row, idPrev.col) & ~GVIS_FOCUSED);
-        RedrawCell(idPrev); // comment to reduce flicker
-
-        if (GetTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
-            for (int row = 0; row < m_nFixedRows; row++)
-                RedrawCell(row, idPrev.col);
-        if (GetTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
-            for (int col = 0; col < m_nFixedCols; col++)
-                RedrawCell(idPrev.row, col);
-    }
-
-    if (IsValid(m_idCurrentCell))
-    {
-        SetItemState(m_idCurrentCell.row, m_idCurrentCell.col,
-            GetItemState(m_idCurrentCell.row, m_idCurrentCell.col) | GVIS_FOCUSED);
-
-        RedrawCell(m_idCurrentCell); // comment to reduce flicker
-
-        if (GetTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
-            for (int row = 0; row < m_nFixedRows; row++)
-                RedrawCell(row, m_idCurrentCell.col);
-        if (GetTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
-            for (int col = 0; col < m_nFixedCols; col++)
-                RedrawCell(m_idCurrentCell.row, col);
-
-        // EFW - New addition.  If in list mode, make sure the selected
-        // row highlight follows the cursor.
-        // Removed by C Maunder 27 May
-        //if (m_bListMode)
-        //{
-        //    m_PrevSelectedCellMap.RemoveAll();
-        //    m_MouseMode = MOUSE_SELECT_ROW;
-        //    OnSelecting(m_idCurrentCell);
-
-            // Leave this off so that you can still drag the highlight around
-            // without selecting rows.
-            // m_MouseMode = MOUSE_NOTHING;
-        //}
-
-	}
-
-    return idPrev;
-}
 
 // Sets the range of currently selected cells
-void CGridCtrl::SetSelectedRange(const CCellRange& Range,
-                                 BOOL bForceRepaint /* = FALSE */, BOOL bSelectCells/*=TRUE*/)
+void HGridCtrl::SetSelectedRange(const CCellRange& Range,
+                                 BOOL bForceRepaint , BOOL bSelectCells)
 {
     SetSelectedRange(Range.GetMinRow(), Range.GetMinCol(),
                      Range.GetMaxRow(), Range.GetMaxCol(),
                      bForceRepaint, bSelectCells);
 }
 
-void CGridCtrl::SetSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMaxCol,
-                                 BOOL bForceRepaint /* = FALSE */, BOOL bSelectCells/*=TRUE*/)
+void HGridCtrl::SetSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMaxCol,
+                                 BOOL bForceRepaint , BOOL bSelectCells)
 {
     if (!m_bEnableSelection)
         return;
@@ -2209,7 +1926,7 @@ void CGridCtrl::SetSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
         if (!GetSingleRowSelection() &&
             nMinRow >= 0 && nMinCol >= 0 && nMaxRow >= 0 && nMaxCol >= 0)
         {
-            for (pos = m_PrevSelectedCellMap.GetStartPosition(); pos != NULL; /* nothing */)
+            for (pos = m_PrevSelectedCellMap.GetStartPosition(); pos != NULL; )
             {
                 DWORD key;
                 CCellID cell;
@@ -2270,9 +1987,10 @@ void CGridCtrl::SetSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
     if (pDC != NULL)
         ReleaseDC(pDC);
 }
-
+*/
+/*
 // selects all cells
-void CGridCtrl::SelectAllCells()
+void HGridCtrl::SelectAllCells()
 {
     if (!m_bEnableSelection)
         return;
@@ -2281,8 +1999,8 @@ void CGridCtrl::SelectAllCells()
 }
 
 // selects columns
-void CGridCtrl::SelectColumns(CCellID currentCell, 
-                              BOOL bForceRedraw /*=FALSE*/, BOOL bSelectCells /*=TRUE*/)
+void HGridCtrl::SelectColumns(CCellID currentCell,
+                              BOOL bForceRedraw , BOOL bSelectCells)
 {
     if (!m_bEnableSelection)
         return;
@@ -2306,8 +2024,8 @@ void CGridCtrl::SelectColumns(CCellID currentCell,
 }
 
 // selects rows
-void CGridCtrl::SelectRows(CCellID currentCell, 
-                           BOOL bForceRedraw /*=FALSE*/, BOOL bSelectCells /*=TRUE*/)
+void HGridCtrl::SelectRows(CCellID currentCell,
+                           BOOL bForceRedraw , BOOL bSelectCells )
 {
     if (!m_bEnableSelection)
         return;
@@ -2331,8 +2049,8 @@ void CGridCtrl::SelectRows(CCellID currentCell,
 }
 
 // selects cells
-void CGridCtrl::SelectCells(CCellID currentCell, 
-                            BOOL bForceRedraw /*=FALSE*/, BOOL bSelectCells /*=TRUE*/)
+void HGridCtrl::SelectCells(CCellID currentCell,
+                            BOOL bForceRedraw , BOOL bSelectCells )
 {
     if (!m_bEnableSelection)
         return;
@@ -2356,7 +2074,7 @@ void CGridCtrl::SelectCells(CCellID currentCell,
 }
 
 // Called when mouse/keyboard selection is a-happening.
-void CGridCtrl::OnSelecting(const CCellID& currentCell)
+void HGridCtrl::OnSelecting(const CCellID& currentCell)
 {
     if (!m_bEnableSelection)
         return;
@@ -2381,7 +2099,7 @@ void CGridCtrl::OnSelecting(const CCellID& currentCell)
     // SetFocusCell(max(currentCell.row, m_nFixedRows), max(currentCell.col, m_nFixedCols));
 }
 
-void CGridCtrl::ValidateAndModifyCellContents(int nRow, int nCol, LPCTSTR strText)
+void HGridCtrl::ValidateAndModifyCellContents(int nRow, int nCol, LPCTSTR strText)
 {
     if (!IsCellEditable(nRow, nCol))
         return;
@@ -2406,7 +2124,7 @@ void CGridCtrl::ValidateAndModifyCellContents(int nRow, int nCol, LPCTSTR strTex
     }
 }
 
-void CGridCtrl::ClearCells(CCellRange Selection)
+void HGridCtrl::ClearCells(CCellRange Selection)
 {
     for (int row = Selection.GetMinRow(); row <= Selection.GetMaxRow(); row++)
     {
@@ -2428,7 +2146,7 @@ void CGridCtrl::ClearCells(CCellRange Selection)
 // Clipboard functions
 
 // Deletes the contents from the selected cells
-void CGridCtrl::CutSelectedText()
+void HGridCtrl::CutSelectedText()
 {
     if (!IsEditable())
         return;
@@ -2443,7 +2161,7 @@ void CGridCtrl::CutSelectedText()
 }
 
 // Copies text from the selected cells to the clipboard
-COleDataSource* CGridCtrl::CopyTextFromGrid()
+COleDataSource* HGridCtrl::CopyTextFromGrid()
 {
     USES_CONVERSION;
 
@@ -2514,8 +2232,8 @@ COleDataSource* CGridCtrl::CopyTextFromGrid()
 }
 
 // Pastes text from the clipboard to the selected cells
-BOOL CGridCtrl::PasteTextToGrid(CCellID cell, COleDataObject* pDataObject, 
-								BOOL bSelectPastedCells /*=TRUE*/)
+BOOL HGridCtrl::PasteTextToGrid(CCellID cell, COleDataObject* pDataObject,
+                                BOOL bSelectPastedCells )
 {
     if (!IsValid(cell) || !IsCellEditable(cell) || !pDataObject->IsDataAvailable(CF_TEXT))
         return FALSE;
@@ -2627,7 +2345,7 @@ BOOL CGridCtrl::PasteTextToGrid(CCellID cell, COleDataObject* pDataObject,
 #ifndef GRIDCONTROL_NO_DRAGDROP
 
 // Start drag n drop
-void CGridCtrl::OnBeginDrag()
+void HGridCtrl::OnBeginDrag()
 {
     if (!m_bAllowDragAndDrop)
         return;
@@ -2653,7 +2371,7 @@ void CGridCtrl::OnBeginDrag()
 }
 
 // Handle drag over grid
-DROPEFFECT CGridCtrl::OnDragOver(COleDataObject* pDataObject, DWORD dwKeyState,
+DROPEFFECT HGridCtrl::OnDragOver(COleDataObject* pDataObject, DWORD dwKeyState,
                                  CPoint point)
 {
     // Any text data available for us?
@@ -2706,7 +2424,7 @@ DROPEFFECT CGridCtrl::OnDragOver(COleDataObject* pDataObject, DWORD dwKeyState,
 }
 
 // Something has just been dragged onto the grid
-DROPEFFECT CGridCtrl::OnDragEnter(COleDataObject* pDataObject, DWORD dwKeyState,
+DROPEFFECT HGridCtrl::OnDragEnter(COleDataObject* pDataObject, DWORD dwKeyState,
                                   CPoint point)
 {
     // Any text data available for us?
@@ -2737,7 +2455,7 @@ DROPEFFECT CGridCtrl::OnDragEnter(COleDataObject* pDataObject, DWORD dwKeyState,
 }
 
 // Something has just been dragged away from the grid
-void CGridCtrl::OnDragLeave()
+void HGridCtrl::OnDragLeave()
 {
     // Set the previously drop-highlighted cell as no longer drop-highlighted
     if (IsValid(m_LastDragOverCell))
@@ -2750,8 +2468,8 @@ void CGridCtrl::OnDragLeave()
 }
 
 // Something has just been dropped onto the grid
-BOOL CGridCtrl::OnDrop(COleDataObject* pDataObject, DROPEFFECT /*dropEffect*/,
-                       CPoint /* point */)
+BOOL HGridCtrl::OnDrop(COleDataObject* pDataObject, DROPEFFECT dropEffect,
+                       CPoint  point )
 {
     m_MouseMode = MOUSE_NOTHING;
     
@@ -2765,7 +2483,7 @@ BOOL CGridCtrl::OnDrop(COleDataObject* pDataObject, DROPEFFECT /*dropEffect*/,
 #endif
 
 #ifndef GRIDCONTROL_NO_CLIPBOARD
-void CGridCtrl::OnEditCut()
+void HGridCtrl::OnEditCut()
 {
     if (!IsEditable())
         return;
@@ -2778,7 +2496,7 @@ void CGridCtrl::OnEditCut()
     CutSelectedText();
 }
 
-void CGridCtrl::OnEditCopy()
+void HGridCtrl::OnEditCopy()
 {
     COleDataSource* pSource = CopyTextFromGrid();
     if (!pSource)
@@ -2787,7 +2505,7 @@ void CGridCtrl::OnEditCopy()
     pSource->SetClipboard();
 }
 
-void CGridCtrl::OnEditPaste()
+void HGridCtrl::OnEditPaste()
 {
     if (!IsEditable())
         return;
@@ -2832,7 +2550,7 @@ void CGridCtrl::OnEditPaste()
 }
 #endif
 
-void CGridCtrl::OnEditSelectAll()
+void HGridCtrl::OnEditSelectAll()
 {
     SendMessageToParent(m_LeftClickDownCell.row, m_LeftClickDownCell.col, GVN_SELCHANGING);
     SelectAllCells();
@@ -2840,21 +2558,21 @@ void CGridCtrl::OnEditSelectAll()
 }
 
 #ifndef GRIDCONTROL_NO_CLIPBOARD
-void CGridCtrl::OnUpdateEditCopy(CCmdUI* pCmdUI)
+void HGridCtrl::OnUpdateEditCopy(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(GetSelectedCount() > 0); // - Thomas Haase 
     //CCellRange Selection = GetSelectedCellRange();
     //pCmdUI->Enable(Selection.Count() && IsValid(Selection));
 }
 
-void CGridCtrl::OnUpdateEditCut(CCmdUI* pCmdUI)
+void HGridCtrl::OnUpdateEditCut(CCmdUI* pCmdUI)
 {
 	pCmdUI->Enable(IsEditable() && GetSelectedCount() > 0); // - Thomas Haase 
     //CCellRange Selection = GetSelectedCellRange();
     //pCmdUI->Enable(IsEditable() && Selection.Count() && IsValid(Selection));
 }
 
-void CGridCtrl::OnUpdateEditPaste(CCmdUI* pCmdUI)
+void HGridCtrl::OnUpdateEditPaste(CCmdUI* pCmdUI)
 {
     CCellID cell = GetFocusCell();
 
@@ -2865,7 +2583,7 @@ void CGridCtrl::OnUpdateEditPaste(CCmdUI* pCmdUI)
 }
 #endif
 
-void CGridCtrl::OnUpdateEditSelectAll(CCmdUI* pCmdUI)
+void HGridCtrl::OnUpdateEditSelectAll(CCmdUI* pCmdUI)
 {
     pCmdUI->Enable(m_bEnableSelection);
 }
@@ -2874,7 +2592,7 @@ void CGridCtrl::OnUpdateEditSelectAll(CCmdUI* pCmdUI)
 // hittest-like functions
 
 // TRUE if the mouse is over a row resize area
-BOOL CGridCtrl::MouseOverRowResizeArea(CPoint& point)
+BOOL HGridCtrl::MouseOverRowResizeArea(CPoint& point)
 {
     if (point.x >= GetFixedColumnWidth())
         return FALSE;
@@ -2899,7 +2617,7 @@ BOOL CGridCtrl::MouseOverRowResizeArea(CPoint& point)
 }
 
 // TRUE if the mouse is over a column resize area. point is in Client coords
-BOOL CGridCtrl::MouseOverColumnResizeArea(CPoint& point)
+BOOL HGridCtrl::MouseOverColumnResizeArea(CPoint& point)
 {
     if (point.y >= GetFixedRowHeight())
         return FALSE;
@@ -2926,7 +2644,7 @@ BOOL CGridCtrl::MouseOverColumnResizeArea(CPoint& point)
 // Get cell from point.
 // point - client coordinates
 // bAllowFixedCellCheck - if TRUE then fixed cells are checked
-CCellID CGridCtrl::GetCellFromPt(CPoint point, BOOL bAllowFixedCellCheck /*=TRUE*/)
+CCellID HGridCtrl::GetCellFromPt(CPoint point, BOOL bAllowFixedCellCheck )
 {
     CCellID cellID; // return value
 
@@ -3012,7 +2730,7 @@ CCellID CGridCtrl::GetCellFromPt(CPoint point, BOOL bAllowFixedCellCheck /*=TRUE
 // CGridCtrl cellrange functions
 
 // Gets the first non-fixed cell ID
-CCellID CGridCtrl::GetTopleftNonFixedCell(BOOL bForceRecalculation /*=FALSE*/)
+CCellID HGridCtrl::GetTopleftNonFixedCell(BOOL bForceRecalculation )
 {
     // Used cached value if possible
     if (m_idTopLeftCell.IsValid() && !bForceRecalculation)
@@ -3036,8 +2754,8 @@ CCellID CGridCtrl::GetTopleftNonFixedCell(BOOL bForceRecalculation /*=FALSE*/)
 }
 
 // This gets even partially visible cells
-CCellRange CGridCtrl::GetVisibleNonFixedCellRange(LPRECT pRect /*=NULL*/, 
-                                                  BOOL bForceRecalculation /*=FALSE*/)
+CCellRange HGridCtrl::GetVisibleNonFixedCellRange(LPRECT pRect ,
+                                                  BOOL bForceRecalculation )
 {
     CRect rect;
     GetClientRect(rect);
@@ -3081,7 +2799,7 @@ CCellRange CGridCtrl::GetVisibleNonFixedCellRange(LPRECT pRect /*=NULL*/,
 }
 
 // used by ResetScrollBars() - This gets only fully visible cells
-CCellRange CGridCtrl::GetUnobstructedNonFixedCellRange(BOOL bForceRecalculation /*=FALSE*/)
+CCellRange HGridCtrl::GetUnobstructedNonFixedCellRange(BOOL bForceRecalculation )
 {
     CRect rect;
     GetClientRect(rect);
@@ -3119,7 +2837,7 @@ CCellRange CGridCtrl::GetUnobstructedNonFixedCellRange(BOOL bForceRecalculation 
 
 // Returns the minimum bounding range of the current selection
 // If no selection, then the returned CCellRange will be invalid
-CCellRange CGridCtrl::GetSelectedCellRange() const
+CCellRange HGridCtrl::GetSelectedCellRange() const
 {
     CCellRange Selection(GetRowCount(), GetColumnCount(), -1,-1);
 
@@ -3139,13 +2857,13 @@ CCellRange CGridCtrl::GetSelectedCellRange() const
 }
 
 // Returns ALL the cells in the grid
-CCellRange CGridCtrl::GetCellRange() const
+CCellRange HGridCtrl::GetCellRange() const
 {
     return CCellRange(0, 0, GetRowCount() - 1, GetColumnCount() - 1);
 }
 
 // Resets the selected cell range to the empty set.
-void CGridCtrl::ResetSelectedRange()
+void HGridCtrl::ResetSelectedRange()
 {
     m_PrevSelectedCellMap.RemoveAll();
     SetSelectedRange(-1,-1,-1,-1);
@@ -3153,7 +2871,7 @@ void CGridCtrl::ResetSelectedRange()
 }
 
 // Get/Set scroll position using 32 bit functions
-int CGridCtrl::GetScrollPos32(int nBar, BOOL bGetTrackPos /* = FALSE */)
+int HGridCtrl::GetScrollPos32(int nBar, BOOL bGetTrackPos )
 {
     SCROLLINFO si;
     si.cbSize = sizeof(SCROLLINFO);
@@ -3172,7 +2890,7 @@ int CGridCtrl::GetScrollPos32(int nBar, BOOL bGetTrackPos /* = FALSE */)
     return 0;
 }
 
-BOOL CGridCtrl::SetScrollPos32(int nBar, int nPos, BOOL bRedraw /* = TRUE */)
+BOOL HGridCtrl::SetScrollPos32(int nBar, int nPos, BOOL bRedraw )
 {
     m_idTopLeftCell.row = -1;
 
@@ -3183,7 +2901,7 @@ BOOL CGridCtrl::SetScrollPos32(int nBar, int nPos, BOOL bRedraw /* = TRUE */)
     return SetScrollInfo(nBar, &si, bRedraw);
 }
 
-void CGridCtrl::EnableScrollBars(int nBar, BOOL bEnable /*=TRUE*/)
+void HGridCtrl::EnableScrollBars(int nBar, BOOL bEnable )
 {
     if (bEnable)
     {
@@ -3216,7 +2934,7 @@ void CGridCtrl::EnableScrollBars(int nBar, BOOL bEnable /*=TRUE*/)
 }
 
 // If resizing or cell counts/sizes change, call this - it'll fix up the scroll bars
-void CGridCtrl::ResetScrollBars()
+void HGridCtrl::ResetScrollBars()
 {
     // Force a refresh. 
     m_idTopLeftCell.row = -1;
@@ -3298,8 +3016,8 @@ void CGridCtrl::ResetScrollBars()
     }
 
     ASSERT(m_nVScrollMax < INT_MAX && m_nHScrollMax < INT_MAX); // This should be fine
-
-    /* Old code - CJM
+*/
+    /* Old code - CJM  alreay ---huangw
     SCROLLINFO si;
     si.cbSize = sizeof(SCROLLINFO);
     si.fMask = SIF_PAGE;
@@ -3313,6 +3031,7 @@ void CGridCtrl::ResetScrollBars()
     */
 
     // New code - Paul Runstedler 
+/*
     SCROLLINFO si;
     si.cbSize = sizeof(SCROLLINFO);
     si.fMask = SIF_PAGE | SIF_RANGE;
@@ -3333,7 +3052,7 @@ void CGridCtrl::ResetScrollBars()
 
 // returns the top left point of the cell. Returns FALSE if cell not visible.
 // consider cell's merge
-BOOL CGridCtrl::GetCellOrigin(int nRow, int nCol, LPPOINT p)
+BOOL HGridCtrl::GetCellOrigin(int nRow, int nCol, LPPOINT p)
 {
     int i;
 
@@ -3399,7 +3118,7 @@ BOOL CGridCtrl::GetCellOrigin(int nRow, int nCol, LPPOINT p)
 }
 // returns the top left point of the cell. Returns FALSE if cell not visible.
 // don't consider cell's merge
-BOOL CGridCtrl::GetCellOriginNoMerge(int nRow, int nCol, LPPOINT p)
+BOOL HGridCtrl::GetCellOriginNoMerge(int nRow, int nCol, LPPOINT p)
 {
     int i;
 
@@ -3443,22 +3162,22 @@ BOOL CGridCtrl::GetCellOriginNoMerge(int nRow, int nCol, LPPOINT p)
 
 
 
-BOOL CGridCtrl::GetCellOrigin(const CCellID& cell, LPPOINT p)
+BOOL HGridCtrl::GetCellOrigin(const CCellID& cell, LPPOINT p)
 {
     return GetCellOrigin(cell.row, cell.col, p);
 }
-BOOL CGridCtrl::GetCellOriginNoMerge(const CCellID& cell, LPPOINT p)
+BOOL HGridCtrl::GetCellOriginNoMerge(const CCellID& cell, LPPOINT p)
 {
     return GetCellOriginNoMerge(cell.row, cell.col, p);
 }
 
 // Returns the bounding box of the cell
-BOOL CGridCtrl::GetCellRect(const CCellID& cell, LPRECT pRect)
+BOOL HGridCtrl::GetCellRect(const CCellID& cell, LPRECT pRect)
 {
     return GetCellRect(cell.row, cell.col, pRect);
 }
 
-BOOL CGridCtrl::GetCellRect(int nRow, int nCol, LPRECT pRect)
+BOOL HGridCtrl::GetCellRect(int nRow, int nCol, LPRECT pRect)
 {
     CPoint CellOrigin;
     if (!GetCellOrigin(nRow, nCol, &CellOrigin))
@@ -3486,12 +3205,12 @@ BOOL CGridCtrl::GetCellRect(int nRow, int nCol, LPRECT pRect)
     return TRUE;
 }
 
-BOOL CGridCtrl::GetTextRect(const CCellID& cell, LPRECT pRect)
+BOOL HGridCtrl::GetTextRect(const CCellID& cell, LPRECT pRect)
 {
     return GetTextRect(cell.row, cell.col, pRect);
 }
 
-BOOL CGridCtrl::GetTextRect(int nRow, int nCol, LPRECT pRect)
+BOOL HGridCtrl::GetTextRect(int nRow, int nCol, LPRECT pRect)
 {
     CGridCellBase* pCell = GetCell( nRow, nCol);
     if( pCell == NULL)
@@ -3504,7 +3223,7 @@ BOOL CGridCtrl::GetTextRect(int nRow, int nCol, LPRECT pRect)
 }
 
 // Returns the bounding box of a range of cells
-BOOL CGridCtrl::GetCellRangeRect(const CCellRange& cellRange, LPRECT lpRect)
+BOOL HGridCtrl::GetCellRangeRect(const CCellRange& cellRange, LPRECT lpRect)
 {
     CPoint MinOrigin,MaxOrigin;
 
@@ -3524,7 +3243,7 @@ BOOL CGridCtrl::GetCellRangeRect(const CCellRange& cellRange, LPRECT lpRect)
 ////////////////////////////////////////////////////////////////////////////////////
 // Grid attribute functions
 
-LRESULT CGridCtrl::OnSetFont(WPARAM hFont, LPARAM /*lParam */)
+LRESULT HGridCtrl::OnSetFont(WPARAM hFont, LPARAM lParam )
 {
     LRESULT result = Default();
 
@@ -3543,7 +3262,7 @@ LRESULT CGridCtrl::OnSetFont(WPARAM hFont, LPARAM /*lParam */)
     return result;
 }
 
-LRESULT CGridCtrl::OnGetFont(WPARAM /*wParam*/, LPARAM /*lParam*/)
+LRESULT HGridCtrl::OnGetFont(WPARAM wParam, LPARAM lParam)
 {
     //LOGFONT    lf;
     //m_cellDefault.GetFontObject()->GetLogFont(&lf);
@@ -3552,7 +3271,7 @@ LRESULT CGridCtrl::OnGetFont(WPARAM /*wParam*/, LPARAM /*lParam*/)
 }
 
 #ifndef _WIN32_WCE_NO_CURSOR
-BOOL CGridCtrl::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
+BOOL HGridCtrl::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 {
     if (nHitTest == HTCLIENT)
     {
@@ -3594,7 +3313,7 @@ BOOL CGridCtrl::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 ////////////////////////////////////////////////////////////////////////////////////
 // Row/Column count functions
 
-BOOL CGridCtrl::SetFixedRowCount(int nFixedRows)
+BOOL HGridCtrl::SetFixedRowCount(int nFixedRows)
 {
     if (m_nFixedRows == nFixedRows)
         return TRUE;
@@ -3650,7 +3369,7 @@ BOOL CGridCtrl::SetFixedRowCount(int nFixedRows)
         return TRUE;
 }
 
-BOOL CGridCtrl::SetFixedColumnCount(int nFixedCols)
+BOOL HGridCtrl::SetFixedColumnCount(int nFixedCols)
 {
     if (m_nFixedCols == nFixedCols)
         return TRUE;
@@ -3707,103 +3426,9 @@ BOOL CGridCtrl::SetFixedColumnCount(int nFixedCols)
     return TRUE;
 }
 
-BOOL CGridCtrl::SetRowCount(int nRows)
-{
-    BOOL bResult = TRUE;
 
-    ASSERT(nRows >= 0);
-    if (nRows == GetRowCount())
-        return bResult;
 
-    // Force recalculation
-    m_idTopLeftCell.col = -1;
-
-    if (nRows < m_nFixedRows)
-        m_nFixedRows = nRows;
-
-    if (m_idCurrentCell.row >= nRows)
-        SetFocusCell(-1, - 1);
-
-    int addedRows = nRows - GetRowCount();
-
-    // If we are about to lose rows, then we need to delete the GridCell objects
-    // in each column within each row
-    if (addedRows < 0)
-    {
-        if (!GetVirtualMode())
-        {
-            for (int row = nRows; row < m_nRows; row++)
-            {
-                // Delete cells
-                for (int col = 0; col < m_nCols; col++)
-                    DestroyCell(row, col);
-            
-                // Delete rows
-                GRID_ROW* pRow = m_RowData[row];
-                if (pRow)
-                    delete pRow;
-            }
-        }
-        m_nRows = nRows;
-    }
-    
-    TRY
-    {
-        m_arRowHeights.SetSize(nRows);
-
-        if (GetVirtualMode())
-        {
-            m_nRows = nRows;
-            if (addedRows > 0)
-            {
-                int startRow = nRows - addedRows;
-                for (int row = startRow; row < nRows; row++)
-                    m_arRowHeights[row] = m_cellDefault.GetHeight();
-            }
-        }
-        else
-        {
-            // Change the number of rows.
-            m_RowData.SetSize(nRows);
-
-            // If we have just added rows, we need to construct new elements for each cell
-            // and set the default row height
-            if (addedRows > 0)
-            {
-                // initialize row heights and data
-                int startRow = nRows - addedRows;
-                for (int row = startRow; row < nRows; row++)
-                {
-                    m_arRowHeights[row] = m_cellDefault.GetHeight();
-
-                    m_RowData[row] = new GRID_ROW;
-                    m_RowData[row]->SetSize(m_nCols);
-                    for (int col = 0; col < m_nCols; col++)
-                    {
-                        GRID_ROW* pRow = m_RowData[row];
-                        if (pRow && !GetVirtualMode())
-                            pRow->SetAt(col, CreateCell(row, col));
-                    }
-                    m_nRows++;
-                }
-            }
-        }
-    }
-    CATCH (CMemoryException, e)
-    {
-        e->ReportError();
-        bResult = FALSE;
-    }
-    END_CATCH
-
-    SetModified();
-    ResetScrollBars();
-    Refresh();
-
-    return bResult;
-}
-
-BOOL CGridCtrl::SetColumnCount(int nCols)
+BOOL HGridCtrl::SetColumnCount(int nCols)
 {
     BOOL bResult = TRUE;
 
@@ -3884,9 +3509,9 @@ BOOL CGridCtrl::SetColumnCount(int nCols)
 }
 
 // Insert a column at a given position, or add to end of columns (if nColumn = -1)
-int CGridCtrl::InsertColumn(LPCTSTR strHeading,
-                            UINT nFormat /* = DT_CENTER|DT_VCENTER|DT_SINGLELINE */,
-                            int nColumn  /* = -1 */)
+int HGridCtrl::InsertColumn(LPCTSTR strHeading,
+                            UINT nFormat ,
+                            int nColumn  )
 {
     if (nColumn >= 0 && nColumn < m_nFixedCols)
     {
@@ -3975,7 +3600,7 @@ int CGridCtrl::InsertColumn(LPCTSTR strHeading,
 }
 
 // Insert a row at a given position, or add to end of rows (if nRow = -1)
-int CGridCtrl::InsertRow(LPCTSTR strHeading, int nRow /* = -1 */)
+int HGridCtrl::InsertRow(LPCTSTR strHeading, int nRow )
 {
     if (nRow >= 0 && nRow < m_nFixedRows)
     {
@@ -4060,7 +3685,7 @@ int CGridCtrl::InsertRow(LPCTSTR strHeading, int nRow /* = -1 */)
 ///////////////////////////////////////////////////////////////////////////////
 // Cell creation stuff
 
-BOOL CGridCtrl::SetCellType(int nRow, int nCol, CRuntimeClass* pRuntimeClass)
+BOOL HGridCtrl::SetCellType(int nRow, int nCol, CRuntimeClass* pRuntimeClass)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4087,7 +3712,7 @@ BOOL CGridCtrl::SetCellType(int nRow, int nCol, CRuntimeClass* pRuntimeClass)
     return TRUE;
 }
 
-BOOL CGridCtrl::SetDefaultCellType( CRuntimeClass* pRuntimeClass)
+BOOL HGridCtrl::SetDefaultCellType( CRuntimeClass* pRuntimeClass)
 {
     ASSERT( pRuntimeClass != NULL );
     if (!pRuntimeClass->IsDerivedFrom(RUNTIME_CLASS(CGridCellBase)))
@@ -4100,7 +3725,7 @@ BOOL CGridCtrl::SetDefaultCellType( CRuntimeClass* pRuntimeClass)
 }
 
 // Creates a new grid cell and performs any necessary initialisation
-/*virtual*/ CGridCellBase* CGridCtrl::CreateCell(int nRow, int nCol)
+ CGridCellBase* HGridCtrl::CreateCell(int nRow, int nCol)
 {
     ASSERT(!GetVirtualMode());
 
@@ -4127,7 +3752,7 @@ BOOL CGridCtrl::SetDefaultCellType( CRuntimeClass* pRuntimeClass)
 }
 
 // Performs any cell cleanup necessary to maintain grid integrity
-/*virtual*/ void CGridCtrl::DestroyCell(int nRow, int nCol)
+void HGridCtrl::DestroyCell(int nRow, int nCol)
 {
     // Should NEVER get here in virtual mode.
     ASSERT(!GetVirtualMode());
@@ -4139,7 +3764,7 @@ BOOL CGridCtrl::SetDefaultCellType( CRuntimeClass* pRuntimeClass)
     delete GetCell(nRow, nCol);
 }
 
-BOOL CGridCtrl::DeleteColumn(int nColumn)
+BOOL HGridCtrl::DeleteColumn(int nColumn)
 {
     if (nColumn < 0 || nColumn >= GetColumnCount())
         return FALSE;
@@ -4176,7 +3801,7 @@ BOOL CGridCtrl::DeleteColumn(int nColumn)
     return TRUE;
 }
 
-BOOL CGridCtrl::DeleteRow(int nRow)
+BOOL HGridCtrl::DeleteRow(int nRow)
 {
     if (nRow < 0 || nRow >= GetRowCount())
         return FALSE;
@@ -4215,7 +3840,7 @@ BOOL CGridCtrl::DeleteRow(int nRow)
 }
 
 // Handy function that removes all non-fixed rows
-BOOL CGridCtrl::DeleteNonFixedRows()
+BOOL HGridCtrl::DeleteNonFixedRows()
 {
     ResetSelectedRange();
 
@@ -4230,7 +3855,7 @@ BOOL CGridCtrl::DeleteNonFixedRows()
 }
 
 // Removes all rows, columns and data from the grid.
-BOOL CGridCtrl::DeleteAllItems()
+BOOL HGridCtrl::DeleteAllItems()
 {
     ResetSelectedRange();
 
@@ -4263,7 +3888,7 @@ BOOL CGridCtrl::DeleteAllItems()
     return TRUE;
 }
 
-void CGridCtrl::AutoFill()
+void HGridCtrl::AutoFill()
 {
     if (!::IsWindow(m_hWnd))
         return;
@@ -4277,12 +3902,12 @@ void CGridCtrl::AutoFill()
     SetFixedColumnCount(1);
     ExpandToFit();
 }
-
+*/
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl data functions
-
+/*
 // Set CListCtrl::GetNextItem for details
-CCellID CGridCtrl::GetNextItem(CCellID& cell, int nFlags) const
+CCellID HGridCtrl::GetNextItem(CCellID& cell, int nFlags) const
 {
     if ((nFlags & GVNI_ALL) == GVNI_ALL)
     {    // GVNI_ALL Search whole Grid beginning from cell
@@ -4397,23 +4022,23 @@ CCellID CGridCtrl::GetNextItem(CCellID& cell, int nFlags) const
 }
 
 // Sorts on a given column using the cell text
-BOOL CGridCtrl::SortTextItems(int nCol, BOOL bAscending, LPARAM data /* = 0 */)
+BOOL HGridCtrl::SortTextItems(int nCol, BOOL bAscending, LPARAM data  )
 {
     SetSortColumn(nCol);
     SetSortAscending(bAscending);
     ResetSelectedRange();
     SetFocusCell(-1, - 1);
-    return CGridCtrl::SortItems(pfnCellTextCompare, nCol, bAscending, data);
+    return HGridCtrl::SortItems(pfnCellTextCompare, nCol, bAscending, data);
 }
 
-void CGridCtrl::SetCompareFunction(PFNLVCOMPARE pfnCompare)
+void HGridCtrl::SetCompareFunction(PFNLVCOMPARE pfnCompare)
 {
 	m_pfnCompare = pfnCompare;
 }
 
 // Sorts on a given column using the cell text and using the specified comparison
 // function
-BOOL CGridCtrl::SortItems(int nCol, BOOL bAscending, LPARAM data /* = 0 */)
+BOOL HGridCtrl::SortItems(int nCol, BOOL bAscending, LPARAM data )
 {
     SetSortColumn(nCol);
     SetSortAscending(bAscending);
@@ -4421,14 +4046,14 @@ BOOL CGridCtrl::SortItems(int nCol, BOOL bAscending, LPARAM data /* = 0 */)
     SetFocusCell(-1, - 1);
 
 	if (m_pfnCompare == NULL)
-		return CGridCtrl::SortItems(pfnCellTextCompare, nCol, bAscending, data);
+        return HGridCtrl::SortItems(pfnCellTextCompare, nCol, bAscending, data);
 	else
-	    return CGridCtrl::SortItems(m_pfnCompare, nCol, bAscending, data);
+        return HGridCtrl::SortItems(m_pfnCompare, nCol, bAscending, data);
 }
 
 // Sorts on a given column using the supplied compare function (see CListCtrl::SortItems)
-BOOL CGridCtrl::SortItems(PFNLVCOMPARE pfnCompare, int nCol, BOOL bAscending,
-                          LPARAM data /* = 0 */)
+BOOL HGridCtrl::SortItems(PFNLVCOMPARE pfnCompare, int nCol, BOOL bAscending,
+                          LPARAM data )
 {
     SetSortColumn(nCol);
     SetSortAscending(bAscending);
@@ -4437,7 +4062,7 @@ BOOL CGridCtrl::SortItems(PFNLVCOMPARE pfnCompare, int nCol, BOOL bAscending,
     return SortItems(pfnCompare, nCol, bAscending, data, GetFixedRowCount(), -1);
 }
 
-int CALLBACK CGridCtrl::pfnCellTextCompare(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+int CALLBACK HGridCtrl::pfnCellTextCompare(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	UNUSED_ALWAYS(lParamSort);
 
@@ -4448,7 +4073,7 @@ int CALLBACK CGridCtrl::pfnCellTextCompare(LPARAM lParam1, LPARAM lParam2, LPARA
 	return _tcscmp(pCell1->GetText(), pCell2->GetText());
 }
 
-int CALLBACK CGridCtrl::pfnCellNumericCompare(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+int CALLBACK HGridCtrl::pfnCellNumericCompare(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	UNUSED_ALWAYS(lParamSort);
 
@@ -4468,7 +4093,7 @@ int CALLBACK CGridCtrl::pfnCellNumericCompare(LPARAM lParam1, LPARAM lParam2, LP
 }
 
 // private recursive sort implementation
-BOOL CGridCtrl::SortItems(PFNLVCOMPARE pfnCompare, int nCol, BOOL bAscending, LPARAM data,
+BOOL HGridCtrl::SortItems(PFNLVCOMPARE pfnCompare, int nCol, BOOL bAscending, LPARAM data,
                           int low, int high)
 {
     if (nCol >= GetColumnCount())
@@ -4545,7 +4170,7 @@ BOOL CGridCtrl::SortItems(PFNLVCOMPARE pfnCompare, int nCol, BOOL bAscending, LP
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl data functions
 
-BOOL CGridCtrl::SetItem(const GV_ITEM* pItem)
+BOOL HGridCtrl::SetItem(const GV_ITEM* pItem)
 {
     if (!pItem || GetVirtualMode())
         return FALSE;
@@ -4578,7 +4203,7 @@ BOOL CGridCtrl::SetItem(const GV_ITEM* pItem)
     return TRUE;
 }
 
-BOOL CGridCtrl::GetItem(GV_ITEM* pItem)
+BOOL HGridCtrl::GetItem(GV_ITEM* pItem)
 {
     if (!pItem)
         return FALSE;
@@ -4608,7 +4233,7 @@ BOOL CGridCtrl::GetItem(GV_ITEM* pItem)
     return TRUE;
 }
 
-BOOL CGridCtrl::SetItemText(int nRow, int nCol, LPCTSTR str)
+BOOL HGridCtrl::SetItemText(int nRow, int nCol, LPCTSTR str)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4625,7 +4250,7 @@ BOOL CGridCtrl::SetItemText(int nRow, int nCol, LPCTSTR str)
 
 #if !defined(_WIN32_WCE) || (_WIN32_WCE >= 210)
 // EFW - 06/13/99 - Added to support printf-style formatting codes
-BOOL CGridCtrl::SetItemTextFmt(int nRow, int nCol, LPCTSTR szFmt, ...)
+BOOL HGridCtrl::SetItemTextFmt(int nRow, int nCol, LPCTSTR szFmt, ...)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4651,7 +4276,7 @@ BOOL CGridCtrl::SetItemTextFmt(int nRow, int nCol, LPCTSTR szFmt, ...)
 
 // EFW - 06/13/99 - Added to support string resource ID.  Supports
 // a variable argument list too.
-BOOL CGridCtrl::SetItemTextFmtID(int nRow, int nCol, UINT nID, ...)
+BOOL HGridCtrl::SetItemTextFmtID(int nRow, int nCol, UINT nID, ...)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4676,7 +4301,7 @@ BOOL CGridCtrl::SetItemTextFmtID(int nRow, int nCol, UINT nID, ...)
 }
 #endif
 
-BOOL CGridCtrl::SetItemData(int nRow, int nCol, LPARAM lParam)
+BOOL HGridCtrl::SetItemData(int nRow, int nCol, LPARAM lParam)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4690,7 +4315,7 @@ BOOL CGridCtrl::SetItemData(int nRow, int nCol, LPARAM lParam)
     return TRUE;
 }
 
-LPARAM CGridCtrl::GetItemData(int nRow, int nCol) const
+LPARAM HGridCtrl::GetItemData(int nRow, int nCol) const
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     if (!pCell)
@@ -4699,7 +4324,7 @@ LPARAM CGridCtrl::GetItemData(int nRow, int nCol) const
     return pCell->GetData();
 }
 
-BOOL CGridCtrl::SetItemImage(int nRow, int nCol, int iImage)
+BOOL HGridCtrl::SetItemImage(int nRow, int nCol, int iImage)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4713,7 +4338,7 @@ BOOL CGridCtrl::SetItemImage(int nRow, int nCol, int iImage)
     return TRUE;
 }
 
-int CGridCtrl::GetItemImage(int nRow, int nCol) const
+int HGridCtrl::GetItemImage(int nRow, int nCol) const
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     ASSERT(pCell);
@@ -4723,7 +4348,7 @@ int CGridCtrl::GetItemImage(int nRow, int nCol) const
     return pCell->GetImage();
 }
 
-BOOL CGridCtrl::SetItemState(int nRow, int nCol, UINT state)
+BOOL HGridCtrl::SetItemState(int nRow, int nCol, UINT state)
 {
     BOOL bSelected = IsCellSelected(nRow, nCol);
 
@@ -4758,7 +4383,7 @@ BOOL CGridCtrl::SetItemState(int nRow, int nCol, UINT state)
     return TRUE;
 }
 
-UINT CGridCtrl::GetItemState(int nRow, int nCol) const
+UINT HGridCtrl::GetItemState(int nRow, int nCol) const
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     ASSERT(pCell);
@@ -4768,7 +4393,7 @@ UINT CGridCtrl::GetItemState(int nRow, int nCol) const
     return pCell->GetState();
 }
 
-BOOL CGridCtrl::SetItemFormat(int nRow, int nCol, UINT nFormat)
+BOOL HGridCtrl::SetItemFormat(int nRow, int nCol, UINT nFormat)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4782,7 +4407,7 @@ BOOL CGridCtrl::SetItemFormat(int nRow, int nCol, UINT nFormat)
     return TRUE;
 }
 
-UINT CGridCtrl::GetItemFormat(int nRow, int nCol) const
+UINT HGridCtrl::GetItemFormat(int nRow, int nCol) const
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     ASSERT(pCell);
@@ -4792,7 +4417,7 @@ UINT CGridCtrl::GetItemFormat(int nRow, int nCol) const
     return pCell->GetFormat();
 }
 
-BOOL CGridCtrl::SetItemBkColour(int nRow, int nCol, COLORREF cr /* = CLR_DEFAULT */)
+BOOL HGridCtrl::SetItemBkColour(int nRow, int nCol, COLORREF cr )
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4806,7 +4431,7 @@ BOOL CGridCtrl::SetItemBkColour(int nRow, int nCol, COLORREF cr /* = CLR_DEFAULT
     return TRUE;
 }
 
-COLORREF CGridCtrl::GetItemBkColour(int nRow, int nCol) const
+COLORREF HGridCtrl::GetItemBkColour(int nRow, int nCol) const
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     ASSERT(pCell);
@@ -4816,7 +4441,7 @@ COLORREF CGridCtrl::GetItemBkColour(int nRow, int nCol) const
     return pCell->GetBackClr();
 }
 
-BOOL CGridCtrl::SetItemFgColour(int nRow, int nCol, COLORREF cr /* = CLR_DEFAULT */)
+BOOL HGridCtrl::SetItemFgColour(int nRow, int nCol, COLORREF cr )
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4830,7 +4455,7 @@ BOOL CGridCtrl::SetItemFgColour(int nRow, int nCol, COLORREF cr /* = CLR_DEFAULT
     return TRUE;
 }
 
-COLORREF CGridCtrl::GetItemFgColour(int nRow, int nCol) const
+COLORREF HGridCtrl::GetItemFgColour(int nRow, int nCol) const
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     ASSERT(pCell);
@@ -4840,7 +4465,7 @@ COLORREF CGridCtrl::GetItemFgColour(int nRow, int nCol) const
     return pCell->GetTextClr();
 }
 
-BOOL CGridCtrl::SetItemFont(int nRow, int nCol, const LOGFONT* plf)
+BOOL HGridCtrl::SetItemFont(int nRow, int nCol, const LOGFONT* plf)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -4855,7 +4480,7 @@ BOOL CGridCtrl::SetItemFont(int nRow, int nCol, const LOGFONT* plf)
     return TRUE;
 }
 
-const LOGFONT* CGridCtrl::GetItemFont(int nRow, int nCol)
+const LOGFONT* HGridCtrl::GetItemFont(int nRow, int nCol)
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     ASSERT(pCell);
@@ -4865,7 +4490,7 @@ const LOGFONT* CGridCtrl::GetItemFont(int nRow, int nCol)
     return pCell->GetFont();
 }
 
-BOOL CGridCtrl::IsItemEditing(int nRow, int nCol)
+BOOL HGridCtrl::IsItemEditing(int nRow, int nCol)
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     ASSERT(pCell);
@@ -4878,7 +4503,7 @@ BOOL CGridCtrl::IsItemEditing(int nRow, int nCol)
 ////////////////////////////////////////////////////////////////////////////////////
 // Row/Column size functions
 
-long CGridCtrl::GetVirtualWidth() const
+long HGridCtrl::GetVirtualWidth() const
 {
     long lVirtualWidth = 0;
     int iColCount = GetColumnCount();
@@ -4888,7 +4513,7 @@ long CGridCtrl::GetVirtualWidth() const
     return lVirtualWidth;
 }
 
-long CGridCtrl::GetVirtualHeight() const
+long HGridCtrl::GetVirtualHeight() const
 {
     long lVirtualHeight = 0;
     int iRowCount = GetRowCount();
@@ -4898,7 +4523,7 @@ long CGridCtrl::GetVirtualHeight() const
     return lVirtualHeight;
 }
 
-int CGridCtrl::GetRowHeight(int nRow) const
+int HGridCtrl::GetRowHeight(int nRow) const
 {
     ASSERT(nRow >= 0 && nRow < m_nRows);
     if (nRow < 0 || nRow >= m_nRows)
@@ -4907,7 +4532,7 @@ int CGridCtrl::GetRowHeight(int nRow) const
     return m_arRowHeights[nRow];
 }
 
-int CGridCtrl::GetColumnWidth(int nCol) const
+int HGridCtrl::GetColumnWidth(int nCol) const
 {
     ASSERT(nCol >= 0 && nCol < m_nCols);
     if (nCol < 0 || nCol >= m_nCols)
@@ -4916,7 +4541,7 @@ int CGridCtrl::GetColumnWidth(int nCol) const
     return m_arColWidths[nCol];
 }
 
-BOOL CGridCtrl::SetRowHeight(int nRow, int height)
+BOOL HGridCtrl::SetRowHeight(int nRow, int height)
 {
     ASSERT(nRow >= 0 && nRow < m_nRows && height >= 0);
     if (nRow < 0 || nRow >= m_nRows || height < 0)
@@ -4928,7 +4553,7 @@ BOOL CGridCtrl::SetRowHeight(int nRow, int height)
     return TRUE;
 }
 
-BOOL CGridCtrl::SetColumnWidth(int nCol, int width)
+BOOL HGridCtrl::SetColumnWidth(int nCol, int width)
 {
     ASSERT(nCol >= 0 && nCol < m_nCols && width >= 0);
     if (nCol < 0 || nCol >= m_nCols || width < 0)
@@ -4940,7 +4565,7 @@ BOOL CGridCtrl::SetColumnWidth(int nCol, int width)
     return TRUE;
 }
 
-int CGridCtrl::GetFixedRowHeight() const
+int HGridCtrl::GetFixedRowHeight() const
 {
     int nHeight = 0;
     for (int i = 0; i < m_nFixedRows; i++)
@@ -4949,7 +4574,7 @@ int CGridCtrl::GetFixedRowHeight() const
     return nHeight;
 }
 
-int CGridCtrl::GetFixedColumnWidth() const
+int HGridCtrl::GetFixedColumnWidth() const
 {
     int nWidth = 0;
     for (int i = 0; i < m_nFixedCols; i++)
@@ -4958,8 +4583,8 @@ int CGridCtrl::GetFixedColumnWidth() const
     return nWidth;
 }
 
-BOOL CGridCtrl::AutoSizeColumn(int nCol, UINT nAutoSizeStyle /*=GVS_DEFAULT*/, 
-                               BOOL bResetScroll /*=TRUE*/)
+BOOL HGridCtrl::AutoSizeColumn(int nCol, UINT nAutoSizeStyle ,
+                               BOOL bResetScroll )
 {
     ASSERT(nCol >= 0 && nCol < m_nCols);
     if (nCol < 0 || nCol >= m_nCols)
@@ -5007,7 +4632,7 @@ BOOL CGridCtrl::AutoSizeColumn(int nCol, UINT nAutoSizeStyle /*=GVS_DEFAULT*/,
     return TRUE;
 }
 
-BOOL CGridCtrl::AutoSizeRow(int nRow, BOOL bResetScroll /*=TRUE*/)
+BOOL HGridCtrl::AutoSizeRow(int nRow, BOOL bResetScroll )
 {
     ASSERT(nRow >= 0 && nRow < m_nRows);
     if (nRow < 0 || nRow >= m_nRows)
@@ -5048,7 +4673,7 @@ BOOL CGridCtrl::AutoSizeRow(int nRow, BOOL bResetScroll /*=TRUE*/)
     return TRUE;
 }
 
-void CGridCtrl::AutoSizeColumns(UINT nAutoSizeStyle /*=GVS_DEFAULT*/)
+void HGridCtrl::AutoSizeColumns(UINT nAutoSizeStyle )
 {
     int nNumColumns = GetColumnCount();
     for (int nCol = 0; nCol < nNumColumns; nCol++)
@@ -5060,7 +4685,7 @@ void CGridCtrl::AutoSizeColumns(UINT nAutoSizeStyle /*=GVS_DEFAULT*/)
     ResetScrollBars();
 }
 
-void CGridCtrl::AutoSizeRows()
+void HGridCtrl::AutoSizeRows()
 {
     int nNumRows = GetRowCount();
     for (int nRow = 0; nRow < nNumRows; nRow++)
@@ -5074,7 +4699,7 @@ void CGridCtrl::AutoSizeRows()
 
 // sizes all rows and columns
 // faster than calling both AutoSizeColumns() and AutoSizeRows()
-void CGridCtrl::AutoSize(UINT nAutoSizeStyle /*=GVS_DEFAULT*/)
+void HGridCtrl::AutoSize(UINT nAutoSizeStyle )
 {
     CDC* pDC = GetDC();
     if (!pDC)
@@ -5136,7 +4761,7 @@ void CGridCtrl::AutoSize(UINT nAutoSizeStyle /*=GVS_DEFAULT*/)
 
 // Expands the columns to fit the screen space. If bExpandFixed is FALSE then fixed 
 // columns will not be affected
-void CGridCtrl::ExpandColumnsToFit(BOOL bExpandFixed /*=TRUE*/)
+void HGridCtrl::ExpandColumnsToFit(BOOL bExpandFixed )
 {
     if (bExpandFixed)
 	{
@@ -5200,7 +4825,7 @@ void CGridCtrl::ExpandColumnsToFit(BOOL bExpandFixed /*=TRUE*/)
     ResetScrollBars();
 }
 
-void CGridCtrl::ExpandLastColumn()
+void HGridCtrl::ExpandLastColumn()
 {
     if (GetColumnCount() <= 0)
         return;
@@ -5235,7 +4860,7 @@ void CGridCtrl::ExpandLastColumn()
 
 // Expands the rows to fit the screen space. If bExpandFixed is FALSE then fixed 
 // rows will not be affected
-void CGridCtrl::ExpandRowsToFit(BOOL bExpandFixed /*=TRUE*/)
+void HGridCtrl::ExpandRowsToFit(BOOL bExpandFixed )
 {
     if (bExpandFixed)
 	{
@@ -5301,7 +4926,7 @@ void CGridCtrl::ExpandRowsToFit(BOOL bExpandFixed /*=TRUE*/)
 
 // Expands the cells to fit the screen space. If bExpandFixed is FALSE then fixed 
 // cells  will not be affected
-void CGridCtrl::ExpandToFit(BOOL bExpandFixed /*=TRUE*/)
+void HGridCtrl::ExpandToFit(BOOL bExpandFixed )
 {
     ExpandColumnsToFit(bExpandFixed);   // This will remove any existing horz scrollbar
     ExpandRowsToFit(bExpandFixed);      // This will remove any existing vert scrollbar
@@ -5312,10 +4937,10 @@ void CGridCtrl::ExpandToFit(BOOL bExpandFixed /*=TRUE*/)
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Attributes
-
-void CGridCtrl::SetVirtualMode(BOOL bVirtual)
+*/
+void HGridCtrl::SetVirtualMode(BOOL bVirtual)
 {
-    DeleteAllItems();
+    deleteAllItems();
     m_bVirtualMode = bVirtual;
 
     // Force some defaults here.
@@ -5329,13 +4954,14 @@ void CGridCtrl::SetVirtualMode(BOOL bVirtual)
     }
 }
 
-void CGridCtrl::SetGridLines(int nWhichLines /*=GVL_BOTH*/) 
+/*
+void HGridCtrl::SetGridLines(int nWhichLines )
 {
     m_nGridLines = nWhichLines;
     Refresh();
 }
 
-void CGridCtrl::SetListMode(BOOL bEnableListMode /*=TRUE*/)
+void HGridCtrl::SetListMode(BOOL bEnableListMode )
 {
     ResetSelectedRange();
     SetSortColumn(-1);
@@ -5344,7 +4970,7 @@ void CGridCtrl::SetListMode(BOOL bEnableListMode /*=TRUE*/)
     Refresh();
 }
 
-void CGridCtrl::SetSortColumn(int nCol)
+void HGridCtrl::SetSortColumn(int nCol)
 {
     if (m_nSortColumn >= 0)
         InvalidateCellRect(0, m_nSortColumn);
@@ -5353,12 +4979,12 @@ void CGridCtrl::SetSortColumn(int nCol)
         InvalidateCellRect(0, nCol);
 }
 
-BOOL CGridCtrl::IsCellFixed(int nRow, int nCol)
+BOOL HGridCtrl::IsCellFixed(int nRow, int nCol)
 {
     return (nRow < GetFixedRowCount() || nCol < GetFixedColumnCount());
 }
 
-void CGridCtrl::SetModified(BOOL bModified /*=TRUE*/, int nRow /*=-1*/, int nCol /*=-1*/)
+void HGridCtrl::SetModified(BOOL bModified , int nRow , int nCol )
 {
     // Cannot guarantee sorting anymore...
     if (nCol < 0 || nCol == GetSortColumn())
@@ -5385,7 +5011,7 @@ void CGridCtrl::SetModified(BOOL bModified /*=TRUE*/, int nRow /*=-1*/, int nCol
     }
 }
 
-BOOL CGridCtrl::GetModified(int nRow /*=-1*/, int nCol /*=-1*/)
+BOOL HGridCtrl::GetModified(int nRow , int nCol )
 {
     if (nRow >= 0 && nCol >= 0)
         return ( (GetItemState(nRow, nCol) & GVIS_MODIFIED) == GVIS_MODIFIED );
@@ -5396,20 +5022,20 @@ BOOL CGridCtrl::GetModified(int nRow /*=-1*/, int nCol /*=-1*/)
 /////////////////////////////////////////////////////////////////////////////////////
 // GridCtrl cell visibility tests and invalidation/redraw functions
 
-void CGridCtrl::Refresh()
+void HGridCtrl::Refresh()
 {
     if (GetSafeHwnd() && m_bAllowDraw)
         Invalidate();
 }
 
 // EnsureVisible supplied by Roelf Werkman
-void CGridCtrl::EnsureVisible(int nRow, int nCol)
+void HGridCtrl::EnsureVisible(int nRow, int nCol)
 {
     if (!m_bAllowDraw)
         return;
 
-    CRect rectWindow;
-    /*
+    CRect rectWindow;*/
+    /*   already ----huangw
     // set the scroll to the approximate position of row (Nigel Page-Jones)
     int nPos = (int)((float)nRow / GetRowCount() * 1000);
     float fPos = (float)nPos / 1000;
@@ -5433,7 +5059,7 @@ void CGridCtrl::EnsureVisible(int nRow, int nCol)
     // We are gonna send some scroll messages, which will steal the focus 
     // from it's rightful owner. Squirrel it away ourselves so we can give
     // it back. (Damir)
-    CWnd* pFocusWnd = GetFocus();
+    /*CWnd* pFocusWnd = GetFocus();
 
     CCellRange VisibleCells = GetVisibleNonFixedCellRange();
 
@@ -5523,22 +5149,22 @@ void CGridCtrl::EnsureVisible(int nRow, int nCol)
 		pFocusWnd->SetFocus(); 
 }
 
-BOOL CGridCtrl::IsCellEditable(CCellID &cell) const
+BOOL HGridCtrl::IsCellEditable(CCellID &cell) const
 {
     return IsCellEditable(cell.row, cell.col);
 }
 
-BOOL CGridCtrl::IsCellEditable(int nRow, int nCol) const
+BOOL HGridCtrl::IsCellEditable(int nRow, int nCol) const
 {
     return IsEditable() && ((GetItemState(nRow, nCol) & GVIS_READONLY) != GVIS_READONLY);
 }
 
-BOOL CGridCtrl::IsCellSelected(CCellID &cell) const
+BOOL HGridCtrl::IsCellSelected(CCellID &cell) const
 {
     return IsCellSelected(cell.row, cell.col);
 }
 
-BOOL CGridCtrl::IsCellSelected(int nRow, int nCol) const
+BOOL HGridCtrl::IsCellSelected(int nRow, int nCol) const
 {
     if (GetVirtualMode())
     {   
@@ -5554,12 +5180,12 @@ BOOL CGridCtrl::IsCellSelected(int nRow, int nCol) const
         return IsSelectable() && ((GetItemState(nRow, nCol) & GVIS_SELECTED) == GVIS_SELECTED);
 }
 
-BOOL CGridCtrl::IsCellVisible(CCellID cell) 
+BOOL HGridCtrl::IsCellVisible(CCellID cell)
 {
     return IsCellVisible(cell.row, cell.col);
 }
 
-BOOL CGridCtrl::IsCellVisible(int nRow, int nCol)
+BOOL HGridCtrl::IsCellVisible(int nRow, int nCol)
 {
     if (!IsWindow(m_hWnd))
         return FALSE;
@@ -5625,12 +5251,12 @@ BOOL CGridCtrl::IsCellVisible(int nRow, int nCol)
     return TRUE;
 }
 
-BOOL CGridCtrl::InvalidateCellRect(const CCellID& cell)
+BOOL HGridCtrl::InvalidateCellRect(const CCellID& cell)
 {
     return InvalidateCellRect(cell.row, cell.col);
 }
 
-BOOL CGridCtrl::InvalidateCellRect(const int row, const int col)
+BOOL HGridCtrl::InvalidateCellRect(const int row, const int col)
 {
     if (!::IsWindow(GetSafeHwnd()) || !m_bAllowDraw)
         return FALSE;
@@ -5651,7 +5277,7 @@ BOOL CGridCtrl::InvalidateCellRect(const int row, const int col)
     return TRUE;
 }
 
-BOOL CGridCtrl::InvalidateCellRect(const CCellRange& cellRange)
+BOOL HGridCtrl::InvalidateCellRect(const CCellRange& cellRange)
 {
     ASSERT(IsValid(cellRange));
     if (!::IsWindow(GetSafeHwnd()) || !m_bAllowDraw)
@@ -5676,7 +5302,7 @@ BOOL CGridCtrl::InvalidateCellRect(const CCellRange& cellRange)
 // Handles mouse wheel notifications
 // Note - if this doesn't work for win95 then use OnRegisteredMouseWheel instead
 #if !defined(_WIN32_WCE) && (_MFC_VER >= 0x0421)
-BOOL CGridCtrl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+BOOL HGridCtrl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
     // A m_nRowsPerWheelNotch value less than 0 indicates that the mouse
     // wheel scrolls whole pages, not just lines.
@@ -5723,7 +5349,7 @@ BOOL CGridCtrl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 }
 #endif // !defined(_WIN32_WCE) && (_MFC_VER >= 0x0421)
 
-void CGridCtrl::OnMouseMove(UINT /*nFlags*/, CPoint point)
+void HGridCtrl::OnMouseMove(UINT nFlags, CPoint point)
 {
     CRect rect;
     GetClientRect(rect);
@@ -5900,7 +5526,7 @@ void CGridCtrl::OnMouseMove(UINT /*nFlags*/, CPoint point)
 }
 
 // Returns the point inside the cell that was clicked (coords relative to cell top left)
-CPoint CGridCtrl::GetPointClicked(int nRow, int nCol, const CPoint& point)
+CPoint HGridCtrl::GetPointClicked(int nRow, int nCol, const CPoint& point)
 {
     CPoint PointCellOrigin;
     if( !GetCellOrigin( nRow, nCol, &PointCellOrigin)  )
@@ -5911,9 +5537,9 @@ CPoint CGridCtrl::GetPointClicked(int nRow, int nCol, const CPoint& point)
     return PointClickedCellRelative;
 }
 
-void CGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
+void HGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
-    TRACE0("CGridCtrl::OnLButtonDblClk\n");
+    TRACE0("HGridCtrl::OnLButtonDblClk\n");
 
     CCellID cell = GetCellFromPt(point);
     if( !IsValid( cell) )
@@ -6025,14 +5651,14 @@ void CGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
     CWnd::OnLButtonDblClk(nFlags, point);
 }
 
-void CGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
+void HGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 {
 #ifdef GRIDCONTROL_USE_TITLETIPS
     // EFW - Bug Fix
     m_TitleTip.Hide();  // hide any titletips
 #endif
 
-    // TRACE0("CGridCtrl::OnLButtonDown\n");
+    // TRACE0("HGridCtrl::OnLButtonDown\n");
     // CWnd::OnLButtonDown(nFlags, point);
 
     SetFocus();
@@ -6369,9 +5995,9 @@ void CGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
     m_LastMousePoint = point;
 }
 
-void CGridCtrl::OnLButtonUp(UINT nFlags, CPoint point)
+void HGridCtrl::OnLButtonUp(UINT nFlags, CPoint point)
 {
-    // TRACE0("CGridCtrl::OnLButtonUp\n");
+    // TRACE0("HGridCtrl::OnLButtonUp\n");
 
     CWnd::OnLButtonUp(nFlags, point);
 
@@ -6501,7 +6127,7 @@ void CGridCtrl::OnLButtonUp(UINT nFlags, CPoint point)
 }
 
 #ifndef _WIN32_WCE
-void CGridCtrl::OnRButtonDown(UINT nFlags, CPoint point)
+void HGridCtrl::OnRButtonDown(UINT nFlags, CPoint point)
 {
     CWnd::OnRButtonDown(nFlags, point);
 	m_bRMouseButtonDown = TRUE;
@@ -6514,7 +6140,7 @@ void CGridCtrl::OnRButtonDown(UINT nFlags, CPoint point)
 
 // EFW - Added to forward right click to parent so that a context
 // menu can be shown without deriving a new grid class.
-void CGridCtrl::OnRButtonUp(UINT nFlags, CPoint point)
+void HGridCtrl::OnRButtonUp(UINT nFlags, CPoint point)
 {
     CWnd::OnRButtonUp(nFlags, point);
 
@@ -6549,7 +6175,8 @@ void CGridCtrl::OnRButtonUp(UINT nFlags, CPoint point)
 // CGridCtrl printing
 
 // EFW - New print margin support functions
-void CGridCtrl::SetPrintMarginInfo(int nHeaderHeight, int nFooterHeight,
+//打印边界设置支持 ok
+void HGridCtrl::setPrintMarginInfo(int nHeaderHeight, int nFooterHeight,
     int nLeftMargin, int nRightMargin, int nTopMargin,
     int nBottomMargin, int nGap)
 {
@@ -6570,7 +6197,8 @@ void CGridCtrl::SetPrintMarginInfo(int nHeaderHeight, int nFooterHeight,
         m_nGap = nGap;
 }
 
-void CGridCtrl::GetPrintMarginInfo(int &nHeaderHeight, int &nFooterHeight,
+//ok
+void HGridCtrl::getPrintMarginInfo(int &nHeaderHeight, int &nFooterHeight,
     int &nLeftMargin, int &nRightMargin, int &nTopMargin,
     int &nBottomMargin, int &nGap)
 {
@@ -6583,7 +6211,7 @@ void CGridCtrl::GetPrintMarginInfo(int &nHeaderHeight, int &nFooterHeight,
     nGap = m_nGap;
 }
 
-void CGridCtrl::Print(CPrintDialog* pPrntDialog /*=NULL*/)
+void HGridCtrl::Print(CPrintDialog* pPrntDialog =NULL)
 {
     CDC dc;
 
@@ -6648,7 +6276,7 @@ void CGridCtrl::Print(CPrintDialog* pPrntDialog /*=NULL*/)
 
 // EFW - Various changes in the next few functions to support the
 // new print margins and a few other adjustments.
-void CGridCtrl::OnBeginPrinting(CDC *pDC, CPrintInfo *pInfo)
+void HGridCtrl::OnBeginPrinting(CDC *pDC, CPrintInfo *pInfo)
 {
     // OnBeginPrinting() is called after the user has committed to
     // printing by OK'ing the Print dialog, and after the framework
@@ -6753,7 +6381,7 @@ void CGridCtrl::OnBeginPrinting(CDC *pDC, CPrintInfo *pInfo)
     pDC->SelectObject(pOldFont);
 }
 
-void CGridCtrl::OnPrint(CDC *pDC, CPrintInfo *pInfo)
+void HGridCtrl::OnPrint(CDC *pDC, CPrintInfo *pInfo)
 {
     if (!pDC || !pInfo)
         return;
@@ -6999,7 +6627,7 @@ void CGridCtrl::OnPrint(CDC *pDC, CPrintInfo *pInfo)
 
 
 // added by M.Fletcher 12/17/00
-void CGridCtrl::PrintFixedRowCells(int nStartColumn, int nStopColumn, int& row, CRect& rect,
+void HGridCtrl::PrintFixedRowCells(int nStartColumn, int nStopColumn, int& row, CRect& rect,
                                    CDC *pDC, BOOL& bFirst)
 {
    // print all cells from nStartColumn to nStopColumn on row
@@ -7069,9 +6697,9 @@ void CGridCtrl::PrintFixedRowCells(int nStartColumn, int nStopColumn, int& row, 
    } // end of column cells loop
 
 
-} // end of CGridCtrl::PrintFixedRowCells
+} // end of HGridCtrl::PrintFixedRowCells
 
-void CGridCtrl::PrintColumnHeadings(CDC *pDC, CPrintInfo* /*pInfo*/)
+void HGridCtrl::PrintColumnHeadings(CDC *pDC, CPrintInfo* pInfo)
 {
     CFont *pOldFont = pDC->SelectObject(&m_PrinterFont);
 
@@ -7107,16 +6735,17 @@ void CGridCtrl::PrintColumnHeadings(CDC *pDC, CPrintInfo* /*pInfo*/)
     } // end of Row Loop
 
     pDC->SelectObject(pOldFont);
-} // end of CGridCtrl::PrintColumnHeadings
+} // end of HGridCtrl::PrintColumnHeadings
 
 
-
+*/
 /*****************************************************************************
 Prints line of row buttons on each page of the printout.  Assumes that
 the window origin is setup before calling
 
 *****************************************************************************/
-void CGridCtrl::PrintRowButtons(CDC *pDC, CPrintInfo* /*pInfo*/)
+/*
+void HGridCtrl::PrintRowButtons(CDC *pDC, CPrintInfo* pInfo)
 {
     CFont *pOldFont = pDC->SelectObject(&m_PrinterFont);
 
@@ -7171,7 +6800,7 @@ void CGridCtrl::PrintRowButtons(CDC *pDC, CPrintInfo* /*pInfo*/)
     pDC->SelectObject(pOldFont);
 }
 
-void CGridCtrl::PrintHeader(CDC *pDC, CPrintInfo *pInfo)
+void HGridCtrl::PrintHeader(CDC *pDC, CPrintInfo *pInfo)
 {
     // print App title on top right margin
     CString strRight;
@@ -7216,7 +6845,7 @@ void CGridCtrl::PrintHeader(CDC *pDC, CPrintInfo *pInfo)
 }
 
 //print footer with a line and date, and page number
-void CGridCtrl::PrintFooter(CDC *pDC, CPrintInfo *pInfo)
+void HGridCtrl::PrintFooter(CDC *pDC, CPrintInfo *pInfo)
 {
     // page numbering on left
     CString strLeft;
@@ -7259,7 +6888,7 @@ void CGridCtrl::PrintFooter(CDC *pDC, CPrintInfo *pInfo)
     BoldFont.DeleteObject();
 }
 
-void CGridCtrl::OnEndPrinting(CDC* /*pDC*/, CPrintInfo* /*pInfo*/)
+void HGridCtrl::OnEndPrinting(CDC* pDC, CPrintInfo* pInfo)
 {
     m_PrinterFont.DeleteObject();
 }
@@ -7271,7 +6900,7 @@ void CGridCtrl::OnEndPrinting(CDC* /*pDC*/, CPrintInfo* /*pInfo*/)
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl persistance
 
-BOOL CGridCtrl::Save(LPCTSTR filename, TCHAR chSeparator/*=_T(',')*/)
+BOOL HGridCtrl::Save(LPCTSTR filename, TCHAR chSeparator)
 {
     CStdioFile File;
     CFileException ex;
@@ -7308,7 +6937,7 @@ BOOL CGridCtrl::Save(LPCTSTR filename, TCHAR chSeparator/*=_T(',')*/)
     return TRUE;
 }
 
-BOOL CGridCtrl::Load(LPCTSTR filename, TCHAR chSeparator/*=_T(',')*/)
+BOOL HGridCtrl::Load(LPCTSTR filename, TCHAR chSeparator)
 {
     if (GetVirtualMode())
         return FALSE;
@@ -7415,7 +7044,7 @@ BOOL CGridCtrl::Load(LPCTSTR filename, TCHAR chSeparator/*=_T(',')*/)
 #ifndef GRIDCONTROL_NO_DRAGDROP
 // This is no longer needed since I've changed to OLE drag and drop - but it's
 // still cool code. :)
-CImageList* CGridCtrl::CreateDragImage(CPoint *pHotSpot)
+CImageList* HGridCtrl::CreateDragImage(CPoint *pHotSpot)
 {
     CDC* pDC = GetDC();
     if (!pDC)
@@ -7466,7 +7095,7 @@ CImageList* CGridCtrl::CreateDragImage(CPoint *pHotSpot)
 }
 #endif
 
-void CGridCtrl::OnFixedRowClick(CCellID& cell)
+void HGridCtrl::OnFixedRowClick(CCellID& cell)
 {
     if (!IsValid(cell))
         return;
@@ -7498,7 +7127,7 @@ void CGridCtrl::OnFixedRowClick(CCellID& cell)
     }
 }
 
-void CGridCtrl::OnFixedColumnClick(CCellID& cell)
+void HGridCtrl::OnFixedColumnClick(CCellID& cell)
 {
     if (!IsValid(cell))
         return;
@@ -7528,7 +7157,7 @@ void CGridCtrl::OnFixedColumnClick(CCellID& cell)
 
 // Gets the extent of the text pointed to by str (no CDC needed)
 // By default this uses the selected font (which is a bigger font)
-CSize CGridCtrl::GetTextExtent(int nRow, int nCol, LPCTSTR str)
+CSize HGridCtrl::GetTextExtent(int nRow, int nCol, LPCTSTR str)
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     if (!pCell)
@@ -7538,7 +7167,7 @@ CSize CGridCtrl::GetTextExtent(int nRow, int nCol, LPCTSTR str)
 }
 
 // virtual
-void CGridCtrl::OnEditCell(int nRow, int nCol, CPoint point, UINT nChar)
+void HGridCtrl::OnEditCell(int nRow, int nCol, CPoint point, UINT nChar)
 {
 #ifndef GRIDCONTROL_NO_TITLETIPS
     m_TitleTip.Hide();  // hide any titletips
@@ -7570,7 +7199,7 @@ void CGridCtrl::OnEditCell(int nRow, int nCol, CPoint point, UINT nChar)
 }
 
 // virtual
-void CGridCtrl::EndEditing()
+void HGridCtrl::EndEditing()
 {
     CCellID cell = GetFocusCell();
     if (!IsValid(cell)) return;
@@ -7580,7 +7209,7 @@ void CGridCtrl::EndEditing()
 }
 
 // virtual
-void CGridCtrl::OnEndEditCell(int nRow, int nCol, CString str)
+void HGridCtrl::OnEndEditCell(int nRow, int nCol, CString str)
 {
     CString strCurrentText = GetItemText(nRow, nCol);
     if (strCurrentText != str)
@@ -7605,7 +7234,7 @@ void CGridCtrl::OnEndEditCell(int nRow, int nCol, CString str)
 
 // If this returns FALSE then the editing isn't allowed
 // virtual
-BOOL CGridCtrl::ValidateEdit(int nRow, int nCol, LPCTSTR str)
+BOOL HGridCtrl::ValidateEdit(int nRow, int nCol, LPCTSTR str)
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
     ASSERT(pCell);
@@ -7616,7 +7245,7 @@ BOOL CGridCtrl::ValidateEdit(int nRow, int nCol, LPCTSTR str)
 }
 
 // virtual
-CString CGridCtrl::GetItemText(int nRow, int nCol) const
+CString HGridCtrl::GetItemText(int nRow, int nCol) const
 {
     if (nRow < 0 || nRow >= m_nRows || nCol < 0 || nCol >= m_nCols)
         return _T("");
@@ -7630,7 +7259,7 @@ CString CGridCtrl::GetItemText(int nRow, int nCol) const
 }
 //Merge the selected cells 
 //by Huang Wei
-CCellID CGridCtrl::GetMergeCellID(CCellID cell)
+CCellID HGridCtrl::GetMergeCellID(CCellID cell)
 {
     CGridCellBase *pCell = (CGridCellBase*) GetCell(cell);
 	if(pCell && pCell->IsMergeWithOthers())
@@ -7639,13 +7268,13 @@ CCellID CGridCtrl::GetMergeCellID(CCellID cell)
 }
 //Merge the selected cells 
 //by Huang Wei
-CGridCellBase* CGridCtrl::GetCell(CCellID cell)
+CGridCellBase* HGridCtrl::GetCell(CCellID cell)
 {
 	return GetCell(cell.row,cell.col);
 }
 //Merge the selected cells 
 //by Huang Wei
-void CGridCtrl::MergeSelectedCells()
+void HGridCtrl::MergeSelectedCells()
 {
 	CCellRange range=GetSelectedCellRange();
 	if(range.GetColSpan()<=1 && range.GetRowSpan()<=1)
@@ -7654,7 +7283,7 @@ void CGridCtrl::MergeSelectedCells()
 }
 //Merge the selected cells 
 //by Huang Wei
-void CGridCtrl::MergeCells(int nStartRow, int nStartCol, int nEndRow, int nEndCol)
+void HGridCtrl::MergeCells(int nStartRow, int nStartCol, int nEndRow, int nEndCol)
 {
 	for(int row=nStartRow;row<=nEndRow;row++)
 	{
@@ -7679,14 +7308,14 @@ void CGridCtrl::MergeCells(int nStartRow, int nStartCol, int nEndRow, int nEndCo
 }
 //Merge the selected cells 
 //by Huang Wei
-void CGridCtrl::UnMergeSelectedCells()
+void HGridCtrl::UnMergeSelectedCells()
 {
 	CCellRange range=GetSelectedCellRange();
 	UnMergeCells(range.GetMinRow(), range.GetMinCol(), range.GetMaxRow(), range.GetMaxCol());
 }
 //Merge the selected cells 
 //by Huang Wei
-void CGridCtrl::UnMergeCells(int nStartRow, int nStartCol, int nEndRow, int nEndCol)
+void HGridCtrl::UnMergeCells(int nStartRow, int nStartCol, int nEndRow, int nEndCol)
 {
 	for(int row=nStartRow;row<=nEndRow;row++)
 	{
@@ -7713,7 +7342,7 @@ void CGridCtrl::UnMergeCells(int nStartRow, int nStartCol, int nEndRow, int nEnd
 }
 //Merge the selected cells 
 //by Huang Wei
-int  CGridCtrl::GetMergeCellWidth(CCellID cell)
+int  HGridCtrl::GetMergeCellWidth(CCellID cell)
 {
 	CCellID mergecell =GetMergeCellID(cell);
     CGridCellBase *pCell = (CGridCellBase*) GetCell(mergecell);
@@ -7728,7 +7357,7 @@ int  CGridCtrl::GetMergeCellWidth(CCellID cell)
 }
 //Merge the selected cells 
 //by Huang Wei
-int  CGridCtrl::GetMergeCellHeight(CCellID cell)
+int  HGridCtrl::GetMergeCellHeight(CCellID cell)
 {
 	CCellID mergecell =GetMergeCellID(cell);
     CGridCellBase *pCell = (CGridCellBase*) GetCell(mergecell);
@@ -7741,3 +7370,4 @@ int  CGridCtrl::GetMergeCellHeight(CCellID cell)
 	}
 	return height;
 }
+*/

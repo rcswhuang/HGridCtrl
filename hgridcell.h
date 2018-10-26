@@ -130,4 +130,35 @@ protected:
     //CWnd*      m_pEditWnd;
 };
 
+// This class is for storing grid default values. It's a little heavy weight, so
+// don't use it in bulk
+/*
+class HGridDefaultCell : public HGridCell
+{
+// Construction/Destruction
+public:
+    HGridDefaultCell();
+    virtual ~HGridDefaultCell();
+
+public:
+    virtual quint32 style() const                         { return m_dwStyle;      }
+    virtual void    setStyle(DWORD dwStyle)               { m_dwStyle = dwStyle;   }
+    virtual int     width() const                         { return m_Size.cx;      }
+    virtual int     geight() const                        { return m_Size.cy;      }
+    virtual void    setWidth(int nWidth)                  { m_Size.cx = nWidth;    }
+    virtual void    setHeight(int nHeight)                { m_Size.cy = nHeight;   }
+
+    // Disable these properties
+    virtual void     setData(HLPARAM )           { ASSERT(FALSE);         }
+    virtual void     setState(quint32 )          { ASSERT(FALSE);         }
+    virtual quint32  state() const                         { return HGridCell::state()|GVIS_READONLY; }
+    virtual void     setCoords( int row, int col)  { ASSERT(FALSE);         }
+    virtual void     setFont(const QFont& plf);
+    virtual QFont    font() const;
+protected:
+    QSize   m_Size;       // Default Size
+    QFont   m_Font;       // Cached font
+    quint32 m_dwStyle;    // Cell Style - unused
+};
+*/
 #endif // HGRIDCELL_H

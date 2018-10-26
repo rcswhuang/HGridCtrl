@@ -10,6 +10,13 @@ HGridCellBase::~HGridCellBase()
 
 }
 
+HGridCellBase* HGridCellBase::getDefaultCell() const
+{
+    if (getGrid())
+        return getGrid()->getDefaultCell(IsFixedRow(), IsFixedCol());
+    return NULL;
+}
+
 void HGridCellBase::reset()
 {
 
