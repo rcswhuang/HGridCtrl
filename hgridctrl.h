@@ -17,6 +17,11 @@
 typedef QList<HGridCellBase*> GRID_ROW;
 class HGridCtrl;
 
+/*
+ * HGridCtrl为了能有滚动条的效果，继承QAbstractScrollArea
+*/
+
+
 /////////////////////////////////////////////////////////////////////////////
 class HGridCtrl : public CWnd,public QWidget
 {
@@ -33,7 +38,7 @@ public:
 // 属性操作
 ///////////////////////////////////////////////////////////////////////////////////
 public:
-    //行、列数目  Fixed 表头的行数和列数
+    //行、列数目  Fixed 表头的行数和列数  ok
     int  rowCount() const                    { return m_nRows; }
     int  columnCount() const                 { return m_nCols; }
     int  fixedRowCount() const               { return m_nFixedRows; }
@@ -43,36 +48,36 @@ public:
     bool setFixedRowCount(int nFixedRows = 1);
     bool setFixedColumnCount(int nFixedCols = 1);
 
-    //行高、列宽
+    //行高、列宽 ok
     int  rowHeight(int nRow) const;
     bool setRowHeight(int row, int height);
     int  columnWidth(int nCol) const;
     bool setColumnWidth(int col, int width);
 
-    //获取单元格的左上角位置或者矩形区域
-    /*bool getCellOrigin(int nRow, int nCol, QPoint& p);
-    bool getCellOrigin(const HCellID& cell, QPoint& p);
-    bool getCellRect(int nRow, int nCol, QRect& pRect);
-    bool getCellRect(const HCellID& cell, QRect& pRect);
+    //获取单元格的左上角位置或者矩形区域 mid
+    bool cellOrigin(int nRow, int nCol, QPoint& p);
+    bool cellOrigin(const HCellID& cell, QPoint& p);
+    bool cellRect(int nRow, int nCol, QRect& pRect);
+    bool cellRect(const HCellID& cell, QRect& pRect);
 
     //获取文字矩形
-    bool getTextRect(const HCellID& cell, QRect& pRect);
-    bool getTextRect(int nRow, int nCol, QRect& pRect);
+    bool textRect(const HCellID& cell, QRect& pRect);
+    bool textRect(int nRow, int nCol, QRect& pRect);
 
     //获取point点的行列号。如果TRUE是固定行列，如果是false则是开始到point的行列等...... 待定--huangw
-    HCellID getCellFromPt(const QPoint& point, BOOL bAllowFixedCellCheck = TRUE);
+    HCellID cellFromPt(const QPoint& point, BOOL bAllowFixedCellCheck = TRUE);
 
-    //获取固定行的行高 固定列的列宽
-    int  getFixedRowHeight() const;
-    int  getFixedColumnWidth() const;
+    //获取固定行的行高 固定列的列宽 ok
+    int  fixedRowHeight() const;
+    int  fixedColumnWidth() const;
 
-    //获取所有行行高，所有列列宽 打印部分---huangw
-    long getVirtualWidth() const;
-    long getVirtualHeight() const;
+    //获取所有行行高，所有列列宽 打印部分 ok ---huangw
+    long virtualWidth() const;
+    long virtualHeight() const;
 
     //获取行列单元格字符串的宽度
-    QSize getTextExtent(int nRow, int nCol, QString& str);
-    inline QSize getCellTextExtent(int nRow, int nCol)  { return getTextExtent(nRow, nCol, getItemText(nRow,nCol)); }// EFW - Get extent of current text in cell
+    QSize textExtent(int nRow, int nCol, QString& str);
+    inline QSize cellTextExtent(int nRow, int nCol)  { return textExtent(nRow, nCol, itemText(nRow,nCol)); }// EFW - Get extent of current text in cell
 
     //设置网格背景颜色、网格线颜色
     void     setGridBkColor(QColor& clr)         { m_crGridBkColour = clr;           }
@@ -84,45 +89,45 @@ public:
     void	 setTitleTipBackClr(QColor& clr = QCLR_DEFAULT) { m_crTTipBackClr = clr;  }
     QColor   titleTipBackClr()				            { return m_crTTipBackClr; }
     void	 setTitleTipTextClr(QColor& clr = QCLR_DEFAULT) { m_crTTipTextClr = clr;  }
-    QColor   titleTipTextClr()				            { return m_crTTipTextClr; }*/
+    QColor   titleTipTextClr()				            { return m_crTTipTextClr; }
 
     // ***************************************************************************** //
     // These have been deprecated. Use GetDefaultCell and then set the colors
     //
-    /*void     SetTextColor(COLORREF clr)      { m_cellDefault.SetTextClr(clr);        }
-    COLORREF GetTextColor()                  { return m_cellDefault.GetTextClr();    }
-    void     SetTextBkColor(COLORREF clr)    { m_cellDefault.SetBackClr(clr);        }
-    COLORREF GetTextBkColor()                { return m_cellDefault.GetBackClr();    }
-    void     SetFixedTextColor(COLORREF clr) { m_cellFixedRowDef.SetTextClr(clr); 
-                                               m_cellFixedColDef.SetTextClr(clr); 
-                                               m_cellFixedRowColDef.SetTextClr(clr); }
-    COLORREF GetFixedTextColor() const       { return m_cellFixedRowDef.GetTextClr(); }
-    void     SetFixedBkColor(COLORREF clr)   { m_cellFixedRowDef.SetBackClr(clr); 
-                                               m_cellFixedColDef.SetBackClr(clr); 
-                                               m_cellFixedRowColDef.SetBackClr(clr); }
-    COLORREF GetFixedBkColor() const         { return m_cellFixedRowDef.GetBackClr(); }
-    void     SetGridColor(COLORREF clr)      { SetGridLineColor(clr);                }
-    COLORREF GetGridColor()                  { return GetGridLineColor();            }
-    void     SetBkColor(COLORREF clr)        { SetGridBkColor(clr);                  }
-    COLORREF GetBkColor()                    { return GetGridBkColor();              }
+    void     setTextColor(COLORREF clr)           { m_cellDefault.setTextClr(clr);           }
+    COLORREF textColor()                          { return m_cellDefault.textClr();          }
+    void     setTextBkColor(COLORREF clr)         { m_cellDefault.setBackClr(clr);           }
+    COLORREF textBkColor()                        { return m_cellDefault.backClr();          }
+    void     setFixedTextColor(COLORREF clr)      { m_cellFixedRowDef.setTextClr(clr);
+                                                    m_cellFixedColDef.setTextClr(clr);
+                                                    m_cellFixedRowColDef.setTextClr(clr);    }
+    COLORREF fixedTextColor() const               { return m_cellFixedRowDef.textClr();      }
+    void     setFixedBkColor(COLORREF clr)        { m_cellFixedRowDef.setBackClr(clr);
+                                                    m_cellFixedColDef.setBackClr(clr);
+                                                    m_cellFixedRowColDef.setBackClr(clr);    }
+    COLORREF fixedBkColor() const                 { return m_cellFixedRowDef.backClr();      }
+    void     setGridColor(COLORREF clr)           { setGridLineColor(clr);                   }
+    COLORREF gridColor()                          { return gridLineColor();                  }
+    void     setBkColor(COLORREF clr)             { setGridBkColor(clr);                     }
+    COLORREF bkColor()                            { return gridBkColor();                    }
 
-    void     SetDefCellMargin( int nMargin)  { m_cellDefault.SetMargin(nMargin); 
-                                               m_cellFixedRowDef.SetMargin(nMargin); 
-                                               m_cellFixedColDef.SetMargin(nMargin); 
-                                               m_cellFixedRowColDef.SetMargin(nMargin); }
-    int      GetDefCellMargin() const        { return m_cellDefault.GetMargin();     }
+    void     setDefCellMargin( int nMargin)       { m_cellDefault.setMargin(nMargin);
+                                                    m_cellFixedRowDef.setMargin(nMargin);
+                                                    m_cellFixedColDef.setMargin(nMargin);
+                                                    m_cellFixedRowColDef.setMargin(nMargin); }
+    int      defCellMargin() const                { return m_cellDefault.margin();           }
 
-    int      GetDefCellHeight() const        { return m_cellDefault.GetHeight();     }
-    void     SetDefCellHeight(int nHeight)   { m_cellDefault.SetHeight(nHeight); 
-                                               m_cellFixedRowDef.SetHeight(nHeight); 
-                                               m_cellFixedColDef.SetHeight(nHeight); 
-                                               m_cellFixedRowColDef.SetHeight(nHeight); }
-    int      GetDefCellWidth() const         { return m_cellDefault.GetWidth();     }
-    void     SetDefCellWidth(int nWidth)     { m_cellDefault.SetWidth(nWidth); 
-                                               m_cellFixedRowDef.SetWidth(nWidth); 
-                                               m_cellFixedColDef.SetWidth(nWidth); 
-                                               m_cellFixedRowColDef.SetWidth(nWidth); }
-                                               */
+    int      defCellHeight() const                { return m_cellDefault.height();           }
+    void     setDefCellHeight(int nHeight)        { m_cellDefault.setHeight(nHeight);
+                                                    m_cellFixedRowDef.setHeight(nHeight);
+                                                    m_cellFixedColDef.setHeight(nHeight);
+                                                    m_cellFixedRowColDef.setHeight(nHeight); }
+    int      defCellWidth() const                 { return m_cellDefault.width();            }
+    void     setDefCellWidth(int nWidth)          { m_cellDefault.setWidth(nWidth);
+                                                    m_cellFixedRowDef.setWidth(nWidth);
+                                                    m_cellFixedColDef.setWidth(nWidth);
+                                                    m_cellFixedRowColDef.setWidth(nWidth);   }
+
     // ***************************************************************************** //
 
     //设置表格相关标志 主要操作bool变量
@@ -132,7 +137,7 @@ public:
     HCellID setFocusCell(HCellID cell);
     HCellID setFocusCell(int nRow, int nCol);
     HCellID focusCell() const                     { return m_idCurrentCell;           }
-/*
+
    //设置为打印模式
     void setVirtualMode(BOOL bVirtual);
     BOOL isVirtualMode() const                      { return m_bVirtualMode;            }
@@ -233,20 +238,21 @@ public:
     void enableRowHide(bool bEnable = TRUE)        { m_bAllowRowHide = bEnable;        }
     bool isRowHide()                               { return m_bAllowRowHide;           }
 
+
 ///////////////////////////////////////////////////////////////////////////////////
 // default Grid cells. Use these for setting default values such as colors and fonts
 ///////////////////////////////////////////////////////////////////////////////////
 public:
-    HGridCellBase* getDefaultCell(BOOL bFixedRow, BOOL bFixedCol) const;
+    HGridCellBase* defaultCell(BOOL bFixedRow, BOOL bFixedCol) const;
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Grid cell Attributes
 ///////////////////////////////////////////////////////////////////////////////////
 public:
-    HGridCellBase* getCell(int nRow, int nCol) const;   // Get the actual cell!
+    HGridCellBase* cell(int nRow, int nCol) const;   // Get the actual cell!
 
     //设置表格是否修改标志
-    void setModified(bool bModified = TRUE, int nRow = -1, int nCol = -1);
+/*  void setModified(bool bModified = TRUE, int nRow = -1, int nCol = -1);
     bool isModified(int nRow = -1, int nCol = -1);
 
     //设置行列是否是固定行列
@@ -275,15 +281,15 @@ public:
     //设置行列图片
     bool   setItemImage(int nRow, int nCol, int iImage);
     int    itemImage(int nRow, int nCol) const;
-
+*/
     //设置行列状态
     bool   setItemState(int nRow, int nCol, uint state);
     uint   itemState(int nRow, int nCol) const;
-
+/*
     //设置格式，居中，对齐等
     bool   setItemFormat(int nRow, int nCol, uint nFormat);
     uint   itemFormat(int nRow, int nCol) const;
-
+*/
     //设置背景颜色
     bool   setItemBkColour(int nRow, int nCol, QColor& cr = QCLR_DEFAULT);
     QColor itemBkColour(int nRow, int nCol) const;
@@ -291,11 +297,11 @@ public:
     //设置前景颜色 就是文字颜色
     bool   setItemFgColour(int nRow, int nCol, QColor& cr = QCLR_DEFAULT);
     QColor itemFgColour(int nRow, int nCol) const;
-
+/*
     //设置字体
     bool  setItemFont(int nRow, int nCol, const QFont& lf);
     QFont itemFont(int nRow, int nCol);
-
+*/
     //是否编辑
     bool isItemEditing(int nRow, int nCol);
 
@@ -304,6 +310,7 @@ public:
      // 比如创建button,首先button必须是HGridCellBase子类，如HGridCellButton
      // 然后setCellType(0,0,RUNTIME_CLASS(HGridCellButton));然后创建了一个button
     //
+    /*
     bool setCellType(int nRow, int nCol, QObject* pRuntimeClass);
     bool setDefaultCellType( QObject* pRuntimeClass);
 
@@ -347,11 +354,13 @@ public:
     bool isCellVisible(HCellID cell);
 
     //可编辑和可选择
+    */
     bool isCellEditable(int nRow, int nCol) const;
     bool isCellEditable(HCellID &cell) const;
     bool isCellSelected(int nRow, int nCol) const;
     bool isCellSelected(HCellID &cell) const;
 
+    /*
     // SetRedraw stops/starts redraws on things like changing the # rows/columns
     // and autosizing, but not for user-intervention such as resizes
     //重绘操作
@@ -377,10 +386,12 @@ public:
     void setSelectedRange(const HCellRange& Range, bool bForceRepaint = FALSE, bool bSelectCells = TRUE);
     void setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMaxCol,
                           bool bForceRepaint = FALSE, bool bSelectCells = TRUE);
+                          */
+
     bool isValid(int nRow, int nCol) const;
     bool isValid(const HCellID& cell) const;
     bool isValid(const HCellRange& range) const;
-
+/*
 ///////////////////////////////////////////////////////////////////////////////////
 // Clipboard, drag and drop, and cut n' paste operations
 // 剪切 拖拽等操作
@@ -507,9 +518,9 @@ protected:
 
     BOOL MouseOverRowResizeArea(CPoint& point);
     BOOL MouseOverColumnResizeArea(CPoint& point);
-
-    HCellID GetTopleftNonFixedCell(BOOL bForceRecalculation = FALSE);
-    CCellRange GetUnobstructedNonFixedCellRange(BOOL bForceRecalculation = FALSE);
+*/
+    HCellID topleftNonFixedCell(bool bForceRecalculation = false);
+  /*  CCellRange GetUnobstructedNonFixedCellRange(BOOL bForceRecalculation = FALSE);
     CCellRange GetVisibleNonFixedCellRange(LPRECT pRect = NULL, BOOL bForceRecalculation = FALSE);
 
     BOOL IsVisibleVScroll() { return ( (m_nBarState & GVL_VERT) > 0); } 
@@ -565,8 +576,8 @@ protected:
     virtual void  OnDraw(CDC* pDC);
 
     // CGridCellBase Creation and Cleanup
-    //virtual CGridCellBase* CreateCell(int nRow, int nCol);
-    //virtual void DestroyCell(int nRow, int nCol);
+    virtual HGridCellBase* createCell(int nRow, int nCol);
+    virtual void destroyCell(int nRow, int nCol);
 
 // Attributes
 protected:
@@ -606,7 +617,7 @@ protected:
 
     // Cell size details
     int            m_nRows, m_nFixedRows, m_nCols, m_nFixedCols;
-    QVector<uint>  m_arRowHeights, m_arColWidths;
+    QVector<uint>  m_arRowHeights, m_arColWidths; //存储行高和列宽的
     int            m_nVScrollMax, m_nHScrollMax;
 
     // Fonts and images
@@ -751,8 +762,8 @@ protected:
 };
 
 // Returns the default cell implementation for the given grid region
-/*
-inline HGridCellBase* HGridCtrl::getDefaultCell(BOOL bFixedRow, BOOL bFixedCol) const
+
+inline HGridCellBase* HGridCtrl::defaultCell(BOOL bFixedRow, BOOL bFixedCol) const
 { 
     if (bFixedRow && bFixedCol) return (HGridCellBase*) &m_cellFixedRowColDef;
     if (bFixedRow)              return (HGridCellBase*) &m_cellFixedRowDef;
@@ -765,35 +776,36 @@ inline HGridCellBase* HGridCtrl::getCell(int nRow, int nCol) const
     if (nRow < 0 || nRow >= m_nRows || nCol < 0 || nCol >= m_nCols) 
         return NULL;
 
-    if (getVirtualMode())
+    if (isVirtualMode())
     {
-        HGridCellBase* pCell = getDefaultCell(nRow < m_nFixedRows, nCol < m_nFixedCols);
+        HGridCellBase* pCell = defaultCell(nRow < m_nFixedRows, nCol < m_nFixedCols);
         static GV_DISPINFO gvdi;
         gvdi.item.row     = nRow;
         gvdi.item.col     = nCol;
         gvdi.item.mask    = 0xFFFFFFFF;
         gvdi.item.nState  = 0;
-        gvdi.item.nFormat = pCell->GetFormat();
-        gvdi.item.iImage  = pCell->GetImage();
-        gvdi.item.crBkClr = pCell->GetBackClr();
-        gvdi.item.crFgClr = pCell->GetTextClr();
-        gvdi.item.lParam  = pCell->GetData();
-        memcpy(&gvdi.item.lfFont, pCell->GetFont(), sizeof(LOGFONT));
-        gvdi.item.nMargin = pCell->GetMargin();
-        gvdi.item.strText.Empty();
+        gvdi.item.nFormat = pCell->format();
+        gvdi.item.iImage  = pCell->image();
+        gvdi.item.crBkClr = pCell->backClr();
+        gvdi.item.crFgClr = pCell->textClr();
+        gvdi.item.lParam  = pCell->data();
+        gvdi.item.lfFont  = pCell->font();
+        gvdi.item.nMargin = pCell->margin();
+        gvdi.item.strText = "";
 
         // Fix the state bits
-        if (IsCellSelected(nRow, nCol))   gvdi.item.nState |= GVIS_SELECTED;
-        if (nRow < GetFixedRowCount())    gvdi.item.nState |= (GVIS_FIXED | GVIS_FIXEDROW);
-        if (nCol < GetFixedColumnCount()) gvdi.item.nState |= (GVIS_FIXED | GVIS_FIXEDCOL);
-        if (GetFocusCell() == HCellID(nRow, nCol)) gvdi.item.nState |= GVIS_FOCUSED;
+        if (isCellSelected(nRow, nCol))          gvdi.item.nState |= GVIS_SELECTED;
+        if (nRow < fixedRowCount())              gvdi.item.nState |= (GVIS_FIXED | GVIS_FIXEDROW);
+        if (nCol < fixedColumnCount())           gvdi.item.nState |= (GVIS_FIXED | GVIS_FIXEDCOL);
+        if (focusCell() == HCellID(nRow, nCol))  gvdi.item.nState |= GVIS_FOCUSED;
         
         if (m_pfnCallback)
             m_pfnCallback(&gvdi, m_lParam);
         else
-            SendDisplayRequestToParent(&gvdi);
-
-        static CGridCell cell;
+        {
+            //SendDisplayRequestToParent(&gvdi);
+        }
+        static HGridCell cell;
         cell.SetState(gvdi.item.nState);
         cell.SetFormat(gvdi.item.nFormat);
         cell.SetImage(gvdi.item.iImage);
@@ -805,7 +817,7 @@ inline HGridCellBase* HGridCtrl::getCell(int nRow, int nCol) const
         cell.SetText(gvdi.item.strText);
         cell.SetGrid((CGridCtrl*)this);
 
-        return (CGridCellBase*) &cell;
+        return (HGridCellBase*) &cell;
     }
 
     GRID_ROW* pRow = m_RowData[nRow];
@@ -815,7 +827,7 @@ inline HGridCellBase* HGridCtrl::getCell(int nRow, int nCol) const
 
 inline BOOL HGridCtrl::setCell(int nRow, int nCol, HGridCellBase* pCell)
 {
-    if (getVirtualMode())
+    if (isVirtualMode())
         return FALSE;
 
     if (nRow < 0 || nRow >= m_nRows || nCol < 0 || nCol >= m_nCols) 
@@ -827,7 +839,7 @@ inline BOOL HGridCtrl::setCell(int nRow, int nCol, HGridCellBase* pCell)
     pCell->setCoords( nRow, nCol);
     pRow->insert(nCol, pCell);
     return TRUE;
-}*/
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

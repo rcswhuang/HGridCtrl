@@ -16,8 +16,8 @@ public:
     virtual void setText(const QString&)       = 0 ; //设置文字
     virtual void setImage(int)                 = 0 ; //设置图片
     virtual void setData(const QVariant & )    = 0 ; //设置数据
-    virtual void setState(ulong nState)        { m_nState = nState; }
-    virtual void setFormat(ulong )             = 0 ; //格式
+    virtual void setState(quint32 nState)      { m_nState = nState; }
+    virtual void setFormat(quint32 )           = 0 ; //格式
     virtual void setTextClr(const QColor)      = 0 ; //文字颜色
     virtual void setBackClr(const QColor )     = 0 ; //背景颜色
     virtual void setFont(const QFont )         = 0 ;
@@ -38,8 +38,8 @@ public:
     virtual QColor     textClr()    const      = 0 ;
     virtual QColor     backClr()    const      = 0 ;
     virtual QFont      font()       const      = 0 ;
-    virtual HGridCtrl* getGrid()    const      = 0 ;
-    virtual uint       getMargin()  const      = 0 ;
+    virtual HGridCtrl* grid()    const      = 0 ;
+    virtual uint       margin()  const      = 0 ;
     virtual int        alignment()  const      = 0 ;
     virtual int        width()      const      = 0 ;
     virtual int        height()     const      = 0 ;
@@ -110,7 +110,7 @@ public:
     virtual short   getBorderStyle()           const      =0;
 
 public:
-   virtual HGridCellBase* getDefaultCell() const;
+   virtual HGridCellBase* defaultCell() const;
 
 // Operators
 public:

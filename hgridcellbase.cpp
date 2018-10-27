@@ -1,5 +1,5 @@
 ﻿ #include "hgridcellbase.h"
-
+#include "hgridctrl.h"
  HGridCellBase::HGridCellBase()
  {
 
@@ -10,10 +10,10 @@ HGridCellBase::~HGridCellBase()
 
 }
 
-HGridCellBase* HGridCellBase::getDefaultCell() const
+HGridCellBase* HGridCellBase::defaultCell() const
 {
-    if (getGrid())
-        return getGrid()->getDefaultCell(IsFixedRow(), IsFixedCol());
+    if (grid())
+        return grid()->defaultCell(IsFixedRow(), IsFixedCol());
     return NULL;
 }
 

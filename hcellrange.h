@@ -44,23 +44,23 @@ public:
     int  inRange(const HCellID& cellID) const;
     int  count() { return (m_nMaxRow - m_nMinRow + 1) * (m_nMaxCol - m_nMinCol + 1); }
     
-    HCellID  getTopLeft() const;
+    HCellID  topLeft() const;
     HCellRange  intersect(const CCellRange& rhs) const;
     
-    int getMinRow() const {return m_nMinRow;}
+    int minRow() const {return m_nMinRow;}
     void setMinRow(int minRow) {m_nMinRow = minRow;}
     
-    int getMinCol() const {return m_nMinCol;}
+    int minCol() const {return m_nMinCol;}
     void setMinCol(int minCol) {m_nMinCol = minCol;}
     
-    int getMaxRow() const {return m_nMaxRow;}
+    int maxRow() const {return m_nMaxRow;}
     void setMaxRow(int maxRow) {m_nMaxRow = maxRow;}
     
-    int getMaxCol() const {return m_nMaxCol;}
+    int maxCol() const {return m_nMaxCol;}
     void setMaxCol(int maxCol) {m_nMaxCol = maxCol;}
 
-    int getRowSpan() const {return m_nMaxRow - m_nMinRow + 1;}
-    int getColSpan() const {return m_nMaxCol - m_nMinCol + 1;}
+    int rowSpan() const {return m_nMaxRow - m_nMinRow + 1;}
+    int colSpan() const {return m_nMaxCol - m_nMinCol + 1;}
     
     void operator=(const HCellRange& rhs);
     int  operator==(const HCellRange& rhs);
@@ -113,7 +113,7 @@ inline int HCellRange::inRange(const HCellID& cellID) const
      return InRange(cellID.row, cellID.col);
 }
 
-inline HCellID HCellRange::getTopLeft() const
+inline HCellID HCellRange::topLeft() const
 {
      return HCellID(m_nMinRow, m_nMinCol);
 }

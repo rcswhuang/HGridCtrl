@@ -257,101 +257,7 @@ void HGridCtrl::EraseBkgnd(CDC* pDC)
                       &Back);
 }
 
-bool HGridCtrl::setRowCount(int nRows)
-{
-    BOOL bResult = TRUE;
 
-    ASSERT(nRows >= 0);
-    if (nRows == rowCount())
-        return bResult;
-
-    // Force recalculation
-    m_idTopLeftCell.col = -1;
-
-    if (nRows < m_nFixedRows)
-        m_nFixedRows = nRows;
-
-    if (m_idCurrentCell.row >= nRows)
-        SetFocusCell(-1, - 1);
-
-    int addedRows = nRows - rowCount();
-
-    // If we are about to lose rows, then we need to delete the GridCell objects
-    // in each column within each row
-    if (addedRows < 0)
-    {
-        if (!GetVirtualMode())
-        {
-            for (int row = nRows; row < m_nRows; row++)
-            {
-                // Delete cells
-                for (int col = 0; col < m_nCols; col++)
-                    DestroyCell(row, col);
-
-                // Delete rows
-                GRID_ROW* pRow = m_RowData[row];
-                if (pRow)
-                    delete pRow;
-            }
-        }
-        m_nRows = nRows;
-    }
-
-    TRY
-    {
-        m_arRowHeights.SetSize(nRows);
-
-        if (GetVirtualMode())
-        {
-            m_nRows = nRows;
-            if (addedRows > 0)
-            {
-                int startRow = nRows - addedRows;
-                for (int row = startRow; row < nRows; row++)
-                    m_arRowHeights[row] = m_cellDefault.GetHeight();
-            }
-        }
-        else
-        {
-            // Change the number of rows.
-            m_RowData.SetSize(nRows);
-
-            // If we have just added rows, we need to construct new elements for each cell
-            // and set the default row height
-            if (addedRows > 0)
-            {
-                // initialize row heights and data
-                int startRow = nRows - addedRows;
-                for (int row = startRow; row < nRows; row++)
-                {
-                    m_arRowHeights[row] = m_cellDefault.GetHeight();
-
-                    m_RowData[row] = new GRID_ROW;
-                    m_RowData[row]->SetSize(m_nCols);
-                    for (int col = 0; col < m_nCols; col++)
-                    {
-                        GRID_ROW* pRow = m_RowData[row];
-                        if (pRow && !GetVirtualMode())
-                            pRow->SetAt(col, CreateCell(row, col));
-                    }
-                    m_nRows++;
-                }
-            }
-        }
-    }
-    CATCH (CMemoryException, e)
-    {
-        e->ReportError();
-        bResult = FALSE;
-    }
-    END_CATCH
-
-    SetModified();
-    ResetScrollBars();
-    Refresh();
-
-    return bResult;
-}
 
 
 HCellID HGridCtrl::setFocusCell(HCellID cell)
@@ -551,7 +457,7 @@ void HGridCtrl::OnSettingChange(UINT uFlags, LPCTSTR lpszSection)
 // TODO: decrease timer interval over time to speed up selection over time
 void HGridCtrl::OnTimer(UINT nIDEvent)
 {
-    ASSERT(nIDEvent == WM_LBUTTONDOWN);
+    Q_ASSERT(nIDEvent == WM_LBUTTONDOWN);
     if (nIDEvent != WM_LBUTTONDOWN)
         return;
 
@@ -1695,32 +1601,33 @@ void HGridCtrl::OnDraw(CDC* pDC)
 #endif
 
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////////////
 // CGridCtrl Cell selection stuff
 
 // Is a given cell designation valid (ie within the bounds of our number
 // of columns/rows)?
-BOOL HGridCtrl::IsValid(int nRow, int nCol) const
+bool HGridCtrl::isValid(int nRow, int nCol) const
 {
     return (nRow >= 0 && nRow < m_nRows && nCol >= 0 && nCol < m_nCols);
 }
 
-BOOL HGridCtrl::IsValid(const CCellID& cell) const
+bool HGridCtrl::isValid(const CCellID& cell) const
 {
-    return IsValid(cell.row, cell.col);
+    return isValid(cell.row, cell.col);
 }
 
 // Is a given cell range valid (ie within the bounds of our number
 // of columns/rows)?
-BOOL HGridCtrl::IsValid(const CCellRange& range) const
+bool HGridCtrl::isValid(const HCellRange& range) const
 {
-    return (range.GetMinRow() >= 0 && range.GetMinCol() >= 0 &&
-        range.GetMaxRow() >= 0 && range.GetMaxCol() >= 0 &&
-        range.GetMaxRow() < m_nRows && range.GetMaxCol() < m_nCols &&
-        range.GetMinRow() <= range.GetMaxRow() && range.GetMinCol() <= range.GetMaxCol());
+    return (range.minRow() >= 0 && range.minCol() >= 0 &&
+        range.maxRow() >= 0 && range.maxCol() >= 0 &&
+        range.maxRow() < m_nRows && range.maxCol() < m_nCols &&
+        range.minRow() <= range.maxRow() && range.minCol() <= range.maxCol());
 }
 
+/*
 // Enables/Disables redraw for certain operations like columns auto-sizing etc,
 // but not for user caused things such as selection changes.
 void HGridCtrl::SetRedraw(BOOL bAllowDraw, BOOL bResetScrollBars  )
@@ -2532,7 +2439,7 @@ void HGridCtrl::OnEditPaste()
     if ( IsItemEditing(cell.row, cell.col) )
     {
         CGridCellBase* pCell = GetCell(cell.row, cell.col);
-        ASSERT(pCell);
+        Q_ASSERT(pCell);
         if (!pCell) return;
 
 		CWnd* pEditWnd = pCell->GetEditWnd();
@@ -2725,34 +2632,38 @@ CCellID HGridCtrl::GetCellFromPt(CPoint point, BOOL bAllowFixedCellCheck )
 	cellID=GetMergeCellID(cellID);
     return cellID;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 // CGridCtrl cellrange functions
 
 // Gets the first non-fixed cell ID
-CCellID HGridCtrl::GetTopleftNonFixedCell(BOOL bForceRecalculation )
+HCellID HGridCtrl::topleftNonFixedCell(bool bForceRecalculation )
 {
     // Used cached value if possible
-    if (m_idTopLeftCell.IsValid() && !bForceRecalculation)
+    if (m_idTopLeftCell.isValid() && !bForceRecalculation)
         return m_idTopLeftCell;
 
-    int nVertScroll = GetScrollPos(SB_VERT), 
-        nHorzScroll = GetScrollPos(SB_HORZ);
+    // win32 huangw
+    int nVertScroll = 0;//GetScrollPos(SB_VERT),
+    int nHorzScroll = 0;//GetScrollPos(SB_HORZ);
 
     m_idTopLeftCell.col = m_nFixedCols;
+    //有何用？ --huangw
     int nRight = 0;
-    while (nRight < nHorzScroll && m_idTopLeftCell.col < (GetColumnCount()-1))
-        nRight += GetColumnWidth(m_idTopLeftCell.col++);
+    while (nRight < nHorzScroll && m_idTopLeftCell.col < (columnCount()-1))
+        nRight += columnWidth(m_idTopLeftCell.col++);
 
     m_idTopLeftCell.row = m_nFixedRows;
+    //有何用 --huangw
     int nTop = 0;
-    while (nTop < nVertScroll && m_idTopLeftCell.row < (GetRowCount()-1))
-        nTop += GetRowHeight(m_idTopLeftCell.row++);
+    while (nTop < nVertScroll && m_idTopLeftCell.row < (rowCount()-1))
+        nTop += rowHeight(m_idTopLeftCell.row++);
 
     //TRACE2("TopLeft cell is row %d, col %d\n",m_idTopLeftCell.row, m_idTopLeftCell.col);
     return m_idTopLeftCell;
 }
 
+/*
 // This gets even partially visible cells
 CCellRange HGridCtrl::GetVisibleNonFixedCellRange(LPRECT pRect ,
                                                   BOOL bForceRecalculation )
@@ -3015,7 +2926,7 @@ void HGridCtrl::ResetScrollBars()
         m_nHScrollMax = 0;
     }
 
-    ASSERT(m_nVScrollMax < INT_MAX && m_nHScrollMax < INT_MAX); // This should be fine
+    Q_ASSERT(m_nVScrollMax < INT_MAX && m_nHScrollMax < INT_MAX); // This should be fine
 */
     /* Old code - CJM  alreay ---huangw
     SCROLLINFO si;
@@ -3049,73 +2960,11 @@ void HGridCtrl::ResetScrollBars()
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Row/Column position functions
-
+*/
 // returns the top left point of the cell. Returns FALSE if cell not visible.
 // consider cell's merge
-BOOL HGridCtrl::GetCellOrigin(int nRow, int nCol, LPPOINT p)
-{
-    int i;
 
-    if (!IsValid(nRow, nCol))
-        return FALSE;
-
-    CCellID idTopLeft;
-    if (nCol >= m_nFixedCols || nRow >= m_nFixedRows)
-        idTopLeft = GetTopleftNonFixedCell();
-
-	//Merge the selected cells 
-	//by Huang Wei
-
-    //if ((nRow >= m_nFixedRows && nRow < idTopLeft.row) ||
-    //    (nCol>= m_nFixedCols && nCol < idTopLeft.col))
-    //    return FALSE;
-
-    p->x = 0;
-    if (nCol < m_nFixedCols)                      // is a fixed column
-        for (i = 0; i < nCol; i++)
-            p->x += GetColumnWidth(i);
-        else 
-        {                                        // is a scrollable data column
-            for (i = 0; i < m_nFixedCols; i++)
-                p->x += GetColumnWidth(i);
-			//Merge the selected cells 
-			//by Huang Wei
-			if(nCol>idTopLeft.col)
-			{
-				for (i = idTopLeft.col; i < nCol; i++)
-					p->x += GetColumnWidth(i);
-			}
-			else
-			{
-				for (i = nCol; i <idTopLeft.col ; i++)
-					p->x -= GetColumnWidth(i);
-			}
-        }
-        
-        p->y = 0;
-        if (nRow < m_nFixedRows)                      // is a fixed row
-            for (i = 0; i < nRow; i++)
-                p->y += GetRowHeight(i);
-            else 
-            {                                        // is a scrollable data row
-                for (i = 0; i < m_nFixedRows; i++)
-                    p->y += GetRowHeight(i);
- 				//Merge the selected cells 
-				//by Huang Wei
-				if(nRow>idTopLeft.row)
-				{
-					for (i = idTopLeft.row; i < nRow; i++)
-						p->y += GetRowHeight(i);
-				}
-				else
-				{
-					for (i = nRow; i <idTopLeft.row; i++)
-						p->y -= GetRowHeight(i);
-				}
-            }
-            
-            return TRUE;
-}
+/*
 // returns the top left point of the cell. Returns FALSE if cell not visible.
 // don't consider cell's merge
 BOOL HGridCtrl::GetCellOriginNoMerge(int nRow, int nCol, LPPOINT p)
@@ -3159,32 +3008,100 @@ BOOL HGridCtrl::GetCellOriginNoMerge(int nRow, int nCol, LPPOINT p)
             
             return TRUE;
 }
+*/
 
-
-
-BOOL HGridCtrl::GetCellOrigin(const CCellID& cell, LPPOINT p)
+bool HGridCtrl::cellOrigin(int nRow, int nCol, QPoint& p)
 {
-    return GetCellOrigin(cell.row, cell.col, p);
+    int i;
+    if (!isValid(nRow, nCol))
+        return false;
+
+    HCellID idTopLeft;
+    if (nCol >= m_nFixedCols || nRow >= m_nFixedRows);
+        idTopLeft = topleftNonFixedCell();
+
+    //Merge the selected cells --huangw
+
+     //note:源代码是有的，后来为了合并修改了
+    //if ((nRow >= m_nFixedRows && nRow < idTopLeft.row) ||
+    //    (nCol>= m_nFixedCols && nCol < idTopLeft.col))
+    //    return FALSE;
+
+    p.setX(0);
+    //如果是在固定列，就是从0开始计算到nCol的宽度之和
+    if (nCol < m_nFixedCols)                      // is a fixed column
+    {
+        for (i = 0; i < nCol; i++)
+            p.setX(p.x() + columnWidth(i));
+    }
+    else
+    {                                        // is a scrollable data column
+        //如果是正常列，就把固定列的位置和左上角列到正常列的位置相加
+        for (i = 0; i < m_nFixedCols; i++)
+            p.setX(p.x() + columnWidth(i));
+        //note:此处也修改过 合并
+        if(nCol>idTopLeft.col)
+        {
+            for (i = idTopLeft.col; i < nCol; i++)
+                p.setX(p.x() + columnWidth(i));
+        }
+        else
+        {
+            for (i = nCol; i <idTopLeft.col ; i++)
+                p.setX(p.x() - columnWidth(i));
+        }
+    }
+        
+    p.setY(0);
+    if (nRow < m_nFixedRows)                      // is a fixed row
+    {
+        for (i = 0; i < nRow; i++)
+            p.setY(p.y() + rowHeight(i));
+    }
+    else
+    {                                        // is a scrollable data row
+        for (i = 0; i < m_nFixedRows; i++)
+            p.setY(p.y() + rowHeight(i));
+        //note:此处也修改过 合并
+        if(nRow>idTopLeft.row)
+        {
+            for (i = idTopLeft.row; i < nRow; i++)
+                p.setY(p.y() + rowHeight(i));
+        }
+        else
+        {
+            for (i = nRow; i <idTopLeft.row; i++)
+                p.setY(p.y() - rowHeight(i));
+        }
+    }
+    return true;
 }
+
+
+BOOL HGridCtrl::cellOrigin(const CCellID& cell, QPoint& p)
+{
+    return cellOrigin(cell.row, cell.col, p);
+}
+
+/*
 BOOL HGridCtrl::GetCellOriginNoMerge(const CCellID& cell, LPPOINT p)
 {
     return GetCellOriginNoMerge(cell.row, cell.col, p);
 }
-
+*/
 // Returns the bounding box of the cell
-BOOL HGridCtrl::GetCellRect(const CCellID& cell, LPRECT pRect)
+bool HGridCtrl::cellRect(const HCellID& cell, QRect& pRect)
 {
-    return GetCellRect(cell.row, cell.col, pRect);
+    return cellRect(cell.row, cell.col, pRect);
 }
 
-BOOL HGridCtrl::GetCellRect(int nRow, int nCol, LPRECT pRect)
+bool HGridCtrl::cellRect(int nRow, int nCol, QRect& pRect)
 {
     CPoint CellOrigin;
-    if (!GetCellOrigin(nRow, nCol, &CellOrigin))
+    if (!cellOrigin(nRow, nCol, CellOrigin))
         return FALSE;
 
     //Merge the selected cells 
-    //by Huang Wei
     CGridCellBase *pCell = (CGridCellBase*) GetCell(nRow,nCol);
 	
 	if(!pCell->IsMerged())
@@ -3198,13 +3115,9 @@ BOOL HGridCtrl::GetCellRect(int nRow, int nCol, LPRECT pRect)
 	{
 		GetCellRangeRect(pCell->m_MergeRange,pRect);
 	}
-    //TRACE("Row %d, col %d: L %d, T %d, W %d, H %d:  %d,%d - %d,%d\n",
-    //      nRow,nCol, CellOrigin.x, CellOrigin.y, GetColumnWidth(nCol), GetRowHeight(nRow),
-    //      pRect->left, pRect->top, pRect->right, pRect->bottom);
-
     return TRUE;
 }
-
+/*
 BOOL HGridCtrl::GetTextRect(const CCellID& cell, LPRECT pRect)
 {
     return GetTextRect(cell.row, cell.col, pRect);
@@ -3309,111 +3222,207 @@ BOOL HGridCtrl::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
     return CWnd::OnSetCursor(pWnd, nHitTest, message);
 }
 #endif
-
+*/
 ////////////////////////////////////////////////////////////////////////////////////
 // Row/Column count functions
-
-BOOL HGridCtrl::SetFixedRowCount(int nFixedRows)
+bool HGridCtrl::setRowCount(int nRows)
 {
-    if (m_nFixedRows == nFixedRows)
-        return TRUE;
+    bool bResult = TRUE;
 
-    ASSERT(nFixedRows >= 0);
-
-    ResetSelectedRange();
+    Q_ASSERT(nRows >= 0);
+    if (nRows == rowCount())
+        return bResult;
 
     // Force recalculation
     m_idTopLeftCell.col = -1;
 
-    if (nFixedRows > GetRowCount())
-        if (!SetRowCount(nFixedRows))
-            return FALSE;
-        
-        if (m_idCurrentCell.row < nFixedRows)
-            SetFocusCell(-1, - 1);
-        
-        if (!GetVirtualMode())
-        {
-            if (nFixedRows > m_nFixedRows)
-            {
-                for (int i = m_nFixedRows; i < nFixedRows; i++)
-                    for (int j = 0; j < GetColumnCount(); j++)
-                    {
-                        SetItemState(i, j, GetItemState(i, j) | GVIS_FIXED | GVIS_FIXEDROW);
-                        SetItemBkColour(i, j, CLR_DEFAULT );
-                        SetItemFgColour(i, j, CLR_DEFAULT );
-                    }
-            }
-            else
-            {
-                for (int i = nFixedRows; i < m_nFixedRows; i++)
-                {
-                    int j;
-                    for (j = 0; j < GetFixedColumnCount(); j++)
-                        SetItemState(i, j, GetItemState(i, j) & ~GVIS_FIXEDROW );
+    if (nRows < m_nFixedRows)
+        m_nFixedRows = nRows;
 
-                    for (j = GetFixedColumnCount(); j < GetColumnCount(); j++)
+    if (m_idCurrentCell.row >= nRows);
+        setFocusCell(-1, - 1); //---huangw
+
+    int addedRows = nRows - rowCount();
+
+    //如果现在设置的行数要小于原来的行数，必须要删除一些行。
+    if (addedRows < 0)
+    {
+        if (!isVirtualMode())
+        {
+            //从nRows到最后一行都要删除，删除行，对应每一列都要删除一次
+            for (int row = nRows; row < m_nRows; row++)
+            {
+                // Delete cells
+                for (int col = 0; col < m_nCols; col++)
+                    DestroyCell(row, col);//---huangw
+
+                // Delete rows
+                GRID_ROW* pRow = m_RowData.takeAt(row);
+                if (pRow)
+                    delete pRow;
+            }
+        }
+        m_nRows = nRows;
+    }
+
+    try
+    {
+        m_arRowHeights.resize(nRows);
+
+        //如果是打印模式
+        if (isVirtualMode())
+        {
+            m_nRows = nRows;
+            if (addedRows > 0)
+            {
+                int startRow = nRows - addedRows;
+                for (int row = startRow; row < nRows; row++)
+                    m_arRowHeights[row] = m_cellDefault.GetHeight();
+            }
+        }
+        else
+        {
+            // 如果是增加行,就需要创建增加的行列，添加到存储列表后面
+            if (addedRows > 0)
+            {
+                // initialize row heights and data
+                int startRow = nRows - addedRows;
+                for (int row = startRow; row < nRows; row++)
+                {
+                    m_arRowHeights[row] = m_cellDefault.height();
+
+                    m_RowData[row] = new GRID_ROW;
+                    //m_RowData[row]->SetSize(m_nCols); //不要设置列
+                    for (int col = 0; col < m_nCols; col++)
                     {
-                        SetItemState(i, j, GetItemState(i, j) & ~(GVIS_FIXED | GVIS_FIXEDROW) );
-                        SetItemBkColour(i, j, CLR_DEFAULT );
-                        SetItemFgColour(i, j, CLR_DEFAULT );
+                        GRID_ROW* pRow = m_RowData[row];
+                        if (pRow && !isVirtualMode())
+                            pRow->insert(col, createCell(row, col));
                     }
+                    m_nRows++;
                 }
             }
         }
+    }
+    catch (exception& e)
+    {
+        e.what();
+        bResult = FALSE;
+    }
 
-        m_nFixedRows = nFixedRows;
-        
-        Refresh();
-        
-        return TRUE;
+    //----huangw
+    //setModified();
+    //resetScrollBars();
+    //refresh();
+
+    return bResult;
 }
 
-BOOL HGridCtrl::SetFixedColumnCount(int nFixedCols)
+bool HGridCtrl::setFixedRowCount(int nFixedRows)
+{
+    if (m_nFixedRows == nFixedRows)
+        return true;
+
+    Q_ASSERT(nFixedRows >= 0);
+
+    //ResetSelectedRange();  --huangw
+
+    // Force recalculation
+    m_idTopLeftCell.col = -1;
+
+    //如果固定行超过已有行，那么已有行设成固定行数。一般来说表格就只有1行1列是固定的
+    if (nFixedRows > rowCount())
+    {
+        if (!setRowCount(nFixedRows))
+            return false;
+    }
+
+    if (m_idCurrentCell.row < nFixedRows)
+        setFocusCell(-1, - 1);
+
+    if (!isVirtualMode())
+    {
+        if (nFixedRows > m_nFixedRows)
+        {
+            for (int i = m_nFixedRows; i < nFixedRows; i++)
+                for (int j = 0; j < columnCount(); j++)
+                {
+                    setItemState(i, j, itemState(i, j) | GVIS_FIXED | GVIS_FIXEDROW);
+                    setItemBkColour(i, j, QColor(QCLR_DEFAULT) );
+                    setItemFgColour(i, j, QColor(QCLR_DEFAULT) );
+                }
+        }
+        else
+        {
+            for (int i = nFixedRows; i < m_nFixedRows; i++)
+            {
+                int j;
+                for (j = 0; j < fixedColumnCount(); j++)
+                    setItemState(i, j, itemState(i, j) & ~GVIS_FIXEDROW );
+
+                for (j = fixedColumnCount(); j < columnCount(); j++)
+                {
+                    setItemState(i, j, itemState(i, j) & ~(GVIS_FIXED | GVIS_FIXEDROW) );
+                    setItemBkColour(i, j, QColor(QCLR_DEFAULT) );
+                    setItemFgColour(i, j, QColor(QCLR_DEFAULT) );
+                }
+            }
+        }
+    }
+
+    m_nFixedRows = nFixedRows;
+
+    //Refresh();  ---huangw
+
+    return true;
+}
+
+bool HGridCtrl::setFixedColumnCount(int nFixedCols)
 {
     if (m_nFixedCols == nFixedCols)
         return TRUE;
 
-    ASSERT(nFixedCols >= 0);
+    Q_ASSERT(nFixedCols >= 0);
 
-    if (nFixedCols > GetColumnCount())
-        if (!SetColumnCount(nFixedCols))
-            return FALSE;
+    if (nFixedCols > columnCount())
+        if (!setColumnCount(nFixedCols))
+            return false;
 
     if (m_idCurrentCell.col < nFixedCols)
-        SetFocusCell(-1, - 1);
+        setFocusCell(-1, - 1);
 
-    ResetSelectedRange();
+    //ResetSelectedRange(); //--huangw
 
     // Force recalculation
     m_idTopLeftCell.col = -1;
 
-    if (!GetVirtualMode())
+    //实际上将表格的行列中抽取fixedrow,fixedcol为固定行列
+    if (!isVirtualMode())
     {
         if (nFixedCols > m_nFixedCols)
         {
-            for (int i = 0; i < GetRowCount(); i++)
+            for (int i = 0; i < rowCount(); i++)
                 for (int j = m_nFixedCols; j < nFixedCols; j++)
                 {
-                    SetItemState(i, j, GetItemState(i, j) | GVIS_FIXED | GVIS_FIXEDCOL);
-                    SetItemBkColour(i, j, CLR_DEFAULT );
-                    SetItemFgColour(i, j, CLR_DEFAULT );
+                    setItemState(i, j, itemState(i, j) | GVIS_FIXED | GVIS_FIXEDCOL);
+                    setItemBkColour(i, j, QColor(QCLR_DEFAULT) );
+                    setItemFgColour(i, j, QColor(QCLR_DEFAULT) );
                 }
         }
         else
         {
 			{ // Scope limit i,j
-	            for (int i = 0; i < GetFixedRowCount(); i++)
+                for (int i = 0; i < fixedRowCount(); i++)
 		            for (int j = nFixedCols; j < m_nFixedCols; j++)
-			            SetItemState(i, j, GetItemState(i, j) & ~GVIS_FIXEDCOL );
+                        setItemState(i, j, itemState(i, j) & ~GVIS_FIXEDCOL );
 			}
 			{// Scope limit i,j
-	            for (int i = GetFixedRowCount(); i < GetRowCount(); i++)
+                for (int i = fixedRowCount(); i < rowCount(); i++)
 		            for (int j = nFixedCols; j < m_nFixedCols; j++)
 			        {
-				        SetItemState(i, j, GetItemState(i, j) & ~(GVIS_FIXED | GVIS_FIXEDCOL) );
-					    SetItemBkColour(i, j, CLR_DEFAULT );
-						SetItemFgColour(i, j, CLR_DEFAULT );
+                        setItemState(i, j, itemState(i, j) & ~(GVIS_FIXED | GVIS_FIXEDCOL) );
+                        setItemBkColour(i, j, QColor(QCLR_DEFAULT) );
+                        setItemFgColour(i, j, QColor(QCLR_DEFAULT) );
 	                }
 			}
         }
@@ -3421,20 +3430,18 @@ BOOL HGridCtrl::SetFixedColumnCount(int nFixedCols)
         
     m_nFixedCols = nFixedCols;
         
-    Refresh();
+    //Refresh(); //huangw
         
     return TRUE;
 }
 
-
-
-BOOL HGridCtrl::SetColumnCount(int nCols)
+bool HGridCtrl::setColumnCount(int nCols)
 {
-    BOOL bResult = TRUE;
+    bool bResult = true;
 
-    ASSERT(nCols >= 0);
+    Q_ASSERT(nCols >= 0);
 
-    if (nCols == GetColumnCount())
+    if (nCols == columnCount())
         return bResult;
 
     // Force recalculation
@@ -3444,70 +3451,58 @@ BOOL HGridCtrl::SetColumnCount(int nCols)
         m_nFixedCols = nCols;
 
     if (m_idCurrentCell.col >= nCols)
-        SetFocusCell(-1, - 1);
+        setFocusCell(-1, - 1);
 
-    int addedCols = nCols - GetColumnCount();
+    int addedCols = nCols - columnCount();
 
-    // If we are about to lose columns, then we need to delete the GridCell objects
-    // within each column
-    if (addedCols < 0 && !GetVirtualMode())
+    // 同行一样 如果列数减少，需要删除多余的部分
+    if (addedCols < 0 && !isVirtualMode())
     {
         for (int row = 0; row < m_nRows; row++)
-            for (int col = nCols; col < GetColumnCount(); col++)
-                DestroyCell(row, col);
+            for (int col = nCols; col < columnCount(); col++)
+                destroyCell(row, col);
     }
 
-    TRY 
-    {
-        // Change the number of columns.
-        m_arColWidths.SetSize(nCols);
-    
-        // Change the number of columns in each row.
-        if (!GetVirtualMode())
-            for (int i = 0; i < m_nRows; i++)
-                if (m_RowData[i])
-                    m_RowData[i]->SetSize(nCols);
-        
-        // If we have just added columns, we need to construct new elements for each cell
-        // and set the default column width
+    try
+    { 
+        // 增加列
         if (addedCols > 0)
         {
-            // initialized column widths
+            //列宽
             int startCol = nCols - addedCols;
             for (int col = startCol; col < nCols; col++)
-                m_arColWidths[col] = m_cellFixedColDef.GetWidth();
+                m_arColWidths[col] = m_cellFixedColDef.width();
         
-            // initialise column data
-            if (!GetVirtualMode())
+            // 创建列
+            if (!isVirtualMode())
             {
                 for (int row = 0; row < m_nRows; row++)
                     for (int col = startCol; col < nCols; col++)
                     {
                         GRID_ROW* pRow = m_RowData[row];
                         if (pRow)
-                            pRow->SetAt(col, CreateCell(row, col));
+                            pRow->insert(col, createCell(row, col));
                     }
             }
         }
-        // else    // check for selected cell ranges
-        //    ResetSelectedRange();
     }
-    CATCH (CMemoryException, e)
+    catch (exception &e)
     {
-        e->ReportError();
-        bResult = FALSE;
+        e.what();
+        bResult = false;
     }
-    END_CATCH
 
     m_nCols = nCols;
 
-    SetModified();
-    ResetScrollBars();
-    Refresh();
+    //--huangw
+    //SetModified();
+    //ResetScrollBars();
+    //Refresh();
 
     return bResult;
 }
 
+/*
 // Insert a column at a given position, or add to end of columns (if nColumn = -1)
 int HGridCtrl::InsertColumn(LPCTSTR strHeading,
                             UINT nFormat ,
@@ -3517,7 +3512,7 @@ int HGridCtrl::InsertColumn(LPCTSTR strHeading,
     {
 
         // TODO: Fix it so column insertion works for in the fixed column area
-        ASSERT(FALSE);
+        Q_ASSERT(FALSE);
         return -1;
     }
 
@@ -3605,7 +3600,7 @@ int HGridCtrl::InsertRow(LPCTSTR strHeading, int nRow )
     if (nRow >= 0 && nRow < m_nFixedRows)
     {
         // TODO: Fix it so column insertion works for in the fixed row area
-        ASSERT(FALSE);
+        Q_ASSERT(FALSE);
         return -1;
     }
 
@@ -3690,13 +3685,13 @@ BOOL HGridCtrl::SetCellType(int nRow, int nCol, CRuntimeClass* pRuntimeClass)
     if (GetVirtualMode())
         return FALSE;
 
-    ASSERT(IsValid(nRow, nCol));
+    Q_ASSERT(IsValid(nRow, nCol));
     if (!IsValid(nRow, nCol))
         return FALSE;
 
     if (!pRuntimeClass->IsDerivedFrom(RUNTIME_CLASS(CGridCellBase)))
     {
-        ASSERT( FALSE);
+        Q_ASSERT( FALSE);
         return FALSE;
     }
 
@@ -3714,40 +3709,40 @@ BOOL HGridCtrl::SetCellType(int nRow, int nCol, CRuntimeClass* pRuntimeClass)
 
 BOOL HGridCtrl::SetDefaultCellType( CRuntimeClass* pRuntimeClass)
 {
-    ASSERT( pRuntimeClass != NULL );
+    Q_ASSERT( pRuntimeClass != NULL );
     if (!pRuntimeClass->IsDerivedFrom(RUNTIME_CLASS(CGridCellBase)))
     {
-        ASSERT( FALSE);
+        Q_ASSERT( FALSE);
         return FALSE;
     }
     m_pRtcDefault = pRuntimeClass;
     return TRUE;
 }
-
+*/
 // Creates a new grid cell and performs any necessary initialisation
- CGridCellBase* HGridCtrl::CreateCell(int nRow, int nCol)
+ HGridCellBase* HGridCtrl::CreateCell(int nRow, int nCol)
 {
-    ASSERT(!GetVirtualMode());
+    Q_ASSERT(!isVirtualMode());
 
-    if (!m_pRtcDefault || !m_pRtcDefault->IsDerivedFrom(RUNTIME_CLASS(CGridCellBase)))
-    {
-        ASSERT( FALSE);
-        return NULL;
-    }
-    CGridCellBase* pCell = (CGridCellBase*) m_pRtcDefault->CreateObject();
+    //if (!m_pRtcDefault || !m_pRtcDefault->IsDerivedFrom(RUNTIME_CLASS(CGridCellBase)))
+    //{
+     //   Q_ASSERT( FALSE);
+     //   return NULL;
+    //}
+    //CGridCellBase* pCell = (CGridCellBase*) m_pRtcDefault->CreateObject();
+    HGridCellBase* pCell = new HGridCell();
     if (!pCell)
         return NULL;
 
-    pCell->SetGrid(this);
-    pCell->SetCoords(nRow, nCol); 
+    pCell->setGrid(this);
+    pCell->setCoords(nRow, nCol);
 
     if (nCol < m_nFixedCols)
-        pCell->SetState(pCell->GetState() | GVIS_FIXED | GVIS_FIXEDCOL);
+        pCell->setState(pCell->state() | GVIS_FIXED | GVIS_FIXEDCOL);
     if (nRow < m_nFixedRows)
-        pCell->SetState(pCell->GetState() | GVIS_FIXED | GVIS_FIXEDROW);
+        pCell->setState(pCell->state() | GVIS_FIXED | GVIS_FIXEDROW);
     
-    pCell->SetFormat(pCell->GetDefaultCell()->GetFormat());
-
+    pCell->setFormat(pCell->defaultCell()->format());
     return pCell;
 }
 
@@ -3755,15 +3750,14 @@ BOOL HGridCtrl::SetDefaultCellType( CRuntimeClass* pRuntimeClass)
 void HGridCtrl::DestroyCell(int nRow, int nCol)
 {
     // Should NEVER get here in virtual mode.
-    ASSERT(!GetVirtualMode());
+    Q_ASSERT(!isVirtualMode());
 
     // Set the cells state to 0. If the cell is selected, this
     // will remove the cell from the selected list.
-    SetItemState(nRow, nCol, 0);
-
-    delete GetCell(nRow, nCol);
+    setItemState(nRow, nCol, 0);
+    delete cell(nRow, nCol);
 }
-
+/*
 BOOL HGridCtrl::DeleteColumn(int nColumn)
 {
     if (nColumn < 0 || nColumn >= GetColumnCount())
@@ -4341,65 +4335,67 @@ BOOL HGridCtrl::SetItemImage(int nRow, int nCol, int iImage)
 int HGridCtrl::GetItemImage(int nRow, int nCol) const
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    Q_ASSERT(pCell);
     if (!pCell)
         return -1;
 
     return pCell->GetImage();
 }
-
-BOOL HGridCtrl::SetItemState(int nRow, int nCol, UINT state)
+*/
+bool HGridCtrl::setItemState(int nRow, int nCol, uint state)
 {
-    BOOL bSelected = IsCellSelected(nRow, nCol);
+    bool bSelected = isCellSelected(nRow, nCol);
 
     // If the cell is being unselected, remove it from the selected list
     if (bSelected && !(state & GVIS_SELECTED))
     {
-        CCellID cell;
-        DWORD key = MAKELONG(nRow, nCol);
-
-        if (m_SelectedCellMap.Lookup(key, (CCellID&)cell))
-            m_SelectedCellMap.RemoveKey(key);
+        HCellID cell;
+        quint32 key = QMAKELONG(nRow, nCol);
+        cell = m_SelectedCellMap.value(key);
+        if (!cell.isValid())
+            m_SelectedCellMap.remove(key);
     }
 
     // If cell is being selected, add it to the list of selected cells
+    //如果单元格未被选中同时正在选中此单元格，就加入到选择单元格列表中
     else if (!bSelected && (state & GVIS_SELECTED))
     {
-        CCellID cell(nRow, nCol);
-        m_SelectedCellMap.SetAt(MAKELONG(nRow, nCol), cell);
+        HCellID cell(nRow, nCol);
+        m_SelectedCellMap.insert(QMAKELONG(nRow, nCol), cell);
     }
 
-    if (GetVirtualMode())
-        return FALSE;
+    if (isVirtualMode())
+        return false;
 
-    CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    HGridCellBase* pCell = cell(nRow, nCol);
+    Q_ASSERT(pCell);
     if (!pCell)
-        return FALSE;
+        return false;
 
     // Set the cell's state
-    pCell->SetState(state);
-
-    return TRUE;
+    //单元格的state就是存储单元格的状态信息
+    pCell->setState(state);
+    return true;
 }
 
-UINT HGridCtrl::GetItemState(int nRow, int nCol) const
+uint HGridCtrl::itemState(int nRow, int nCol) const
 {
-    CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    HGridCellBase* pCell = cell(nRow, nCol);
+    Q_ASSERT(pCell);
     if (!pCell)
         return 0;
 
-    return pCell->GetState();
+    return pCell->state();
 }
 
+/*
 BOOL HGridCtrl::SetItemFormat(int nRow, int nCol, UINT nFormat)
 {
     if (GetVirtualMode())
         return FALSE;
 
     CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    Q_ASSERT(pCell);
     if (!pCell)
         return FALSE;
 
@@ -4410,68 +4406,69 @@ BOOL HGridCtrl::SetItemFormat(int nRow, int nCol, UINT nFormat)
 UINT HGridCtrl::GetItemFormat(int nRow, int nCol) const
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    Q_ASSERT(pCell);
     if (!pCell)
         return 0;
 
     return pCell->GetFormat();
 }
-
-BOOL HGridCtrl::SetItemBkColour(int nRow, int nCol, COLORREF cr )
+*/
+bool HGridCtrl::setItemBkColour(int nRow, int nCol, QColor& cr )
 {
-    if (GetVirtualMode())
-        return FALSE;
+    if (isVirtualMode())
+        return false;
 
-    CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    HGridCellBase* pCell = cell(nRow, nCol);
+    Q_ASSERT(pCell);
     if (!pCell)
-        return FALSE;
+        return false;
 
-    pCell->SetBackClr(cr);
+    pCell->setBackClr(cr);
     return TRUE;
 }
 
-COLORREF HGridCtrl::GetItemBkColour(int nRow, int nCol) const
+QColor HGridCtrl::itemBkColour(int nRow, int nCol) const
 {
-    CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    HGridCellBase* pCell = cell(nRow, nCol);
+    Q_ASSERT(pCell);
     if (!pCell)
-        return 0;
+        return QColor();
 
-    return pCell->GetBackClr();
+    return pCell->backClr();
 }
 
-BOOL HGridCtrl::SetItemFgColour(int nRow, int nCol, COLORREF cr )
+bool HGridCtrl::setItemFgColour(int nRow, int nCol, QColor& cr )
 {
-    if (GetVirtualMode())
-        return FALSE;
+    if (isVirtualMode())
+        return false;
 
-    CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    HGridCellBase* pCell = cell(nRow, nCol);
+    Q_ASSERT(pCell);
     if (!pCell)
-        return FALSE;
+        return false;
     
-    pCell->SetTextClr(cr);
-    return TRUE;
+    pCell->setTextClr(cr);
+    return true;
 }
 
-COLORREF HGridCtrl::GetItemFgColour(int nRow, int nCol) const
+QColor HGridCtrl::itemFgColour(int nRow, int nCol) const
 {
-    CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    HGridCellBase* pCell = cell(nRow, nCol);
+    Q_ASSERT(pCell);
     if (!pCell)
-        return 0;
+        return QColor();
     
-    return pCell->GetTextClr();
+    return pCell->textClr();
 }
 
+/*
 BOOL HGridCtrl::SetItemFont(int nRow, int nCol, const LOGFONT* plf)
 {
     if (GetVirtualMode())
         return FALSE;
 
     CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    Q_ASSERT(pCell);
     if (!pCell)
         return FALSE;
     
@@ -4483,110 +4480,113 @@ BOOL HGridCtrl::SetItemFont(int nRow, int nCol, const LOGFONT* plf)
 const LOGFONT* HGridCtrl::GetItemFont(int nRow, int nCol)
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    Q_ASSERT(pCell);
     if (!pCell) 
         return GetDefaultCell(nRow < GetFixedRowCount(), nCol < GetFixedColumnCount())->GetFont();
     
     return pCell->GetFont();
 }
-
-BOOL HGridCtrl::IsItemEditing(int nRow, int nCol)
+*/
+bool HGridCtrl::isItemEditing(int nRow, int nCol)
 {
-    CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    HGridCellBase* pCell = cell(nRow, nCol);
+    Q_ASSERT(pCell);
     if (!pCell)
-        return FALSE;
+        return false;
 
-    return pCell->IsEditing();
+    return pCell->isEditing();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Row/Column size functions
-
-long HGridCtrl::GetVirtualWidth() const
+//好像是所有列的宽度之和
+long HGridCtrl::virtualWidth() const
 {
     long lVirtualWidth = 0;
-    int iColCount = GetColumnCount();
+    int iColCount = columnCount();
     for (int i = 0; i < iColCount; i++)
         lVirtualWidth += m_arColWidths[i];
 
     return lVirtualWidth;
 }
 
-long HGridCtrl::GetVirtualHeight() const
+//所有行的高度之和
+long HGridCtrl::virtualHeight() const
 {
     long lVirtualHeight = 0;
-    int iRowCount = GetRowCount();
+    int iRowCount = rowCount();
     for (int i = 0; i < iRowCount; i++)
         lVirtualHeight += m_arRowHeights[i];
 
     return lVirtualHeight;
 }
 
-int HGridCtrl::GetRowHeight(int nRow) const
+int HGridCtrl::rowHeight(int nRow) const
 {
-    ASSERT(nRow >= 0 && nRow < m_nRows);
+    Q_ASSERT(nRow >= 0 && nRow < m_nRows);
     if (nRow < 0 || nRow >= m_nRows)
         return -1;
 
     return m_arRowHeights[nRow];
 }
 
-int HGridCtrl::GetColumnWidth(int nCol) const
+int HGridCtrl::columnWidth(int nCol) const
 {
-    ASSERT(nCol >= 0 && nCol < m_nCols);
+    Q_ASSERT(nCol >= 0 && nCol < m_nCols);
     if (nCol < 0 || nCol >= m_nCols)
         return -1;
 
     return m_arColWidths[nCol];
 }
 
-BOOL HGridCtrl::SetRowHeight(int nRow, int height)
+bool HGridCtrl::setRowHeight(int nRow, int height)
 {
-    ASSERT(nRow >= 0 && nRow < m_nRows && height >= 0);
+    Q_ASSERT(nRow >= 0 && nRow < m_nRows && height >= 0);
     if (nRow < 0 || nRow >= m_nRows || height < 0)
-        return FALSE;
+        return false;
 
     m_arRowHeights[nRow] = height;
-    ResetScrollBars();
+    //ResetScrollBars(); //--huangw
 
-    return TRUE;
+    return true;
 }
 
-BOOL HGridCtrl::SetColumnWidth(int nCol, int width)
+bool HGridCtrl::setColumnWidth(int nCol, int width)
 {
-    ASSERT(nCol >= 0 && nCol < m_nCols && width >= 0);
+    Q_ASSERT(nCol >= 0 && nCol < m_nCols && width >= 0);
     if (nCol < 0 || nCol >= m_nCols || width < 0)
-        return FALSE;
+        return false;
 
     m_arColWidths[nCol] = width;
-    ResetScrollBars();
+    //ResetScrollBars(); //--huangw
 
-    return TRUE;
+    return true;
 }
 
-int HGridCtrl::GetFixedRowHeight() const
+//固定行列的高度和virtualWidth,virtualHeight的差不多都是和
+int HGridCtrl::fixedRowHeight() const
 {
     int nHeight = 0;
     for (int i = 0; i < m_nFixedRows; i++)
-        nHeight += GetRowHeight(i);
+        nHeight += rowHeight(i);
 
     return nHeight;
 }
 
-int HGridCtrl::GetFixedColumnWidth() const
+int HGridCtrl::fixedColumnWidth() const
 {
     int nWidth = 0;
     for (int i = 0; i < m_nFixedCols; i++)
-        nWidth += GetColumnWidth(i);
+        nWidth += columnWidth(i);
 
     return nWidth;
 }
 
+/*
 BOOL HGridCtrl::AutoSizeColumn(int nCol, UINT nAutoSizeStyle ,
                                BOOL bResetScroll )
 {
-    ASSERT(nCol >= 0 && nCol < m_nCols);
+    Q_ASSERT(nCol >= 0 && nCol < m_nCols);
     if (nCol < 0 || nCol >= m_nCols)
         return FALSE;
 
@@ -4601,7 +4601,7 @@ BOOL HGridCtrl::AutoSizeColumn(int nCol, UINT nAutoSizeStyle ,
 
     int nWidth = 0;
 
-    ASSERT(GVS_DEFAULT <= nAutoSizeStyle && nAutoSizeStyle <= GVS_BOTH);
+    Q_ASSERT(GVS_DEFAULT <= nAutoSizeStyle && nAutoSizeStyle <= GVS_BOTH);
     if (nAutoSizeStyle == GVS_DEFAULT)
         nAutoSizeStyle = GetAutoSizeStyle();
 
@@ -4634,7 +4634,7 @@ BOOL HGridCtrl::AutoSizeColumn(int nCol, UINT nAutoSizeStyle ,
 
 BOOL HGridCtrl::AutoSizeRow(int nRow, BOOL bResetScroll )
 {
-    ASSERT(nRow >= 0 && nRow < m_nRows);
+    Q_ASSERT(nRow >= 0 && nRow < m_nRows);
     if (nRow < 0 || nRow >= m_nRows)
         return FALSE;
 
@@ -4709,7 +4709,7 @@ void HGridCtrl::AutoSize(UINT nAutoSizeStyle )
 
     int nCol, nRow;
 
-    ASSERT(GVS_DEFAULT <= nAutoSizeStyle && nAutoSizeStyle <= GVS_BOTH);
+    Q_ASSERT(GVS_DEFAULT <= nAutoSizeStyle && nAutoSizeStyle <= GVS_BOTH);
     if (nAutoSizeStyle == GVS_DEFAULT)
         nAutoSizeStyle = GetAutoSizeStyle();
 
@@ -4938,7 +4938,7 @@ void HGridCtrl::ExpandToFit(BOOL bExpandFixed )
 /////////////////////////////////////////////////////////////////////////////////////
 // Attributes
 */
-void HGridCtrl::SetVirtualMode(BOOL bVirtual)
+void HGridCtrl::setVirtualMode(BOOL bVirtual)
 {
     deleteAllItems();
     m_bVirtualMode = bVirtual;
@@ -5148,38 +5148,38 @@ void HGridCtrl::EnsureVisible(int nRow, int nCol)
 	if (pFocusWnd && ::IsWindow(pFocusWnd->GetSafeHwnd()))
 		pFocusWnd->SetFocus(); 
 }
-
-BOOL HGridCtrl::IsCellEditable(CCellID &cell) const
+*/
+bool HGridCtrl::isCellEditable(HCellID &cell) const
 {
-    return IsCellEditable(cell.row, cell.col);
+    return isCellEditable(cell.row, cell.col);
 }
 
-BOOL HGridCtrl::IsCellEditable(int nRow, int nCol) const
+bool HGridCtrl::isCellEditable(int nRow, int nCol) const
 {
-    return IsEditable() && ((GetItemState(nRow, nCol) & GVIS_READONLY) != GVIS_READONLY);
+    return isEditable() && ((itemState(nRow, nCol) & GVIS_READONLY) != GVIS_READONLY);
 }
 
-BOOL HGridCtrl::IsCellSelected(CCellID &cell) const
+bool HGridCtrl::isCellSelected(HCellID &cell) const
 {
-    return IsCellSelected(cell.row, cell.col);
+    return isCellSelected(cell.row, cell.col);
 }
 
-BOOL HGridCtrl::IsCellSelected(int nRow, int nCol) const
+bool HGridCtrl::isCellSelected(int nRow, int nCol) const
 {
-    if (GetVirtualMode())
+    if (isVirtualMode())
     {   
-        if (!IsSelectable())
-            return FALSE;
+        if (!isSelectable())
+            return false;
 
-        CCellID cell;
-        DWORD key = MAKELONG(nRow, nCol);
-
-        return (m_SelectedCellMap.Lookup(key, (CCellID&)cell));       
+        HCellID cell;
+        DWORD key = QMAKELONG(nRow, nCol);
+        cell = m_SelectedCellMap.value(key);
+        return (cell.isValid());
     }
     else
-        return IsSelectable() && ((GetItemState(nRow, nCol) & GVIS_SELECTED) == GVIS_SELECTED);
+        return isSelectable() && ((itemState(nRow, nCol) & GVIS_SELECTED) == GVIS_SELECTED);
 }
-
+/*
 BOOL HGridCtrl::IsCellVisible(CCellID cell)
 {
     return IsCellVisible(cell.row, cell.col);
@@ -5279,7 +5279,7 @@ BOOL HGridCtrl::InvalidateCellRect(const int row, const int col)
 
 BOOL HGridCtrl::InvalidateCellRect(const CCellRange& cellRange)
 {
-    ASSERT(IsValid(cellRange));
+    Q_ASSERT(IsValid(cellRange));
     if (!::IsWindow(GetSafeHwnd()) || !m_bAllowDraw)
         return FALSE;
 
@@ -5544,7 +5544,7 @@ void HGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
     CCellID cell = GetCellFromPt(point);
     if( !IsValid( cell) )
     {
-        //ASSERT(FALSE);
+        //Q_ASSERT(FALSE);
         return;
     }
 
@@ -6287,7 +6287,7 @@ void HGridCtrl::OnBeginPrinting(CDC *pDC, CPrintInfo *pInfo)
     // fit on a page, so we can in turn determine how many printed
     // pages represent the entire document.
 
-    ASSERT(pDC && pInfo);
+    Q_ASSERT(pDC && pInfo);
     if (!pDC || !pInfo) return;
 
     // Get a DC for the current window (will be a screen DC for print previewing)
@@ -7237,7 +7237,7 @@ void HGridCtrl::OnEndEditCell(int nRow, int nCol, CString str)
 BOOL HGridCtrl::ValidateEdit(int nRow, int nCol, LPCTSTR str)
 {
     CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    Q_ASSERT(pCell);
     if (!pCell)
         return TRUE;
 
@@ -7251,7 +7251,7 @@ CString HGridCtrl::GetItemText(int nRow, int nCol) const
         return _T("");
 
     CGridCellBase* pCell = GetCell(nRow, nCol);
-    ASSERT(pCell);
+    Q_ASSERT(pCell);
     if (!pCell)
         return _T("");
 

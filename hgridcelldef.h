@@ -1,5 +1,9 @@
 ﻿#ifndef HGRIDCTRLDEF_H_
 #define HGRIDCTRLDEF_H_
+//c++
+#include <exception>
+using namespace std;
+//qt define
 #include <QtGlobal>
 #include <QObject>
 #include <QWidget>
@@ -98,18 +102,21 @@ typedef  QList<QImage*>  QImageList;
 
 // Used for Get/SetItem calls.
 typedef struct _GV_ITEM {
-    int      row,col;     // Row and Column of item
-    UINT     mask;        // Mask for use in getting/setting cell data
-    UINT     nState;      // cell state (focus/hilighted etc)
-    DWORD    nFormat;     // Format of cell 表示网格格式：边框，单选，Alignment等
-    int      iImage;      // index of the list view item icon
-    COLORREF crBkClr;     // Background colour (or CLR_DEFAULT)
-    COLORREF crFgClr;     // Forground colour (or CLR_DEFAULT)
-    LPARAM   lParam;      // 32-bit value to associate with item
-    LOGFONT  lfFont;      // Cell font
-    UINT     nMargin;     // Internal cell margin
-    CString  strText;     // Text in cell
+    int        row,col;     // Row and Column of item
+    uint       mask;        // Mask for use in getting/setting cell data
+    uint       nState;      // cell state (focus/hilighted etc)
+    quint32    nFormat;     // Format of cell 表示网格格式：边框，单选，Alignment等
+    int        iImage;      // index of the list view item icon
+    QColor     crBkClr;     // Background colour (or CLR_DEFAULT)
+    QColor     crFgClr;     // Forground colour (or CLR_DEFAULT)
+    quint32    lParam;      // 32-bit value to associate with item 选择状态
+    QFont      lfFont;      // Cell font
+    uint       nMargin;     // Internal cell margin
+    QString    strText;     // Text in cell
 } GV_ITEM;
+
+//防windows定义类似Qt宏
+#define QMAKELONG(a, b) ((long)(((ushort)(((ulong)(a)) & 0xffff)) | ((quint32)((ushort)(((quint32)(b)) & 0xffff))) << 16))
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -168,6 +175,8 @@ typedef struct tagGV_CACHEHINT {
 // storage typedef for each row in the grid
 //typedef CTypedPtrArray<CObArray, CGridCellBase*> GRID_ROW;
 //typedef QList<HGridCellBase*> GRID_ROW;
+
+
 // For virtual mode callback
 typedef BOOL (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 
