@@ -60,12 +60,12 @@ public:
     bool cellRect(int nRow, int nCol, QRect& pRect);
     bool cellRect(const HCellID& cell, QRect& pRect);
 
-    //获取文字矩形
+    //获取文字矩形 ok
     bool textRect(const HCellID& cell, QRect& pRect);
     bool textRect(int nRow, int nCol, QRect& pRect);
 
-    //获取point点的行列号。如果TRUE是固定行列，如果是false则是开始到point的行列等...... 待定--huangw
-    HCellID cellFromPt(const QPoint& point, BOOL bAllowFixedCellCheck = TRUE);
+    //获取point点的行列号。如果true是固定行列，如果是false则是开始到point的行列等...... mid--huangw
+    HCellID cellFromPt(const QPoint& point, bool bAllowFixedCellCheck = true);
 
     //获取固定行的行高 固定列的列宽 ok
     int  fixedRowHeight() const;
@@ -75,21 +75,21 @@ public:
     long virtualWidth() const;
     long virtualHeight() const;
 
-    //获取行列单元格字符串的宽度
+    //获取行列单元格字符串的宽度 ok
     QSize textExtent(int nRow, int nCol, QString& str);
     inline QSize cellTextExtent(int nRow, int nCol)  { return textExtent(nRow, nCol, itemText(nRow,nCol)); }// EFW - Get extent of current text in cell
 
-    //设置网格背景颜色、网格线颜色
+    //设置网格背景颜色、网格线颜色 ok
     void     setGridBkColor(QColor& clr)         { m_crGridBkColour = clr;           }
     QColor   gridBkColor() const                 { return m_crGridBkColour;          }
     void     setGridLineColor(QColor& clr)       { m_crGridLineColour = clr;         }
     QColor   gridLineColor() const               { return m_crGridLineColour;        }
 
-    //提示窗口背景颜色、提示文字颜色
-    void	 setTitleTipBackClr(QColor& clr = QCLR_DEFAULT) { m_crTTipBackClr = clr;  }
-    QColor   titleTipBackClr()				            { return m_crTTipBackClr; }
-    void	 setTitleTipTextClr(QColor& clr = QCLR_DEFAULT) { m_crTTipTextClr = clr;  }
-    QColor   titleTipTextClr()				            { return m_crTTipTextClr; }
+    //提示窗口背景颜色、提示文字颜色 ok
+    void	 setTitleTipBackClr(QColor& clr = QColor(QCLR_DEFAULT))   { m_crTTipBackClr = clr;  }
+    QColor   titleTipBackClr()				                          { return m_crTTipBackClr; }
+    void	 setTitleTipTextClr(QColor& clr = QColor(QCLR_DEFAULT))   { m_crTTipTextClr = clr;  }
+    QColor   titleTipTextClr()				                          { return m_crTTipTextClr; }
 
     // ***************************************************************************** //
     // These have been deprecated. Use GetDefaultCell and then set the colors
@@ -133,77 +133,77 @@ public:
     //设置表格相关标志 主要操作bool变量
 
 
-    //设置焦点 主要是重绘操作
+    //设置焦点 主要是重绘操作  mid
     HCellID setFocusCell(HCellID cell);
     HCellID setFocusCell(int nRow, int nCol);
     HCellID focusCell() const                     { return m_idCurrentCell;           }
 
-   //设置为打印模式
-    void setVirtualMode(BOOL bVirtual);
-    BOOL isVirtualMode() const                      { return m_bVirtualMode;            }
+   //设置为打印模式 ok
+    void setVirtualMode(bool bVirtual);
+    bool isVirtualMode() const                    { return m_bVirtualMode;            }
 
-    //回调函数
+    //回调函数  lParam --huangw
     void setCallbackFunc(GRIDCALLBACK pCallback,
                          LPARAM lParam)           { m_pfnCallback = pCallback; m_lParam = lParam; }
     GRIDCALLBACK callbackFunc()                   { return m_pfnCallback;             }
 
-    //网格设置图片
+    //网格设置图片 ok
     void setImageList(QImageList* pList)          { m_pImageList = pList;             }
     QImageList* imageList() const                 { return m_pImageList;              }
 
-    //设置网格线类型
+    //设置网格线类型 ok
     void setGridLines(int nWhichLines = GVL_BOTH);
     int  gridLines() const                        { return m_nGridLines;              }
 
-    //设置可编辑
-    void setEditable(bool bEditable = TRUE)       { m_bEditable = bEditable;          }
+    //设置可编辑  ok
+    void setEditable(bool bEditable = true)       { m_bEditable = bEditable;          }
     bool isEditable() const                       { return m_bEditable;               }
-    void setListMode(bool bEnableListMode = TRUE);
+    void setListMode(bool bEnableListMode = true);
     bool isListMode() const                       { return m_bListMode;               }
 
-    //获取固定选择行
-    int selectedCount() const                     { return (int)m_SelectedCellMap.GetCount(); }
+    //获取固定选择行 ok
+    int selectedCount() const                     { return (int)m_SelectedCellMap.count(); }
 
-    //单行、单列选择
-    void setSingleRowSelection(bool bSing = TRUE) { m_bSingleRowSelection = bSing;    }
-    bool singleRowSelection()                     { return m_bSingleRowSelection & m_bListMode; }
-    void setSingleColSelection(bool bSing = TRUE) { m_bSingleColSelection = bSing;    }
-    bool singleColSelection()                     { return m_bSingleColSelection;     }
+    //单行、单列选择 ok
+    void setSingleRowSelection(bool bSing = true) { m_bSingleRowSelection = bSing;    }
+    bool isSingleRowSelection()                     { return m_bSingleRowSelection & m_bListMode; }
+    void setSingleColSelection(bool bSing = true) { m_bSingleColSelection = bSing;    }
+    bool isSingleColSelection()                     { return m_bSingleColSelection;     }
 
-    //设置可选择
-    void enableSelection(bool bEnable = TRUE)     { ResetSelectedRange(); m_bEnableSelection = bEnable; ResetSelectedRange(); }
+    //设置可选择 ok
+    void enableSelection(bool bEnable = true)     { resetSelectedRange(); m_bEnableSelection = bEnable; resetSelectedRange(); }
     bool isSelectable() const                     { return m_bEnableSelection;        }
 
-    //设置表头行列选择
+    //设置表头行列选择 ok
     void setFixedColumnSelection(bool bSelect)    { m_bFixedColumnSelection = bSelect;}
     bool isFixedColumnSelection()                 { return m_bFixedColumnSelection;   }
     void setFixedRowSelection(bool bSelect)       { m_bFixedRowSelection = bSelect;   }
     bool isFixedRowSelection()                    { return m_bFixedRowSelection;      }
 
-    //允许拖拽
-    void enableDragAndDrop(bool bAllow = TRUE)    { m_bAllowDragAndDrop = bAllow;     }
+    //允许拖拽 ok
+    void enableDragAndDrop(bool bAllow = true)    { m_bAllowDragAndDrop = bAllow;     }
     bool isDragAndDrop() const                    { return m_bAllowDragAndDrop;       }
 
-    //允许调整行列大小
-    void setRowResize(bool bResize = TRUE)        { m_bAllowRowResize = bResize;      }
+    //允许调整行列大小 ok
+    void setRowResize(bool bResize = true)        { m_bAllowRowResize = bResize;      }
     bool isRowResize() const                      { return m_bAllowRowResize;         }
-    void setColumnResize(bool bResize = TRUE)     { m_bAllowColumnResize = bResize;   }
+    void setColumnResize(bool bResize = true)     { m_bAllowColumnResize = bResize;   }
     bool isColumnResize() const                   { return m_bAllowColumnResize;      }
 
-    //设置表头按照鼠标点击排序
-    void setHeaderSort(bool bSortOnClick = TRUE)  { m_bSortOnClick = bSortOnClick;    }
+    //设置表头按照鼠标点击排序 ok
+    void setHeaderSort(bool bSortOnClick = true)  { m_bSortOnClick = bSortOnClick;    }
     bool isHeaderSort() const                     { return m_bSortOnClick;            }
 
-    //设置Tab键处理 按Tab键后选择表格往后移动一格
-    void setHandleTabKey(bool bHandleTab = TRUE)  { m_bHandleTabKey = bHandleTab;     }
+    //设置Tab键处理 按Tab键后选择表格往后移动一格 ok
+    void setHandleTabKey(bool bHandleTab = true)  { m_bHandleTabKey = bHandleTab;     }
     bool isHandleTabKey() const                   { return m_bHandleTabKey;           }
 
     //设置双缓冲绘制方法
-    //void SetDoubleBuffering(BOOL bBuffer = TRUE)  { m_bDoubleBuffer = bBuffer;        }
-    //BOOL GetDoubleBuffering() const               { return m_bDoubleBuffer;           }
+    //void SetDoubleBuffering(bool bBuffer = true)  { m_bDoubleBuffer = bBuffer;        }
+    //bool GetDoubleBuffering() const               { return m_bDoubleBuffer;           }
 
     //允许提示
-    void enableTitleTips(bool bEnable = TRUE)     { m_bTitleTips = bEnable;           }
+    void enableTitleTips(bool bEnable = true)     { m_bTitleTips = bEnable;           }
     bool isTitleTips()                            { return m_bTitleTips;              }
 
     //设置列排序 这种方法？？？
@@ -227,15 +227,15 @@ public:
     int  autoSizeStyle()                          { return m_nAutoSizeColumnStyle; }
 
     //设置忽略隐藏列 忽略隐藏的列并向左看第一个可见列
-    void enableHiddenColUnhide(bool bEnable = TRUE){ m_bHiddenColUnhide = bEnable;    }
-    BOOL hiddenColUnhide()                         { return m_bHiddenColUnhide;        }
-    void enableHiddenRowUnhide(bool bEnable = TRUE){ m_bHiddenRowUnhide = bEnable;    }
-    BOOL hiddenRowUnhide()                         { return m_bHiddenRowUnhide;        }
+    void enableHiddenColUnhide(bool bEnable = true){ m_bHiddenColUnhide = bEnable;    }
+    bool hiddenColUnhide()                         { return m_bHiddenColUnhide;        }
+    void enableHiddenRowUnhide(bool bEnable = true){ m_bHiddenRowUnhide = bEnable;    }
+    bool hiddenRowUnhide()                         { return m_bHiddenRowUnhide;        }
 
     //允许行列隐藏 如当鼠标移动列，如果允许隐藏列，则列宽为0，如果不允许则列宽是最小是1
-    void enableColumnHide(bool bEnable = TRUE)     { m_bAllowColHide = bEnable;        }
+    void enableColumnHide(bool bEnable = true)     { m_bAllowColHide = bEnable;        }
     bool isColumnHide()                            { return m_bAllowColHide;           }
-    void enableRowHide(bool bEnable = TRUE)        { m_bAllowRowHide = bEnable;        }
+    void enableRowHide(bool bEnable = true)        { m_bAllowRowHide = bEnable;        }
     bool isRowHide()                               { return m_bAllowRowHide;           }
 
 
@@ -243,7 +243,7 @@ public:
 // default Grid cells. Use these for setting default values such as colors and fonts
 ///////////////////////////////////////////////////////////////////////////////////
 public:
-    HGridCellBase* defaultCell(BOOL bFixedRow, BOOL bFixedCol) const;
+    HGridCellBase* defaultCell(bool bFixedRow, bool bFixedCol) const;
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Grid cell Attributes
@@ -251,21 +251,19 @@ public:
 public:
     HGridCellBase* cell(int nRow, int nCol) const;   // Get the actual cell!
 
-    //设置表格是否修改标志
-/*  void setModified(bool bModified = TRUE, int nRow = -1, int nCol = -1);
+    //设置表格是否修改标志 ok
+    void setModified(bool bModified = true, int nRow = -1, int nCol = -1);
     bool isModified(int nRow = -1, int nCol = -1);
 
-    //设置行列是否是固定行列
+    //设置行列是否是固定行列 ok
     bool isCellFixed(int nRow, int nCol);
 
-    //通过行列结构方式设置行列信息
+    //通过行列结构方式设置行列信息 ok
     bool   setItem(const GV_ITEM* pItem);
     bool   item(GV_ITEM* pItem);
     bool   setItemText(int nRow, int nCol, const QString& str);
-    // The following was virtual. If you want to override, use 
-    //  CGridCellBase-derived class's GetText() to accomplish same thing
-    QString itemText(int nRow, int nCol) const;
-
+    QString itemText(int nRow, int nCol) const; //原代码有注释
+/*
     // EFW - 06/13/99 - Added to support printf-style formatting codes.
     // Also supports use with a string resource ID
 #if !defined(_WIN32_WCE) || (_WIN32_WCE >= 210) //win ce环境不能用
@@ -273,36 +271,36 @@ public:
     bool   setItemTextFmt(int nRow, int nCol, const char *szFmt, ...); /////////////修改
     bool   setItemTextFmtID(int nRow, int nCol, uint nID, ...);
 #endif
-
-    //设置行列Data
+*/
+    //设置行列Data ok
     bool   setItemData(int nRow, int nCol, const QVariant& lParam);
     QVariant itemData(int nRow, int nCol) const;
 
-    //设置行列图片
+    //设置行列图片 ok
     bool   setItemImage(int nRow, int nCol, int iImage);
     int    itemImage(int nRow, int nCol) const;
-*/
-    //设置行列状态
+
+    //设置行列状态 ok
     bool   setItemState(int nRow, int nCol, uint state);
     uint   itemState(int nRow, int nCol) const;
-/*
-    //设置格式，居中，对齐等
+
+    //设置格式，居中，对齐等 ok
     bool   setItemFormat(int nRow, int nCol, uint nFormat);
     uint   itemFormat(int nRow, int nCol) const;
-*/
-    //设置背景颜色
-    bool   setItemBkColour(int nRow, int nCol, QColor& cr = QCLR_DEFAULT);
+
+    //设置背景颜色 ok
+    bool   setItemBkColour(int nRow, int nCol, QColor& cr = QColor(QCLR_DEFAULT));
     QColor itemBkColour(int nRow, int nCol) const;
 
-    //设置前景颜色 就是文字颜色
-    bool   setItemFgColour(int nRow, int nCol, QColor& cr = QCLR_DEFAULT);
+    //设置前景颜色 就是文字颜色 ok
+    bool   setItemFgColour(int nRow, int nCol, QColor& cr = QColor(QCLR_DEFAULT));
     QColor itemFgColour(int nRow, int nCol) const;
-/*
-    //设置字体
+
+    //设置字体 ok
     bool  setItemFont(int nRow, int nCol, const QFont& lf);
     QFont itemFont(int nRow, int nCol);
-*/
-    //是否编辑
+
+    //是否编辑 ok
     bool isItemEditing(int nRow, int nCol);
 
     //单元格显示不同类型控件，如果checkbox,button等
@@ -313,7 +311,7 @@ public:
     /*
     bool setCellType(int nRow, int nCol, QObject* pRuntimeClass);
     bool setDefaultCellType( QObject* pRuntimeClass);
-
+*/
 ///////////////////////////////////////////////////////////////////////////////////
 // Operations
 ///////////////////////////////////////////////////////////////////////////////////
@@ -331,30 +329,29 @@ public:
 
     //清除表格范围
     void clearCells(HCellRange Selection);
-
+/*
     //自动调整行列，扩展行列到合适位置
-    bool autoSizeRow(int nRow, bool bResetScroll = TRUE);
-    bool autoSizeColumn(int nCol, uint nAutoSizeStyle = GVS_DEFAULT, bool bResetScroll = TRUE);
+    bool autoSizeRow(int nRow, bool bResetScroll = true);
+    bool autoSizeColumn(int nCol, uint nAutoSizeStyle = GVS_DEFAULT, bool bResetScroll = true);
     void autoSizeRows();
     void autoSizeColumns(uint nAutoSizeStyle = GVS_DEFAULT);
     void autoSize(uint nAutoSizeStyle = GVS_DEFAULT);
-    void expandColumnsToFit(bool bExpandFixed = TRUE);
+    void expandColumnsToFit(bool bExpandFixed = true);
     void expandLastColumn();
-    void expandRowsToFit(bool bExpandFixed = TRUE);
-    void expandToFit(bool bExpandFixed = TRUE);
-
+    void expandRowsToFit(bool bExpandFixed = true);
+    void expandToFit(bool bExpandFixed = true);
+*/
     //自动填充
     void refresh();
-    void autoFill();   // Fill grid with blank cells
+/*    void autoFill();   // Fill grid with blank cells
 
-    //可视化 不知道干啥的
+    //可视化
     void ensureVisible(HCellID &cell)       { ensureVisible(cell.row, cell.col); }
-    void ensureVisible(int nRow, int nCol);
+    void ensureVisible(int nRow, int nCol);*/
     bool isCellVisible(int nRow, int nCol);
-    bool isCellVisible(HCellID cell);
+    bool isCellVisible(const HCellID& cell);
 
     //可编辑和可选择
-    */
     bool isCellEditable(int nRow, int nCol) const;
     bool isCellEditable(HCellID &cell) const;
     bool isCellSelected(int nRow, int nCol) const;
@@ -364,7 +361,7 @@ public:
     // SetRedraw stops/starts redraws on things like changing the # rows/columns
     // and autosizing, but not for user-intervention such as resizes
     //重绘操作
-    void setRedraw(bool bAllowDraw, bool bResetScrollBars = FALSE);
+    void setRedraw(bool bAllowDraw, bool bResetScrollBars = false);
     bool redrawCell(int nRow, int nCol, QPainter* painter = NULL);
     bool redrawCell(const HCellID& cell, QPainter* painter = NULL);
     bool redrawRow(int row);
@@ -374,34 +371,35 @@ public:
     bool save(const char* filename, char chSeparator = _T(','));
     bool load(const char* filename, char chSeparator = _T(','));
 
-
+*/
 ///////////////////////////////////////////////////////////////////////////////////
 // Cell Ranges
 ///////////////////////////////////////////////////////////////////////////////////
  public:
 
-    //多表格(区域表格)操作
-    HCellRange getCellRange() const;
-    HCellRange getSelectedCellRange() const;
-    void setSelectedRange(const HCellRange& Range, bool bForceRepaint = FALSE, bool bSelectCells = TRUE);
+    //多表格(区域表格)操作 ok
+    HCellRange cellRange() const;
+    HCellRange selectedCellRange() const;
+    void setSelectedRange(const HCellRange& Range, bool bForceRepaint = false, bool bselectCells = true);
     void setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMaxCol,
-                          bool bForceRepaint = FALSE, bool bSelectCells = TRUE);
-                          */
+                          bool bForceRepaint = false, bool bselectCells = true);
+
 
     bool isValid(int nRow, int nCol) const;
     bool isValid(const HCellID& cell) const;
     bool isValid(const HCellRange& range) const;
-/*
+
 ///////////////////////////////////////////////////////////////////////////////////
 // Clipboard, drag and drop, and cut n' paste operations
 // 剪切 拖拽等操作
 ///////////////////////////////////////////////////////////////////////////////////
-#ifndef GRIDCONTROL_NO_CLIPBOARD
-    virtual void CutSelectedText();
-    virtual COleDataSource* CopyTextFromGrid();
-    virtual BOOL PasteTextToGrid(HCellID cell, COleDataObject* pDataObject, BOOL bSelectPastedCells=TRUE);
+#ifndef QT_NO_CLIPBOARD
+    virtual void cutSelectedText();
+    virtual QString copyTextFromGrid();
+    virtual bool pasteTextToGrid(const HCellID& cell, const QString& strCopyText, bool bSelectPastedCells=true);
 #endif
 
+/*
 #ifndef GRIDCONTROL_NO_DRAGDROP
  public:
 
@@ -409,7 +407,7 @@ public:
     virtual DROPEFFECT OnDragEnter(COleDataObject* pDataObject, DWORD dwKeyState, CPoint point);
     virtual DROPEFFECT OnDragOver(COleDataObject* pDataObject, DWORD dwKeyState, CPoint point);
     virtual void OnDragLeave();
-    virtual BOOL OnDrop(COleDataObject* pDataObject, DROPEFFECT dropEffect, CPoint point);
+    virtual bool OnDrop(COleDataObject* pDataObject, DROPEFFECT dropEffect, CPoint point);
 
     //拖拽
     virtual void dragEnterEvent(QDragEnterEvent *event);
@@ -418,8 +416,8 @@ public:
     virtual void dropEvent(QDropEvent *event);
 
 #endif
-
-#ifndef GRIDCONTROL_NO_CLIPBOARD
+*/
+#ifndef QT_NO_CLIPBOARD
     //复制 剪切 拷贝
     virtual void onEditCut();
     virtual void onEditCopy();
@@ -427,7 +425,7 @@ public:
 #endif
     // Ctrl+A 全选
     virtual void onEditSelectAll();
-
+/*
 ///////////////////////////////////////////////////////////////////////////////////
 // Misc.排序 比较等
 ///////////////////////////////////////////////////////////////////////////////////
@@ -452,11 +450,11 @@ public:
     void Print(CPrintDialog* pPrntDialog = NULL);
 
     // EFW - New printing support functions
-    void EnableWysiwygPrinting(BOOL bEnable = TRUE) { m_bWysiwygPrinting = bEnable;     }
-    BOOL GetWysiwygPrinting()                       { return m_bWysiwygPrinting;        }
+    void EnableWysiwygPrinting(bool bEnable = true) { m_bWysiwygPrinting = bEnable;     }
+    bool GetWysiwygPrinting()                       { return m_bWysiwygPrinting;        }
 
-    void SetShadedPrintOut(BOOL bEnable = TRUE)     {   m_bShadedPrintOut = bEnable;    }
-    BOOL GetShadedPrintOut(void)                    {   return m_bShadedPrintOut;       }
+    void SetShadedPrintOut(bool bEnable = true)     {   m_bShadedPrintOut = bEnable;    }
+    bool GetShadedPrintOut(void)                    {   return m_bShadedPrintOut;       }
 
     // Use -1 to have it keep the existing value
     void setPrintMarginInfo(int nHeaderHeight, int nFooterHeight,
@@ -489,8 +487,8 @@ public:
 	void MergeCells(int nStartRow, int nStartCol, int nEndRow, int nEndCol);
     int  GetMergeCellWidth(HCellID cell);
     int  GetMergeCellHeight(HCellID cell);
-	BOOL GetCellOriginNoMerge(int nRow, int nCol, LPPOINT p);
-    BOOL GetCellOriginNoMerge(const HCellID& cell, LPPOINT p);
+    bool GetCellOriginNoMerge(int nRow, int nCol, LPPOINT p);
+    bool GetCellOriginNoMerge(const HCellID& cell, LPPOINT p);
 
 
 
@@ -502,42 +500,40 @@ protected:
 
     LRESULT SendMessageToParent(int nRow, int nCol, int nMessage) const;
     LRESULT SendDisplayRequestToParent(GV_DISPINFO* pDisplayInfo) const;
-    LRESULT SendCacheHintToParent(const CCellRange& range) const;
-
-    BOOL InvalidateCellRect(const int row, const int col);
-    BOOL InvalidateCellRect(const HCellID& cell);
-    BOOL InvalidateCellRect(const CCellRange& cellRange);
+    LRESULT SendCacheHintToParent(const HCellRange& range) const;
+*/
+    bool invalidateCellRect(const int row, const int col);
+    bool invalidateCellRect(const HCellID& cell);
+    bool invalidateCellRect(const HCellRange& cellRange);
     void EraseBkgnd(CDC* pDC);
+/*
+    bool GetCellRangeRect(const HCellRange& cellRange, LPRECT lpRect);
 
-    BOOL GetCellRangeRect(const CCellRange& cellRange, LPRECT lpRect);
-
-    BOOL SetCell(int nRow, int nCol, CGridCellBase* pCell);
+    bool SetCell(int nRow, int nCol, CGridCellBase* pCell);
 
     int  SetMouseMode(int nMode) { int nOldMode = m_MouseMode; m_MouseMode = nMode; return nOldMode; }
     int  GetMouseMode() const    { return m_MouseMode; }
 
-    BOOL MouseOverRowResizeArea(CPoint& point);
-    BOOL MouseOverColumnResizeArea(CPoint& point);
+    bool MouseOverRowResizeArea(CPoint& point);
+    bool MouseOverColumnResizeArea(CPoint& point);
 */
     HCellID topleftNonFixedCell(bool bForceRecalculation = false);
-  /*  CCellRange GetUnobstructedNonFixedCellRange(BOOL bForceRecalculation = FALSE);
-    CCellRange GetVisibleNonFixedCellRange(LPRECT pRect = NULL, BOOL bForceRecalculation = FALSE);
+  /*  HCellRange GetUnobstructedNonFixedCellRange(bool bForceRecalculation = false);
+    HCellRange GetVisibleNonFixedCellRange(LPRECT pRect = NULL, bool bForceRecalculation = false);
 
-    BOOL IsVisibleVScroll() { return ( (m_nBarState & GVL_VERT) > 0); } 
-    BOOL IsVisibleHScroll() { return ( (m_nBarState & GVL_HORZ) > 0); }
-    void ResetSelectedRange();
-    void ResetScrollBars();
-    void EnableScrollBars(int nBar, BOOL bEnable = TRUE);
-    int  GetScrollPos32(int nBar, BOOL bGetTrackPos = FALSE);
-    BOOL SetScrollPos32(int nBar, int nPos, BOOL bRedraw = TRUE);
+    bool IsVisibleVScroll() { return ( (m_nBarState & GVL_VERT) > 0); }
+    bool IsVisibleHScroll() { return ( (m_nBarState & GVL_HORZ) > 0); }*/
+    void resetSelectedRange();
+    /*void ResetScrollBars();
+    void EnableScrollBars(int nBar, bool bEnable = true);
+    int  GetScrollPos32(int nBar, bool bGetTrackPos = false);
+    bool SetScrollPos32(int nBar, int nPos, bool bRedraw = true);
 
-    BOOL SortTextItems(int nCol, BOOL bAscending, int low, int high);
-    BOOL SortItems(PFNLVCOMPARE pfnCompare, int nCol, BOOL bAscending, LPARAM data,
+    bool SortTextItems(int nCol, bool bAscending, int low, int high);
+    bool SortItems(PFNLVCOMPARE pfnCompare, int nCol, bool bAscending, LPARAM data,
                    int low, int high);
 
     CPoint GetPointClicked(int nRow, int nCol, const CPoint& point);
-
-	void ValidateAndModifyCellContents(int nRow, int nCol, LPCTSTR strText);
 
 // Overrrides
     // ClassWizard generated virtual function overrides
@@ -550,7 +546,7 @@ protected:
 #if !defined(_WIN32_WCE_NO_PRINTING) && !defined(GRIDCONTROL_NO_PRINTING)
     // Printing
 	virtual void PrintFixedRowCells(int nStartColumn, int nStopColumn, int& row, CRect& rect,
-                                    CDC *pDC, BOOL& bFirst);
+                                    CDC *pDC, bool& bFirst);
     virtual void PrintColumnHeadings(CDC *pDC, CPrintInfo *pInfo);
     virtual void PrintHeader(CDC *pDC, CPrintInfo *pInfo);
     virtual void PrintFooter(CDC *pDC, CPrintInfo *pInfo);
@@ -569,11 +565,11 @@ protected:
     // Editing
     virtual void  OnEditCell(int nRow, int nCol, CPoint point, UINT nChar);
     virtual void  OnEndEditCell(int nRow, int nCol, CString str);
-	virtual BOOL  ValidateEdit(int nRow, int nCol, LPCTSTR str);
+    virtual bool  ValidateEdit(int nRow, int nCol, LPCTSTR str);
     virtual void  EndEditing();
 */
     // Drawing
-    virtual void  OnDraw(CDC* pDC);
+    virtual void  onDraw(QPainter* painter);
 
     // CGridCellBase Creation and Cleanup
     virtual HGridCellBase* createCell(int nRow, int nCol);
@@ -588,7 +584,7 @@ protected:
                 m_crShadow;
     QColor    m_crTTipBackClr, m_crTTipTextClr;                 // Titletip colours - FNA
     
-    BOOL        m_bVirtualMode;
+    bool        m_bVirtualMode;
     HLPARAM     m_lParam;                                           // lParam for callback
     GRIDCALLBACK m_pfnCallback;                                     // The callback function
 
@@ -674,7 +670,7 @@ protected:
 
     // EFW - Added to support shaded/unshaded printout.  If true, colored
     // cells will print as-is.  If false, all text prints as black on white.
-    BOOL        m_bShadedPrintOut;
+    bool        m_bShadedPrintOut;
 
     // EFW - Added support for user-definable margins.  Top and bottom are in 
     // lines.  Left, right, and gap are in characters (avg width is used).
@@ -682,14 +678,18 @@ protected:
                 m_nRightMargin, m_nTopMargin, m_nBottomMargin, m_nGap;
 
 protected:
-    /*
+
     void selectAllCells();
-    void selectColumns(HCellID currentCell, bool bForceRedraw=FALSE, bool bSelectCells=TRUE);
-    void selectRows(HCellID currentCell, bool bForceRedraw=FALSE, bool bSelectCells=TRUE);
-    void selectCells(HCellID currentCell, bool bForceRedraw=FALSE, bool bSelectCells=TRUE);
+    void selectColumns(HCellID currentCell, bool bForceRedraw=false, bool bselectCells=true);
+    void selectRows(HCellID currentCell, bool bForceRedraw=false, bool bselectCells=true);
+    void selectCells(HCellID currentCell, bool bForceRedraw=false, bool bselectCells=true);
     void onSelecting(const HCellID& currentCell);
+    void validateAndModifyCellContents(int nRow, int nCol, const QString& strText);
 
-
+    virtual void paintEvent(QPaintEvent *event);
+    virtual void keyPressEvent(QKeyEvent *event);
+    virtual void keyReleaseEvent(QKeyEvent *event);
+ /*
     //重载函数 对应windows的消息映射函数
     virtual void enterEvent(QEvent *event);
     virtual void focusInEvent(QFocusEvent *event);
@@ -697,15 +697,13 @@ protected:
     virtual void focusOutEvent(QFocusEvent *event);
     virtual void hideEvent(QHideEvent *event);
     virtual void inputMethodEvent(QInputMethodEvent *event);
-    virtual void keyPressEvent(QKeyEvent *event);
-    virtual void keyReleaseEvent(QKeyEvent *event);
     virtual void leaveEvent(QEvent *event);
     virtual void mouseDoubleClickEvent(QMouseEvent *event);
     virtual void mouseMoveEvent(QMouseEvent *event);
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual void moveEvent(QMoveEvent *event);
-    virtual void paintEvent(QPaintEvent *event);
+
     virtual void resizeEvent(QResizeEvent *event);
     virtual void showEvent(QShowEvent *event);
     virtual void wheelEvent(QWheelEvent *event);
@@ -726,12 +724,12 @@ protected:
     //afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
     afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
     //afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
-    afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+    afx_msg bool OnEraseBkgnd(CDC* pDC);
     afx_msg void OnSysKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
     afx_msg void OnUpdateEditSelectAll(CCmdUI* pCmdUI);
     //}}AFX_MSG
 #ifndef _WIN32_WCE_NO_CURSOR
-    afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
+    afx_msg bool OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
 #endif
 #ifndef _WIN32_WCE
     afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
@@ -741,7 +739,7 @@ protected:
 #ifndef _WIN32_WCE_NO_CURSOR
     afx_msg void OnCaptureChanged(CWnd *pWnd);
 #endif
-#ifndef GRIDCONTROL_NO_CLIPBOARD
+#ifndef QT_NO_CLIPBOARD
     afx_msg void OnUpdateEditCopy(CCmdUI* pCmdUI);
     afx_msg void OnUpdateEditCut(CCmdUI* pCmdUI);
     afx_msg void OnUpdateEditPaste(CCmdUI* pCmdUI);
@@ -750,7 +748,7 @@ protected:
     afx_msg void OnSettingChange(UINT uFlags, LPCTSTR lpszSection);
 #endif
 #if !defined(_WIN32_WCE) && (_MFC_VER >= 0x0421)
-    afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+    afx_msg bool OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 #endif
     afx_msg LRESULT OnSetFont(WPARAM hFont, LPARAM lParam);
     afx_msg LRESULT OnGetFont(WPARAM hFont, LPARAM lParam);
@@ -763,7 +761,7 @@ protected:
 
 // Returns the default cell implementation for the given grid region
 
-inline HGridCellBase* HGridCtrl::defaultCell(BOOL bFixedRow, BOOL bFixedCol) const
+inline HGridCellBase* HGridCtrl::defaultCell(bool bFixedRow, bool bFixedCol) const
 { 
     if (bFixedRow && bFixedCol) return (HGridCellBase*) &m_cellFixedRowColDef;
     if (bFixedRow)              return (HGridCellBase*) &m_cellFixedRowDef;
@@ -825,20 +823,20 @@ inline HGridCellBase* HGridCtrl::getCell(int nRow, int nCol) const
     return pRow->at(nCol);
 }
 
-inline BOOL HGridCtrl::setCell(int nRow, int nCol, HGridCellBase* pCell)
+inline bool HGridCtrl::setCell(int nRow, int nCol, HGridCellBase* pCell)
 {
     if (isVirtualMode())
-        return FALSE;
+        return false;
 
     if (nRow < 0 || nRow >= m_nRows || nCol < 0 || nCol >= m_nCols) 
-        return FALSE;
+        return false;
 
     GRID_ROW* pRow = m_RowData[nRow];
-    if (!pRow) return FALSE;
+    if (!pRow) return false;
 
     pCell->setCoords( nRow, nCol);
     pRow->insert(nCol, pCell);
-    return TRUE;
+    return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////

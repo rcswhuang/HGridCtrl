@@ -105,7 +105,7 @@ public:
     virtual void    setCellTypeEx(long nType)             =0;
     virtual int     getCellType()              const      =0;
     virtual long    getCellTypeEx()            const      =0;
-    virtual	BOOL    isPropertySet(long flag)              =0;
+    virtual	bool    isPropertySet(long flag)              =0;
     virtual	long    getPropertyFlags()                    =0;
     virtual short   getBorderStyle()           const      =0;
 
@@ -121,12 +121,12 @@ public:
 
     virtual void reset();
 
-    virtual bool draw(QPainter* painter, int nRow, int nCol, QRect rect, bool bEraseBkgnd = TRUE);
+    virtual bool draw(QPainter* painter, int nRow, int nCol, QRect rect, bool bEraseBkgnd = true);
     //如果是图片的话就获取对应的矩形，不是就算了。不能const引用，draw转过来的rect需要做判断 ---huangw
-    virtual bool getTextRect( QRect& rect);    // i/o:  i=dims of cell rect; o=dims of text rect
-    virtual bool getTipTextRect( QRect&  rect) { return getTextRect( rect); }  // may override for btns, etc.
-    virtual QSize getTextExtent(QString& str, QPainter* painter = NULL);
-    virtual QSize getCellExtent(QPainter* painter);
+    virtual bool textRect( QRect& rect);    // i/o:  i=dims of cell rect; o=dims of text rect
+    virtual bool tipTextRect( QRect&  rect) { return textRect( rect); }  // may override for btns, etc.
+    virtual QSize textExtent(QString& str, QPainter* painter = NULL);
+    virtual QSize cellExtent(QPainter* painter);
 
     // Editing
     virtual bool edit( int /* nRow */, int /* nCol */, QRect /* rect */, QPoint /* point */,
@@ -152,23 +152,23 @@ protected:
     virtual bool OnSetCursor();
 
 public:
-	/*bool IsMerged();
+    /*bool IsMerged();
 	void SetMergeRange(HCellRange range);
-	void Show(bool IsShow);
+    void Show(bool IsShow);
 	void UnMerge();
-	virtual bool IsShow() ;
-	virtual CCellRange GetMergeRange();
-	virtual bool IsMergeWithOthers();
+    virtual bool IsShow() ;
+    virtual HCellRange GetMergeRange();
+    virtual bool IsMergeWithOthers();
 	virtual HCellID GetMergeCellID();
 	virtual void SetMergeCellID(HCellID cell);*/
 protected:
     quint32    m_nState;      // Cell state (selected/focus etc)
 private:
 /*
-	CCellRange m_MergeRange;
-	bool m_IsMergeWithOthers;
+    HCellRange m_MergeRange;
+    bool m_IsMergeWithOthers;
 	HCellID m_MergeCellID;
-	bool m_Hide;
+    bool m_Hide;
     */
 };
 

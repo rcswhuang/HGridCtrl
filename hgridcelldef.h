@@ -4,6 +4,7 @@
 #include <exception>
 using namespace std;
 //qt define
+#include <QApplication>
 #include <QtGlobal>
 #include <QObject>
 #include <QWidget>
@@ -12,6 +13,9 @@ using namespace std;
 #include <QFont>
 #include <QSize>
 #include <QMap>
+#include <QPainter>
+#include <QKeyEvent>
+#include <QClipboard>
 typedef unsigned int HWPARAM;
 typedef qlonglong HLPARAM; //统一64位平台
 
@@ -129,10 +133,10 @@ typedef struct _GV_ITEM {
 
 #ifndef GRIDCONTROL_NO_DRAGDROP
 #   include "GridDropTarget.h"
-#   undef GRIDCONTROL_NO_CLIPBOARD     // Force clipboard functions on
+#   undef QT_NO_CLIPBOARD     // Force clipboard functions on
 #endif
 
-#ifndef GRIDCONTROL_NO_CLIPBOARD
+#ifndef QT_NO_CLIPBOARD
 #   include <afxole.h>
 #endif
 
@@ -169,7 +173,7 @@ typedef struct tagGV_DISPINFO {
 // This is sent to the Grid from child in-place edit controls
 typedef struct tagGV_CACHEHINT {
     NMHDR      hdr;
-    CCellRange range;
+    HCellRange range;
 } GV_CACHEHINT;
 
 // storage typedef for each row in the grid
@@ -178,11 +182,40 @@ typedef struct tagGV_CACHEHINT {
 
 
 // For virtual mode callback
-typedef BOOL (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
+typedef bool (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Defines
 ///////////////////////////////////////////////////////////////////////////////////
+//绘制文字 仿windows
+#define QDT_TOP                      0x00000000
+#define QDT_LEFT                     0x00000000
+#define QDT_CENTER                   0x00000001
+#define QDT_RIGHT                    0x00000002
+#define QDT_VCENTER                  0x00000004
+#define QDT_BOTTOM                   0x00000008
+#define QDT_WORDBREAK                0x00000010
+#define QDT_SINGLELINE               0x00000020
+#define QDT_EXPANDTABS               0x00000040
+#define QDT_TABSTOP                  0x00000080
+#define QDT_NOCLIP                   0x00000100
+#define QDT_EXTERNALLEADING          0x00000200
+#define QDT_CALCRECT                 0x00000400
+#define QDT_NOPREFIX                 0x00000800
+#define QDT_INTERNAL                 0x00001000
+
+#if(WINVER >= 0x0400)
+#define QDT_EDITCONTROL              0x00002000
+#define QDT_PATH_ELLIPSIS            0x00004000
+#define QDT_END_ELLIPSIS             0x00008000
+#define QDT_MODIFYSTRING             0x00010000
+#define QDT_RTLREADING               0x00020000
+#define QDT_WORD_ELLIPSIS            0x00040000
+#if(WINVER >= 0x0500)
+#define QDT_NOFULLWIDTHCHARBREAK     0x00080000
+#if(_WIN32_WINNT >= 0x0500)
+#define QDT_HIDEPREFIX               0x00100000
+#define QDT_PREFIXONLY               0x00200000
 
 // Grid line/scrollbar selection
 #define GVL_NONE                0L      // Neither

@@ -45,7 +45,7 @@ public:
     int  count() { return (m_nMaxRow - m_nMinRow + 1) * (m_nMaxCol - m_nMinCol + 1); }
     
     HCellID  topLeft() const;
-    HCellRange  intersect(const CCellRange& rhs) const;
+    HCellRange  intersect(const HCellRange& rhs) const;
     
     int minRow() const {return m_nMinRow;}
     void setMinRow(int minRow) {m_nMinRow = minRow;}
@@ -81,18 +81,18 @@ inline void HCellRange::set(int minRow, int minCol, int maxRow, int maxCol)
      m_nMaxCol = maxCol;
 }
 
-inline void HCellRange::operator=(const CCellRange& rhs)
+inline void HCellRange::operator=(const HCellRange& rhs)
 {
     if (this != &rhs) Set(rhs.m_nMinRow, rhs.m_nMinCol, rhs.m_nMaxRow, rhs.m_nMaxCol);
 }
 
-inline int HCellRange::operator==(const CCellRange& rhs)
+inline int HCellRange::operator==(const HCellRange& rhs)
 {
      return ((m_nMinRow == rhs.m_nMinRow) && (m_nMinCol == rhs.m_nMinCol) &&
              (m_nMaxRow == rhs.m_nMaxRow) && (m_nMaxCol == rhs.m_nMaxCol));
 }
 
-inline int HCellRange::operator!=(const CCellRange& rhs)
+inline int HCellRange::operator!=(const HCellRange& rhs)
 {
      return !operator==(rhs);
 }

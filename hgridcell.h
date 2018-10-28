@@ -91,7 +91,7 @@ public:
 
 // editing cells
 public:
-    virtual BOOL edit(int nRow, int nCol, CRect rect, CPoint point, UINT nID, UINT nChar);
+    virtual bool edit(int nRow, int nCol, CRect rect, CPoint point, UINT nID, UINT nChar);
     virtual void endEdit();
 protected:
     virtual void onEndEdit();
@@ -149,10 +149,10 @@ public:
     virtual void    setHeight(int nHeight)                { m_Size.cy = nHeight;   }
 
     // Disable these properties
-    virtual void     setData(HLPARAM )           { Q_ASSERT(FALSE);         }
-    virtual void     setState(quint32 )          { Q_ASSERT(FALSE);         }
+    virtual void     setData(HLPARAM )           { Q_ASSERT(false);         }
+    virtual void     setState(quint32 )          { Q_ASSERT(false);         }
     virtual quint32  state() const                         { return HGridCell::state()|GVIS_READONLY; }
-    virtual void     setCoords( int row, int col)  { Q_ASSERT(FALSE);         }
+    virtual void     setCoords( int row, int col)  { Q_ASSERT(false);         }
     virtual void     setFont(const QFont& plf);
     virtual QFont    font() const;
 protected:

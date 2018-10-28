@@ -91,6 +91,6 @@ void HGridCell::EndEdit()
 
 void HGridCell::OnEndEdit()
 {
-    m_bEditing = FALSE;
+    m_bEditing = false;
     m_pEditWnd = NULL;
 }
