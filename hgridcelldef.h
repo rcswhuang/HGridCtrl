@@ -8,6 +8,7 @@ using namespace std;
 #include <QtGlobal>
 #include <QObject>
 #include <QWidget>
+#include <QAbstractScrollArea>
 #include <QColor>
 #include <QRgb>
 #include <QFont>
@@ -16,6 +17,7 @@ using namespace std;
 #include <QPainter>
 #include <QKeyEvent>
 #include <QClipboard>
+#include <QScrollBar>
 typedef unsigned int HWPARAM;
 typedef qlonglong HLPARAM; //统一64位平台
 
@@ -124,9 +126,35 @@ typedef struct _GV_ITEM {
 
 
 //定义滚动条相关信息
-#define QWM_HSCROLL    0x0110 //行滚动条
-#define QWM_VSCROLL    0x0111 //列滚动条
+#define QWM_HSCROLL                      0x0114
+#define QWM_VSCROLL                      0x0115
 
+/*
+ * Scroll Bar Constants滚动条常量
+ */
+#define QSB_HORZ             0
+#define QSB_VERT             1
+#define QSB_CTL              2
+#define QSB_BOTH             3
+
+/*
+ * Scroll Bar Commands 滚动条命令
+ */
+#define QSB_LINEUP           0
+#define QSB_LINELEFT         0
+#define QSB_LINEDOWN         1
+#define QSB_LINERIGHT        1
+#define QSB_PAGEUP           2
+#define QSB_PAGELEFT         2
+#define QSB_PAGEDOWN         3
+#define QSB_PAGERIGHT        3
+#define QSB_THUMBPOSITION    4
+#define QSB_THUMBTRACK       5
+#define QSB_TOP              6
+#define QSB_LEFT             6
+#define QSB_BOTTOM           7
+#define QSB_RIGHT            7
+#define QSB_ENDSCROLL        8
 
 
 ///////////////////////////////////////////////////////////////////////////////////

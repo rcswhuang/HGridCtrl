@@ -589,6 +589,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         bFoundVisible = false;
         iOrig = next.row;
         next.row++;
+        //不能移动到隐藏行列中
         while( next.row < rowCount())
         {
             if( rowHeight( next.row) > 0)
@@ -632,7 +633,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
             if (next.col == (columnCount()) && next.row < (rowCount() - 1))
             {
 				next.row++;
-				while( next.row < GetRowCount())
+                while( next.row < rowCount())
 				{
                     if( rowHeight(next.row) > 0)
 					{
@@ -650,7 +651,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         }
 
 		// We're on a non-hidden row, so look across for the next non-hidden column
-        while( next.col < GetColumnCount())
+        while( next.col < columnCount())
         {
             if( columnWidth( next.col) > 0)
             {
@@ -707,8 +708,8 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
     }
     else if (Qt::Key_PageDown = event->key())
     {
-        HCellID idOldTopLeft = topleftNonFixedCell();
-        SendMessage(WM_VSCROLL, SB_PAGEDOWN, 0);//--huangw
+        HCellID idOldTopLeft = topleftNonFixedCell();//huangw
+        setScrollBarValue(QWM_VSCROLL,QSB_PAGEDOWN,0);
         bVertScrollAction = true;
         HCellID idNewTopLeft = topleftNonFixedCell();
 
@@ -725,7 +726,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
     else if (Qt::Key_PageUp = event->key())
     {
         HCellID idOldTopLeft = topleftNonFixedCell();
-        SendMessage(WM_VSCROLL, SB_PAGEUP, 0);//huangw
+        setScrollBarValue(QWM_VSCROLL,QSB_PAGEUP,0);
         bVertScrollAction = true;
         HCellID idNewTopLeft = topleftNonFixedCell();
             
@@ -745,9 +746,9 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         //  and don't let user go to a hidden cell
         if (Qt::SHIFT == event->modifiers())
         {
-            //调整滚动条的位置 --huangw
-            //SendMessage(WM_VSCROLL, SB_TOP, 0);
-            //SendMessage(WM_HSCROLL, SB_LEFT, 0);
+            //调整滚动条的位置
+            setScrollBarValue(QWM_VSCROLL,QSB_TOP,0);
+            setScrollBarValue(QWM_HSCROLL,QSB_LEFT,0);
             bVertScrollAction = true;
             bHorzScrollAction = true;
             next.row = m_nFixedRows;
@@ -755,7 +756,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         }
         else
         {
-            SendMessage(WM_HSCROLL, SB_LEFT, 0);//huangw
+            setScrollBarValue(QWM_HSCROLL,QSB_LEFT,0);
             bHorzScrollAction = true;
             next.col = m_nFixedCols;
         }
@@ -779,9 +780,8 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         //  and don't let user go to a hidden cell
         if (Qt::CTRL == event->modifiers())
         {
-            //huangw
-            SendMessage(WM_VSCROLL, SB_BOTTOM, 0);
-            SendMessage(WM_HSCROLL, SB_RIGHT, 0);
+            setScrollBarValue(QWM_VSCROLL,QSB_BOTTOM,0);
+            setScrollBarValue(QWM_HSCROLL,QSB_RIGHT,0);
             bHorzScrollAction = true;
             bVertScrollAction = true;
             next.row = rowCount() - 1;
@@ -789,8 +789,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         }
         else
         {
-            //huangw
-            SendMessage(WM_HSCROLL, SB_RIGHT, 0);
+            setScrollBarValue(QWM_HSCROLL,QSB_RIGHT,0);
             bHorzScrollAction = true;
             next.col = columnCount() - 1;
         }
@@ -848,22 +847,23 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
             switch (event->key())
             {
             case Qt::Key_Right:
-                SendMessage(WM_HSCROLL, SB_LINERIGHT, 0); 
+                setScrollBarValue(QWM_HSCROLL,QSB_LINERIGHT,0);
                 bHorzScrollAction = true;
                 break;
                 
             case Qt::Key_Left:
-                SendMessage(WM_HSCROLL, SB_LINELEFT, 0);  
+
+                setScrollBarValue(QWM_HSCROLL,QSB_LINELEFT,0);
                 bHorzScrollAction = true;
                 break;
                 
             case Qt::Key_Down:
-                SendMessage(WM_VSCROLL, SB_LINEDOWN, 0);  
+                setScrollBarValue(QWM_VSCROLL,QSB_LINEDOWN,0);
                 bVertScrollAction = true;
                 break;
                 
             case Qt::Key_Up:
-                SendMessage(WM_VSCROLL, SB_LINEUP, 0);    
+                setScrollBarValue(QWM_VSCROLL,QSB_LINEUP,0);
                 bVertScrollAction = true;
                 break;                
                 
@@ -872,14 +872,14 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
                 {
                     if (bChangeLine) 
                     {
-                        SendMessage(WM_VSCROLL, SB_LINEUP, 0);
+                        setScrollBarValue(QWM_VSCROLL,QSB_LINEUP,0);
                         bVertScrollAction = true;
-                        SetScrollPos32(SB_HORZ, m_nHScrollMax);
+                        setScrollPos32(SB_HORZ, m_nHScrollMax);
                         break;
                     }
                     else 
 					{
-                        SendMessage(WM_HSCROLL, SB_LINELEFT, 0);
+                        setScrollBarValue(QWM_HSCROLL,QSB_LINELEFT,0);
                         bHorzScrollAction = true;
 					}
                 }
@@ -887,14 +887,14 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
                 {
                     if (bChangeLine) 
                     {
-                        SendMessage(WM_VSCROLL, SB_LINEDOWN, 0);
+                        setScrollBarValue(QWM_VSCROLL,QSB_LINEDOWN,0);
                         bVertScrollAction = true;
-                        SetScrollPos32(SB_HORZ, 0);
+                        setScrollPos32(SB_HORZ, 0);
                         break;
                     }
                     else 
 					{
-						SendMessage(WM_HSCROLL, SB_LINERIGHT, 0);
+                        setScrollBarValue(QWM_HSCROLL,QSB_LINERIGHT,0);
                         bHorzScrollAction = true;
 					}
                 }
@@ -906,9 +906,13 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         EnsureVisible(next); // Make sure cell is visible
 
 		if (bHorzScrollAction)
-			SendMessage(WM_HSCROLL, SB_ENDSCROLL, 0);
+        {
+            setScrollBarValue(QWM_HSCROLL,QSB_ENDSCROLL,0);
+        }
 		if (bVertScrollAction)
-			SendMessage(WM_VSCROLL, SB_ENDSCROLL, 0);
+        {
+            setScrollBarValue(QWM_VSCROLL,QSB_ENDSCROLL,0);
+        }
     }
 }
 
@@ -981,117 +985,113 @@ void HGridCtrl::OnEndInPlaceEdit(NMHDR* pNMHDR, LRESULT* pResult)
 
     *pResult = 0;
 }
-
-// Handle horz scrollbar notifications
-void HGridCtrl::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+*/
+// Handle horz scrollbar notifications 水平滚动条
+void HGridCtrl::OnHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
 {
-    EndEditing();
+    EndEditing();//huangw
 
 #ifndef GRIDCONTROL_NO_TITLETIPS
-    m_TitleTip.Hide();  // hide any titletips
+    m_TitleTip.Hide();  // hide any titletips --huangw
 #endif
 
-    int scrollPos = GetScrollPos32(SB_HORZ);
+    int scrollPos = scrollPos32(SB_HORZ);
 
-    HCellID idTopLeft = GetTopleftNonFixedCell();
+    HCellID idTopLeft = topleftNonFixedCell();
 
-    CRect rect;
-    GetClientRect(rect);
+    QRect rect;
+    QWidget* widget = viewport();
+    rect = widget->rect();
 
     switch (nSBCode)
     {
-    case SB_LINERIGHT:
+    case QSB_LINERIGHT: //向右滚动一行
         if (scrollPos < m_nHScrollMax)
         {
             // may have contiguous hidden columns.  Blow by them
-            while (idTopLeft.col < (GetColumnCount()-1)
-                    && GetColumnWidth( idTopLeft.col) < 1 )
+            while (idTopLeft.col < (columnCount()-1)
+                    && columnWidth( idTopLeft.col) < 1 )
             {
                 idTopLeft.col++;
             }
-            int xScroll = GetColumnWidth(idTopLeft.col);
-            SetScrollPos32(SB_HORZ, scrollPos + xScroll);
-            if (GetScrollPos32(SB_HORZ) == scrollPos)
+            int xScroll = columnWidth(idTopLeft.col);
+            setScrollPos32(SB_HORZ, scrollPos + xScroll);
+            if (scrollPos32(SB_HORZ) == scrollPos)
                 break;          // didn't work
 
-            rect.left = GetFixedColumnWidth();
-            //rect.left = GetFixedColumnWidth() + xScroll;
-            //ScrollWindow(-xScroll, 0, rect);
-            //rect.left = rect.right - xScroll;
+            rect.left = fixedColumnWidth();
             InvalidateRect(rect);
         }
         break;
 
-    case SB_LINELEFT:
-        if (scrollPos > 0 && idTopLeft.col > GetFixedColumnCount())
+    case QSB_LINELEFT: //向左滚动一行
+        if (scrollPos > 0 && idTopLeft.col > fixedColumnCount())
         {
             int iColToUse = idTopLeft.col-1;
             // may have contiguous hidden columns.  Blow by them
-            while(  iColToUse > GetFixedColumnCount()
-                    && GetColumnWidth( iColToUse) < 1 )
+            while(  iColToUse > fixedColumnCount()
+                    && columnWidth(iColToUse) < 1 )
             {
                 iColToUse--;
             }
 
-            int xScroll = GetColumnWidth(iColToUse);
-            SetScrollPos32(SB_HORZ, max(0, scrollPos - xScroll));
-            rect.left = GetFixedColumnWidth();
-            //ScrollWindow(xScroll, 0, rect);
-            //rect.right = rect.left + xScroll;
+            int xScroll = columnWidth(iColToUse);
+            setScrollPos32(SB_HORZ, max(0, scrollPos - xScroll));
+            rect.left = fixedColumnWidth();
             InvalidateRect(rect);
         }
         break;
 
-    case SB_PAGERIGHT:
+    case QSB_PAGERIGHT: //向右滚动一页
         if (scrollPos < m_nHScrollMax)
         {
-            rect.left = GetFixedColumnWidth();
+            rect.left = fixedColumnWidth();
             int offset = rect.Width();
             int pos = min(m_nHScrollMax, scrollPos + offset);
-            SetScrollPos32(SB_HORZ, pos);
-            rect.left = GetFixedColumnWidth();
+            setScrollPos32(SB_HORZ, pos);
+            rect.left = fixedColumnWidth();
             InvalidateRect(rect);
         }
         break;
         
-    case SB_PAGELEFT:
+    case QSB_PAGELEFT: //向左滚动一页
         if (scrollPos > 0)
         {
-            rect.left = GetFixedColumnWidth();
+            rect.left = fixedColumnWidth();
             int offset = -rect.Width();
             int pos = max(0, scrollPos + offset);
-            SetScrollPos32(SB_HORZ, pos);
-            rect.left = GetFixedColumnWidth();
+            setScrollPos32(SB_HORZ, pos);
+            rect.left = fixedColumnWidth();
             InvalidateRect(rect);
         }
         break;
         
-    case SB_THUMBPOSITION:
-    case SB_THUMBTRACK:
+    case QSB_THUMBPOSITION://滚动框到指定位置
+    case QSB_THUMBTRACK: //滚动框被拖动
         {
-            SetScrollPos32(SB_HORZ, GetScrollPos32(SB_HORZ, true));
+            setScrollPos32(SB_HORZ, scrollPos32(SB_HORZ, true));
             m_idTopLeftCell.row = -1;
-            HCellID idNewTopLeft = GetTopleftNonFixedCell();
+            HCellID idNewTopLeft = topleftNonFixedCell();
             if (idNewTopLeft != idTopLeft)
             {
-                rect.left = GetFixedColumnWidth();
+                rect.left = fixedColumnWidth();
                 InvalidateRect(rect);
             }
         }
         break;
         
-    case SB_LEFT:
+    case QSB_LEFT://到左端
         if (scrollPos > 0)
         {
-            SetScrollPos32(SB_HORZ, 0);
+            setScrollPos32(SB_HORZ, 0);
             Invalidate();
         }
         break;
         
-    case SB_RIGHT:
+    case QSB_RIGHT: //到右端
         if (scrollPos < m_nHScrollMax)
         {
-            SetScrollPos32(SB_HORZ, m_nHScrollMax);
+            setScrollPos32(SB_HORZ, m_nHScrollMax);
             Invalidate();
         }
         break;
@@ -1114,14 +1114,14 @@ void HGridCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
     // Get the scroll position ourselves to ensure we get a 32 bit value
     int scrollPos = GetScrollPos32(SB_VERT);
 
-    HCellID idTopLeft = GetTopleftNonFixedCell();
+    HCellID idTopLeft = topleftNonFixedCell();
 
     CRect rect;
     GetClientRect(rect);
 
     switch (nSBCode)
     {
-    case SB_LINEDOWN:
+    case SB_LINEDOWN: //向下一行
         if (scrollPos < m_nVScrollMax)
         {
             // may have contiguous hidden rows.  Blow by them
@@ -1132,7 +1132,7 @@ void HGridCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
             }
 
             int yScroll = GetRowHeight(idTopLeft.row);
-            SetScrollPos32(SB_VERT, scrollPos + yScroll);
+            setScrollPos32(SB_VERT, scrollPos + yScroll);
             if (GetScrollPos32(SB_VERT) == scrollPos)
                 break;          // didn't work
 
@@ -1144,7 +1144,7 @@ void HGridCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
         }
         break;
         
-    case SB_LINEUP:
+    case SB_LINEUP: //向上一行
         if (scrollPos > 0 && idTopLeft.row > GetFixedRowCount())
         {
             int iRowToUse = idTopLeft.row-1;
@@ -1156,7 +1156,7 @@ void HGridCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
             }
 
             int yScroll = GetRowHeight( iRowToUse);
-            SetScrollPos32(SB_VERT, max(0, scrollPos - yScroll));
+            setScrollPos32(SB_VERT, max(0, scrollPos - yScroll));
             rect.top = GetFixedRowHeight();
             //ScrollWindow(0, yScroll, rect);
             //rect.bottom = rect.top + yScroll;
@@ -1164,33 +1164,33 @@ void HGridCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
         }
         break;
         
-    case SB_PAGEDOWN:
+    case SB_PAGEDOWN: //向下一页
         if (scrollPos < m_nVScrollMax)
         {
             rect.top = GetFixedRowHeight();
             scrollPos = min(m_nVScrollMax, scrollPos + rect.Height());
-            SetScrollPos32(SB_VERT, scrollPos);
+            setScrollPos32(SB_VERT, scrollPos);
             rect.top = GetFixedRowHeight();
             InvalidateRect(rect);
         }
         break;
         
-    case SB_PAGEUP:
+    case SB_PAGEUP: // 向上一页
         if (scrollPos > 0)
         {
             rect.top = GetFixedRowHeight();
             int offset = -rect.Height();
             int pos = max(0, scrollPos + offset);
-            SetScrollPos32(SB_VERT, pos);
+            setScrollPos32(SB_VERT, pos);
             rect.top = GetFixedRowHeight();
             InvalidateRect(rect);
         }
         break;
         
-    case SB_THUMBPOSITION:
-    case SB_THUMBTRACK:
+    case SB_THUMBPOSITION: //滚动到指定位置
+    case SB_THUMBTRACK: //拖动滚动框
         {
-            SetScrollPos32(SB_VERT, GetScrollPos32(SB_VERT, true));
+            setScrollPos32(SB_VERT, GetScrollPos32(SB_VERT, true));
             m_idTopLeftCell.row = -1;
             HCellID idNewTopLeft = GetTopleftNonFixedCell();
             if (idNewTopLeft != idTopLeft)
@@ -1201,18 +1201,18 @@ void HGridCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
         }
         break;
         
-    case SB_TOP:
+    case SB_TOP: //到顶段
         if (scrollPos > 0)
         {
-            SetScrollPos32(SB_VERT, 0);
+            setScrollPos32(SB_VERT, 0);
             Invalidate();
         }
         break;
         
-    case SB_BOTTOM:
+    case SB_BOTTOM: //到底端
         if (scrollPos < m_nVScrollMax)
         {
-            SetScrollPos32(SB_VERT, m_nVScrollMax);
+            setScrollPos32(SB_VERT, m_nVScrollMax);
             Invalidate();
         }
         
@@ -1220,7 +1220,7 @@ void HGridCtrl::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
         break;
     }
 }
-*/
+
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl implementation functions
 //最核心函数
@@ -2769,28 +2769,43 @@ void HGridCtrl::resetSelectedRange()
     setSelectedRange(-1,-1,-1,-1);
     setFocusCell(-1,-1);
 }
-/*
-// Get/Set scroll position using 32 bit functions
-int HGridCtrl::GetScrollPos32(int nBar, bool bGetTrackPos )
-{
-    SCROLLINFO si;
-    si.cbSize = sizeof(SCROLLINFO);
 
-    if (bGetTrackPos)
+//设置滚动条参数
+void HGridCtrl::setScrollBarValue(uint Msg,HWPARAM wParam,HLPARAM IParam )
+{
+    QScrollBar *pScrollBar = NULL;
+    if(QWM_HSCROLL == Msg)
     {
-        if (GetScrollInfo(nBar, &si, SIF_TRACKPOS))
-            return si.nTrackPos;
+        pScrollBar = horizontalScrollBar();
+        onHScroll(wParam,0,pScrollBar);
+    }
+    else if(QWM_VSCROLL == Msg)
+    {
+        pScrollBar = verticalScrollBar();
+        onVScroll(wParam,0,pScrollBar);
     }
     else
+        return;
+
+}
+
+// Get/Set scroll position using 32 bit functions
+//和win32 有区别
+int HGridCtrl::scrollPos32(int nBar, bool bGetTrackPos )
+{
+    if(QSB_HORZ == nBar)
     {
-        if (GetScrollInfo(nBar, &si, SIF_POS))
-            return si.nPos;
+        return horizontalScrollBar()->value();
+    }
+    else if(QSB_VERT == nBar)
+    {
+        return verticalScrollBar()->value();
     }
 
     return 0;
 }
 
-bool HGridCtrl::SetScrollPos32(int nBar, int nPos, bool bRedraw )
+bool HGridCtrl::setScrollPos32(int nBar, int nPos, bool bRedraw )
 {
     m_idTopLeftCell.row = -1;
 
@@ -2916,7 +2931,7 @@ void HGridCtrl::ResetScrollBars()
     }
 
     Q_ASSERT(m_nVScrollMax < INT_MAX && m_nHScrollMax < INT_MAX); // This should be fine
-*/
+
     /* Old code - CJM  alreay ---huangw
     SCROLLINFO si;
     si.cbSize = sizeof(SCROLLINFO);
@@ -2931,7 +2946,7 @@ void HGridCtrl::ResetScrollBars()
     */
 
     // New code - Paul Runstedler 
-/*
+
     SCROLLINFO si;
     si.cbSize = sizeof(SCROLLINFO);
     si.fMask = SIF_PAGE | SIF_RANGE;
@@ -2949,7 +2964,7 @@ void HGridCtrl::ResetScrollBars()
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Row/Column position functions
-*/
+
 // returns the top left point of the cell. Returns false if cell not visible.
 // consider cell's merge
 

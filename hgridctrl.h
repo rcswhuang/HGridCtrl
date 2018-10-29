@@ -23,7 +23,7 @@ class HGridCtrl;
 
 
 /////////////////////////////////////////////////////////////////////////////
-class HGridCtrl : public CWnd,public QWidget
+class HGridCtrl : public CWnd,public QAbstractScrollArea
 {
     Q_OBJECT
     friend class HGridCell;
@@ -520,10 +520,14 @@ protected:
 
     //设置滚动条位置
     void setScrollBarValue(uint Msg,HWPARAM wParam,HLPARAM IParam );
+    void onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar);
+    void onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar);
+    int  scrollPos32(int nBar, bool bGetTrackPos = false);
+    bool setScrollPos32(int nBar, int nPos, bool bRedraw = true);
     /*void ResetScrollBars();
     void EnableScrollBars(int nBar, bool bEnable = true);
-    int  GetScrollPos32(int nBar, bool bGetTrackPos = false);
-    bool SetScrollPos32(int nBar, int nPos, bool bRedraw = true);
+    //int  GetScrollPos32(int nBar, bool bGetTrackPos = false);
+
 
     bool SortTextItems(int nCol, bool bAscending, int low, int high);
     bool SortItems(PFNLVCOMPARE pfnCompare, int nCol, bool bAscending, LPARAM data,
