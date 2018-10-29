@@ -103,8 +103,8 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     setFixedRowCount(nFixedRows);
     setFixedColumnCount(nFixedCols);
 
-    setTitleTipTextClr(QCLR_DEFAULT);  //FNA
-    setTitleTipBackClr(QCLR_DEFAULT);
+    setTitleTipTextClr(QColor(QCLR_DEFAULT));  //FNA
+    setTitleTipBackClr(QColor(QCLR_DEFAULT));
 
     // set initial selection range (ie. none)
     m_SelectedCellMap.clear();
@@ -117,17 +117,16 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     setPrintMarginInfo(2, 2, 4, 4, 1, 1, 1);
 #endif
 
-    //TRY
+    try
     {
         m_arRowHeights.resize(m_nRows);    // initialize row heights
         m_arColWidths.resize(m_nCols);     // initialize column widths
     }
-    /*CATCH (CMemoryException, e)
+    catch (exception &e)
     {
-        e->ReportError();
+        e.what();
         return false;
     }
-    END_CATCH*/
 
     int i;
     for (i = 0; i < m_nRows; i++)
@@ -256,9 +255,6 @@ void HGridCtrl::EraseBkgnd(CDC* pDC)
                       VisRect.right, ClipRect.bottom),
                       &Back);
 }
-
-
-
 
 HCellID HGridCtrl::setFocusCell(HCellID cell)
 {
@@ -498,7 +494,7 @@ void HGridCtrl::OnTimer(UINT nIDEvent)
         if (pt.x > rect.right)
             pt.x = rect.right;
         pt.y = rect.bottom;
-        onSelecting(GetCellFromPt(pt));
+        onSelecting(cellFromPt(pt));
     }
     else if (pt.y < nFixedRowHeight)
     {
@@ -510,7 +506,7 @@ void HGridCtrl::OnTimer(UINT nIDEvent)
         if (pt.x > rect.right)
             pt.x = rect.right;
         pt.y = nFixedRowHeight + 1;
-        onSelecting(GetCellFromPt(pt));
+        onSelecting(cellFromPt(pt));
     }
 
     pt = origPt;
@@ -524,7 +520,7 @@ void HGridCtrl::OnTimer(UINT nIDEvent)
         if (pt.y > rect.bottom)
             pt.y = rect.bottom;
         pt.x = rect.right;
-        onSelecting(GetCellFromPt(pt));
+        onSelecting(cellFromPt(pt));
     }
     else if (pt.x < nFixedColWidth)
     {
@@ -536,13 +532,18 @@ void HGridCtrl::OnTimer(UINT nIDEvent)
         if (pt.y > rect.bottom)
             pt.y = rect.bottom;
         pt.x = nFixedColWidth + 1;
-        onSelecting(GetCellFromPt(pt));
+        onSelecting(cellFromPt(pt));
     }
 }
 */
 // move about with keyboard
 void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
 {
+/*
+ * Qt滚动条是有相关自动实现的部分，但除了这部分其他的如ctrl键等是没有的需要自己修改
+注意对于里面特殊的按键处理没有调用QWidget类的keyReleaseEvent来处理
+而是通过自己调整滚动工作条即可。
+*/
     if (!isValid(m_idCurrentCell))
     {
         QWidget::keyReleaseEvent(event);
@@ -588,9 +589,9 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         bFoundVisible = false;
         iOrig = next.row;
         next.row++;
-        while( next.row < GetRowCount())
+        while( next.row < rowCount())
         {
-            if( GetRowHeight( next.row) > 0)
+            if( rowHeight( next.row) > 0)
             {
                 bFoundVisible = true;
                 break;
@@ -608,7 +609,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         next.row--;
         while( next.row >= m_nFixedRows)
         {
-            if( GetRowHeight( next.row) > 0)
+            if( rowHeight( next.row) > 0)
             {
                 bFoundVisible = true;
                 break;
@@ -628,12 +629,12 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         if (Qt::Key_Tab = event->key())
         {
 			// If we're at the end of a row, go down a row till we find a non-hidden row
-            if (next.col == (GetColumnCount()) && next.row < (GetRowCount() - 1))
+            if (next.col == (columnCount()) && next.row < (rowCount() - 1))
             {
 				next.row++;
 				while( next.row < GetRowCount())
 				{
-					if( GetRowHeight(next.row) > 0)
+                    if( rowHeight(next.row) > 0)
 					{
                         bFoundVisible = true;
 						break;
@@ -645,13 +646,13 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
                 bChangeLine = true;
             }
             else
-                CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
+                QWidget::keyReleaseEvent(event);
         }
 
 		// We're on a non-hidden row, so look across for the next non-hidden column
         while( next.col < GetColumnCount())
         {
-            if( GetColumnWidth( next.col) > 0)
+            if( columnWidth( next.col) > 0)
             {
                 bFoundVisible = true;
                 break;
@@ -672,12 +673,12 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
 
         if (Qt::Key_Tab = event->key())
         {
-            if (next.col == (GetFixedColumnCount()-1) && next.row > GetFixedRowCount())
+            if (next.col == (fixedColumnCount()-1) && next.row > fixedRowCount())
             {
                 next.row--;
-				while( next.row > GetFixedRowCount())
+                while( next.row > fixedRowCount())
 				{
-					if( GetRowHeight(next.row) > 0)
+                    if( rowHeight(next.row) > 0)
 					{
                         bFoundVisible = true;
 						break;
@@ -685,16 +686,16 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
 					next.row--; 
 				}
 
-                next.col = GetColumnCount() - 1; 
+                next.col = columnCount() - 1;
                 bChangeLine = true;
             }
             else
-                CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
+                QWidget::keyReleaseEvent(event);
         }
 
         while( next.col >= m_nFixedCols)
         {
-            if( GetColumnWidth( next.col) > 0)
+            if( columnWidth( next.col) > 0)
             {
                 bFoundVisible = true;
                 break;
@@ -706,27 +707,27 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
     }
     else if (Qt::Key_PageDown = event->key())
     {
-        HCellID idOldTopLeft = GetTopleftNonFixedCell();
-        SendMessage(WM_VSCROLL, SB_PAGEDOWN, 0);
+        HCellID idOldTopLeft = topleftNonFixedCell();
+        SendMessage(WM_VSCROLL, SB_PAGEDOWN, 0);//--huangw
         bVertScrollAction = true;
-        HCellID idNewTopLeft = GetTopleftNonFixedCell();
+        HCellID idNewTopLeft = topleftNonFixedCell();
 
         int increment = idNewTopLeft.row - idOldTopLeft.row;
         if (increment)
         {
             next.row += increment;
-            if (next.row >(GetRowCount() - 1))
-                next.row = GetRowCount() - 1;
+            if (next.row >(rowCount() - 1))
+                next.row = rowCount() - 1;
         }
         else
-            next.row = GetRowCount() - 1;
+            next.row = rowCount() - 1;
     }
     else if (Qt::Key_PageUp = event->key())
     {
-        HCellID idOldTopLeft = GetTopleftNonFixedCell();
-        SendMessage(WM_VSCROLL, SB_PAGEUP, 0);
+        HCellID idOldTopLeft = topleftNonFixedCell();
+        SendMessage(WM_VSCROLL, SB_PAGEUP, 0);//huangw
         bVertScrollAction = true;
-        HCellID idNewTopLeft = GetTopleftNonFixedCell();
+        HCellID idNewTopLeft = topleftNonFixedCell();
             
         int increment = idNewTopLeft.row - idOldTopLeft.row;
         if (increment) 
@@ -744,7 +745,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         //  and don't let user go to a hidden cell
         if (Qt::SHIFT == event->modifiers())
         {
-            //调整滚动条的位置
+            //调整滚动条的位置 --huangw
             //SendMessage(WM_VSCROLL, SB_TOP, 0);
             //SendMessage(WM_HSCROLL, SB_LEFT, 0);
             bVertScrollAction = true;
@@ -754,20 +755,20 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         }
         else
         {
-            SendMessage(WM_HSCROLL, SB_LEFT, 0);
+            SendMessage(WM_HSCROLL, SB_LEFT, 0);//huangw
             bHorzScrollAction = true;
             next.col = m_nFixedCols;
         }
         // adjust column to avoid hidden columns and rows
-        while( next.col < GetColumnCount() - 1)
+        while( next.col < columnCount() - 1)
         {
-            if( GetColumnWidth( next.col) > 0)
+            if( columnWidth( next.col) > 0)
                 break;
             next.col++;
         }
-        while( next.row < GetRowCount() - 1)
+        while( next.row < rowCount() - 1)
         {
-            if( GetRowHeight( next.row) > 0)
+            if( rowHeight( next.row) > 0)
                 break;
             next.row++;
         }
@@ -778,40 +779,42 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         //  and don't let user go to a hidden cell
         if (Qt::CTRL == event->modifiers())
         {
+            //huangw
             SendMessage(WM_VSCROLL, SB_BOTTOM, 0);
             SendMessage(WM_HSCROLL, SB_RIGHT, 0);
             bHorzScrollAction = true;
             bVertScrollAction = true;
-            next.row = GetRowCount() - 1;
-            next.col = GetColumnCount() - 1;
+            next.row = rowCount() - 1;
+            next.col = columnCount() - 1;
         }
         else
         {
+            //huangw
             SendMessage(WM_HSCROLL, SB_RIGHT, 0);
             bHorzScrollAction = true;
-            next.col = GetColumnCount() - 1;
+            next.col = columnCount() - 1;
         }
         // adjust column to avoid hidden columns and rows
         while( next.col > m_nFixedCols + 1)
         {
-            if( GetColumnWidth( next.col) > 0)
+            if( columnWidth( next.col) > 0)
                 break;
             next.col--;
         }
         while( next.row > m_nFixedRows + 1)
         {
-            if( GetRowHeight( next.row) > 0)
+            if( rowHeight( next.row) > 0)
                 break;
             next.row--;
         }
     }
-    else if (Qt::Key_F2 == event->modifiers())
+    else if (Qt::Key_F2 == event->key())
     {
         OnEditCell(m_idCurrentCell.row, m_idCurrentCell.col, CPoint( -1, -1), VK_LBUTTON);
     }
     else
     {
-        CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
+        QWidget::keyReleaseEvent(event);
         return;
     }
 
@@ -823,12 +826,13 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
         // Added check for NULL mouse mode - Chris Maunder.
         if (m_MouseMode == MOUSE_NOTHING)
         {
-            m_PrevSelectedCellMap.RemoveAll();
+            m_PrevSelectedCellMap.clear();
             m_MouseMode = m_bListMode? MOUSE_SELECT_ROW : MOUSE_SELECT_CELLS;
-            if (!IsSHIFTpressed() || nChar == VK_TAB)
+            if (!(Qt::SHIFT == event->modifiers()) || Qt::Key_Tab == event->key())
                 m_SelectionStartCell = next;
 
 			// Notify parent that selection is changing - Arthur Westerman/Scot Brennecke 
+            //huangw
             SendMessageToParent(next.row, next.col, GVN_SELCHANGING);
             onSelecting(next);
 			SendMessageToParent(next.row, next.col, GVN_SELCHANGED);
@@ -836,7 +840,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
             m_MouseMode = MOUSE_NOTHING;
         }
 
-        SetFocusCell(next);
+        setFocusCell(next);
 
         if (!isCellVisible(next))
         {
@@ -1349,7 +1353,7 @@ void HGridCtrl::onDraw(QPainter* painter)
 					{
 						CGridCellBase* pMergedCell=GetCell(pCell->GetMergeCellID());
 						CRect mergerect=rect;
-						if(GetCellRangeRect(pMergedCell->m_MergeRange,&mergerect))
+                        if(cellRangeRect(pMergedCell->m_MergeRange,&mergerect))
 						{
 							mergerect.DeflateRect(0,0,1,1);
 							pMergedCell->SetCoords(pCell->GetMergeCellID().row,pCell->GetMergeCellID().col);
@@ -1361,7 +1365,7 @@ void HGridCtrl::onDraw(QPainter* painter)
 				{
 					CRect mergerect=rect;
 
-					if(GetCellRangeRect(pCell->m_MergeRange,&mergerect))
+                    if(cellRangeRect(pCell->m_MergeRange,&mergerect))
 					{
 						mergerect.DeflateRect(0,0,1,1);
 						pCell->SetCoords(row,col);
@@ -1433,7 +1437,7 @@ void HGridCtrl::onDraw(QPainter* painter)
 					{
 						CGridCellBase* pMergedCell=GetCell(pCell->GetMergeCellID());
 						CRect mergerect=rect;
-						if(GetCellRangeRect(pMergedCell->m_MergeRange,&mergerect))
+                        if(cellRangeRect(pMergedCell->m_MergeRange,&mergerect))
 						{
 							mergerect.DeflateRect(0,0,1,1);
 							pMergedCell->SetCoords(pCell->GetMergeCellID().row,pCell->GetMergeCellID().col);
@@ -1445,7 +1449,7 @@ void HGridCtrl::onDraw(QPainter* painter)
 				{
 					CRect mergerect=rect;
 
-					if(GetCellRangeRect(pCell->m_MergeRange,&mergerect))
+                    if(cellRangeRect(pCell->m_MergeRange,&mergerect))
 					{
 						mergerect.DeflateRect(0,0,1,1);
 						pCell->SetCoords(row,col);
@@ -1512,7 +1516,7 @@ void HGridCtrl::onDraw(QPainter* painter)
 					{
 						CGridCellBase* pMergedCell=GetCell(pCell->GetMergeCellID());
 						CRect mergerect=rect;
-						if(GetCellRangeRect(pMergedCell->m_MergeRange,&mergerect))
+                        if(cellRangeRect(pMergedCell->m_MergeRange,&mergerect))
 						{
 							mergerect.DeflateRect(0,0,1,1);
 							pMergedCell->SetCoords(pCell->GetMergeCellID().row,pCell->GetMergeCellID().col);
@@ -1524,7 +1528,7 @@ void HGridCtrl::onDraw(QPainter* painter)
 				{
 					CRect mergerect=rect;
 
-					if(GetCellRangeRect(pCell->m_MergeRange,&mergerect))
+                    if(cellRangeRect(pCell->m_MergeRange,&mergerect))
 					{
 						mergerect.DeflateRect(0,0,1,1);
 						pCell->SetCoords(row,col);
@@ -1601,7 +1605,7 @@ void HGridCtrl::onDraw(QPainter* painter)
 					{
 						CGridCellBase* pMergedCell=GetCell(pCell->GetMergeCellID());
 						CRect mergerect=rect;
-						if(GetCellRangeRect(pMergedCell->m_MergeRange,&mergerect))
+                        if(cellRangeRect(pMergedCell->m_MergeRange,&mergerect))
 						{
 							mergerect.DeflateRect(0,0,1,1);
 							pMergedCell->SetCoords(pCell->GetMergeCellID().row,pCell->GetMergeCellID().col);
@@ -1613,7 +1617,7 @@ void HGridCtrl::onDraw(QPainter* painter)
 				{
 					CRect mergerect=rect;
 
-					if(GetCellRangeRect(pCell->m_MergeRange,&mergerect))
+                    if(cellRangeRect(pCell->m_MergeRange,&mergerect))
 					{
 						mergerect.DeflateRect(0,0,1,1);
 						pCell->SetCoords(row,col);
@@ -2273,7 +2277,7 @@ DROPEFFECT HGridCtrl::OnDragOver(COleDataObject* pDataObject, DWORD dwKeyState,
         return DROPEFFECT_NONE;
 
     // Find which cell we are over and drop-highlight it
-    HCellID cell = GetCellFromPt(point, false);
+    HCellID cell = cellFromPt(point, false);
 
     // If not valid, set the previously drop-highlighted cell as no longer drop-highlighted
     if (!isValid(cell))
@@ -2326,7 +2330,7 @@ DROPEFFECT HGridCtrl::OnDragEnter(COleDataObject* pDataObject, DWORD dwKeyState,
         return DROPEFFECT_NONE;
 
     // Find which cell we are over and drop-highlight it
-    m_LastDragOverCell = GetCellFromPt(point, false);
+    m_LastDragOverCell = cellFromPt(point, false);
     if (!isValid(m_LastDragOverCell))
         return DROPEFFECT_NONE;
 
@@ -2480,25 +2484,23 @@ void HGridCtrl::OnUpdateEditSelectAll(CCmdUI* pCmdUI)
 {
     pCmdUI->Enable(m_bEnableSelection);
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////////////
 // hittest-like functions
 
 // true if the mouse is over a row resize area
-bool HGridCtrl::MouseOverRowResizeArea(CPoint& point)
+//鼠标只移动到表头行位置处调整
+bool HGridCtrl::mouseOverRowResizeArea(QPoint& point)
 {
-    if (point.x >= GetFixedColumnWidth())
+    if (point.x() >= fixedColumnWidth())
         return false;
 
-    HCellID idCurrentCell = GetCellFromPt(point);
-    CPoint start;
-    if (!GetCellOrigin(idCurrentCell, &start))
+    HCellID idCurrentCell = cellFromPt(point);
+    QPoint start;
+    if (!cellOrigin(idCurrentCell, &start))
         return false;
 
-    //int endy = start.y + GetRowHeight(idCurrentCell.row);
-	//Merge the selected cells 
-	//by Huang Wei
-    int endy = start.y + GetMergeCellHeight(idCurrentCell);
+    int endy = start.y + rowHeight(idCurrentCell.row);
 
     if ((point.y - start.y < m_nResizeCaptureRange && idCurrentCell.row != 0) ||
         endy - point.y < m_nResizeCaptureRange)
@@ -2510,21 +2512,18 @@ bool HGridCtrl::MouseOverRowResizeArea(CPoint& point)
 }
 
 // true if the mouse is over a column resize area. point is in Client coords
-bool HGridCtrl::MouseOverColumnResizeArea(CPoint& point)
+//鼠标只移动到表头列位置处调整
+bool HGridCtrl::mouseOverColumnResizeArea(QPoint& point)
 {
-    if (point.y >= GetFixedRowHeight())
+    if (point.y() >= fixedRowHeight())
         return false;
 
-    HCellID idCurrentCell = GetCellFromPt(point);
-    CPoint start;
-    if (!GetCellOrigin(idCurrentCell, &start))
+    HCellID idCurrentCell = cellFromPt(point);
+    QPoint start;
+    if (!cellOrigin(idCurrentCell, &start))
         return false;
 
-    //int endx = start.x + GetColumnWidth(idCurrentCell.col);
-	//Merge the selected cells 
-	//by Huang Wei
-    int endx = start.x + GetMergeCellWidth(idCurrentCell);
-
+    int endx = start.x + columnWidth(idCurrentCell.col);
     if ((point.x - start.x < m_nResizeCaptureRange && idCurrentCell.col != 0) ||
         endx - point.x < m_nResizeCaptureRange)
     {
@@ -2533,7 +2532,8 @@ bool HGridCtrl::MouseOverColumnResizeArea(CPoint& point)
     else
         return false;
 }
-*/
+
+
 // Get cell from point.
 // point - client coordinates
 // bAllowFixedCellCheck - if true then fixed cells are checked
@@ -2541,7 +2541,7 @@ HCellID HGridCtrl::cellFromPt(const QPoint& point, bool bAllowFixedCellCheck )
 {
     HCellID cellID; // return value
 
-    //1.判断如果取不包括固定行列同时左上角的无效
+    //1.判断如果取不包括固定行列同时非固定行左上角的无效
     HCellID idTopLeft = topleftNonFixedCell();
     if (!bAllowFixedCellCheck && !isValid(idTopLeft))
 		return cellID;
@@ -3102,7 +3102,7 @@ bool HGridCtrl::cellRect(int nRow, int nCol, QRect& pRect)
 	}
 	else
 	{
-		GetCellRangeRect(pCell->m_MergeRange,pRect);
+        cellRangeRect(pCell->m_MergeRange,pRect);
 	}
     return true;
 }
@@ -3123,28 +3123,29 @@ bool HGridCtrl::textRect(int nRow, int nCol, QRect& pRect)
 
     return pCell->textRect( pRect);
 }
-/*
+
 // Returns the bounding box of a range of cells
-bool HGridCtrl::GetCellRangeRect(const HCellRange& cellRange, LPRECT lpRect)
+//返回表格的外部box
+bool HGridCtrl::cellRangeRect(const HCellRange& cellRange, const QRect& lpRect)
 {
-    CPoint MinOrigin,MaxOrigin;
+    QPoint MinOrigin,MaxOrigin;
 
-    if (!GetCellOrigin(cellRange.GetMinRow(), cellRange.GetMinCol(), &MinOrigin))
+    if (!cellOrigin(cellRange.minRow(), cellRange.minCol(), &MinOrigin))
         return false;
-    if (!GetCellOrigin(cellRange.GetMaxRow(), cellRange.GetMaxCol(), &MaxOrigin))
+    if (!cellOrigin(cellRange.maxRow(), cellRange.maxCol(), &MaxOrigin))
         return false;
 
-    lpRect->left   = MinOrigin.x;
-    lpRect->top    = MinOrigin.y;
-    lpRect->right  = MaxOrigin.x + GetColumnWidth(cellRange.GetMaxCol()) - 1;
-    lpRect->bottom = MaxOrigin.y + GetRowHeight(cellRange.GetMaxRow()) - 1;
+    lpRect.setLeft(MinOrigin.x());
+    lpRect.setTop(MinOrigin.y());
+    lpRect.setRight(MaxOrigin.x() + columnWidth(cellRange.maxCol()) - 1);
+    lpRect.setBottom(MaxOrigin.y() + rowHeight(cellRange.maxRow()) - 1);
 
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Grid attribute functions
-
+/*
 LRESULT HGridCtrl::OnSetFont(WPARAM hFont, LPARAM lParam )
 {
     LRESULT result = Default();
@@ -3194,7 +3195,7 @@ bool HGridCtrl::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
             {
                 CPoint pt(GetMessagePos());
                 ScreenToClient(&pt);
-                HCellID cell = GetCellFromPt(pt);
+                HCellID cell = cellFromPt(pt);
                 if (isValid(cell))
                 {
                     CGridCellBase* pCell = GetCell(cell.row, cell.col);
@@ -5373,7 +5374,7 @@ void HGridCtrl::OnMouseMove(UINT nFlags, CPoint point)
     if (!m_bLMouseButtonDown ||
         (m_bLMouseButtonDown && m_MouseMode == MOUSE_NOTHING))
     {
-        if (m_bAllowColumnResize && MouseOverColumnResizeArea(point))
+        if (m_bAllowColumnResize && mouseOverColumnResizeArea(point))
         {
             if (m_MouseMode != MOUSE_OVER_COL_DIVIDE)
             {
@@ -5383,7 +5384,7 @@ void HGridCtrl::OnMouseMove(UINT nFlags, CPoint point)
                 m_MouseMode = MOUSE_OVER_COL_DIVIDE;
             }
         }
-        else if (m_bAllowRowResize && MouseOverRowResizeArea(point))
+        else if (m_bAllowRowResize && mouseOverRowResizeArea(point))
         {
             if (m_MouseMode != MOUSE_OVER_ROW_DIVIDE)
             {
@@ -5409,7 +5410,7 @@ void HGridCtrl::OnMouseMove(UINT nFlags, CPoint point)
             {
                 // Let the cell know that a big fat cursor is currently hovering
                 // over it.
-                idCurrentCell = GetCellFromPt(point);
+                idCurrentCell = cellFromPt(point);
                 pCell = GetCell(idCurrentCell.row, idCurrentCell.col);
                 if (pCell)
                     pCell->OnMouseOver();
@@ -5461,7 +5462,7 @@ void HGridCtrl::OnMouseMove(UINT nFlags, CPoint point)
         case MOUSE_SELECT_ROW:
         case MOUSE_SELECT_CELLS:
             {
-                HCellID idCurrentCell = GetCellFromPt(point);
+                HCellID idCurrentCell = cellFromPt(point);
                 if (!isValid(idCurrentCell))
                     return;
 
@@ -5544,7 +5545,7 @@ void HGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
     TRACE0("HGridCtrl::OnLButtonDblClk\n");
 
-    HCellID cell = GetCellFromPt(point);
+    HCellID cell = cellFromPt(point);
     if( !isValid( cell) )
     {
         //Q_ASSERT(false);
@@ -5552,7 +5553,7 @@ void HGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
     }
 
 #ifdef _WIN32_WCE
-    if (MouseOverColumnResizeArea(point))
+    if (mouseOverColumnResizeArea(point))
 #else
     if (m_MouseMode == MOUSE_OVER_COL_DIVIDE)
 #endif
@@ -5582,7 +5583,7 @@ void HGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
         Invalidate();
     }
 #ifdef _WIN32_WCE
-    else if (MouseOverRowResizeArea(point))
+    else if (mouseOverRowResizeArea(point))
 #else
     else if (m_MouseMode == MOUSE_OVER_ROW_DIVIDE)
 #endif
@@ -5668,7 +5669,7 @@ void HGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 
     m_bLMouseButtonDown   = true;
     m_LeftClickDownPoint = point;
-    m_LeftClickDownCell  = GetCellFromPt(point);
+    m_LeftClickDownCell  = cellFromPt(point);
     if (!isValid(m_LeftClickDownCell))
         return;
 
@@ -5753,7 +5754,7 @@ void HGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
     
     if (m_MouseMode == MOUSE_NOTHING)
     {
-        if (m_bAllowColumnResize && MouseOverColumnResizeArea(point))
+        if (m_bAllowColumnResize && mouseOverColumnResizeArea(point))
         {
             if (m_MouseMode != MOUSE_OVER_COL_DIVIDE)
             {
@@ -5763,7 +5764,7 @@ void HGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
                 m_MouseMode = MOUSE_OVER_COL_DIVIDE;
             }
         }
-        else if (m_bAllowRowResize && MouseOverRowResizeArea(point))
+        else if (m_bAllowRowResize && mouseOverRowResizeArea(point))
         {
             if (m_MouseMode != MOUSE_OVER_ROW_DIVIDE)
             {
@@ -6150,7 +6151,7 @@ void HGridCtrl::OnRButtonUp(UINT nFlags, CPoint point)
     m_bRMouseButtonDown = false;
 
     HCellID FocusCell;
-    FocusCell = GetCellFromPt(point);
+    FocusCell = cellFromPt(point);
 
     EndEditing();        // Auto-destroy any InPlaceEdit's
 
@@ -6575,7 +6576,7 @@ void HGridCtrl::OnPrint(CDC *pDC, CPrintInfo *pInfo)
 				else
 				{
 					CRect mergerect=rect;
-					if(GetCellRangeRect(pCell->m_MergeRange,&mergerect))
+                    if(cellRangeRect(pCell->m_MergeRange,&mergerect))
 					{
 						//mergerect.DeflateRect(0,0,1,1);
 						mergerect.OffsetRect(rect.TopLeft()-mergerect.TopLeft());
@@ -6658,7 +6659,7 @@ void HGridCtrl::PrintFixedRowCells(int nStartColumn, int nStopColumn, int& row, 
 			else
 			{
 				CRect mergerect=rect;
-				if(GetCellRangeRect(pCell->m_MergeRange,&mergerect))
+                if(cellRangeRect(pCell->m_MergeRange,&mergerect))
 				{
 					//mergerect.DeflateRect(0,0,1,1);
 					mergerect.OffsetRect(rect.TopLeft()-mergerect.TopLeft());

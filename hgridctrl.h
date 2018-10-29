@@ -130,9 +130,7 @@ public:
 
     // ***************************************************************************** //
 
-    //设置表格相关标志 主要操作bool变量
-
-
+    //设置表格相关标志
     //设置焦点 主要是重绘操作  mid
     HCellID setFocusCell(HCellID cell);
     HCellID setFocusCell(int nRow, int nCol);
@@ -246,7 +244,7 @@ public:
     HGridCellBase* defaultCell(bool bFixedRow, bool bFixedCol) const;
 
 ///////////////////////////////////////////////////////////////////////////////////
-// Grid cell Attributes
+// Grid cell Attributes 表格属性
 ///////////////////////////////////////////////////////////////////////////////////
 public:
     HGridCellBase* cell(int nRow, int nCol) const;   // Get the actual cell!
@@ -316,7 +314,6 @@ public:
 // Operations
 ///////////////////////////////////////////////////////////////////////////////////
 public:
-
     //插入行列，在原有的基础上再插入
     int  insertColumn(const QString& strHeading, uint nFormat = DT_CENTER|DT_VCENTER|DT_SINGLELINE,int nColumn = -1);//format huangw
     int  insertRow(const QString& strHeading, int nRow = -1);
@@ -383,8 +380,9 @@ public:
     void setSelectedRange(const HCellRange& Range, bool bForceRepaint = false, bool bselectCells = true);
     void setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMaxCol,
                           bool bForceRepaint = false, bool bselectCells = true);
+    void resetSelectedRange();
 
-
+    bool cellRangeRect(const HCellRange& cellRange, const QRect& lpRect);
     bool isValid(int nRow, int nCol) const;
     bool isValid(const HCellID& cell) const;
     bool isValid(const HCellRange& range) const;
@@ -493,11 +491,11 @@ public:
 
 
 
-
+*/
 protected:
     //设置默认单元格
     void setupDefaultCells(); //
-
+/*
     LRESULT SendMessageToParent(int nRow, int nCol, int nMessage) const;
     LRESULT SendDisplayRequestToParent(GV_DISPINFO* pDisplayInfo) const;
     LRESULT SendCacheHintToParent(const HCellRange& range) const;
@@ -506,24 +504,22 @@ protected:
     bool invalidateCellRect(const HCellID& cell);
     bool invalidateCellRect(const HCellRange& cellRange);
     void EraseBkgnd(CDC* pDC);
-/*
-    bool GetCellRangeRect(const HCellRange& cellRange, LPRECT lpRect);
 
-    bool SetCell(int nRow, int nCol, CGridCellBase* pCell);
+    int  setMouseMode(int nMode) { int nOldMode = m_MouseMode; m_MouseMode = nMode; return nOldMode; }
+    int  mouseMode() const       { return m_MouseMode; }
 
-    int  SetMouseMode(int nMode) { int nOldMode = m_MouseMode; m_MouseMode = nMode; return nOldMode; }
-    int  GetMouseMode() const    { return m_MouseMode; }
+    bool mouseOverRowResizeArea(QPoint& point);
+    bool mouseOverColumnResizeArea(QPoint& point);
 
-    bool MouseOverRowResizeArea(CPoint& point);
-    bool MouseOverColumnResizeArea(CPoint& point);
-*/
     HCellID topleftNonFixedCell(bool bForceRecalculation = false);
   /*  HCellRange GetUnobstructedNonFixedCellRange(bool bForceRecalculation = false);
     HCellRange GetVisibleNonFixedCellRange(LPRECT pRect = NULL, bool bForceRecalculation = false);
 
     bool IsVisibleVScroll() { return ( (m_nBarState & GVL_VERT) > 0); }
     bool IsVisibleHScroll() { return ( (m_nBarState & GVL_HORZ) > 0); }*/
-    void resetSelectedRange();
+
+    //设置滚动条位置
+    void setScrollBarValue(uint Msg,HWPARAM wParam,HLPARAM IParam );
     /*void ResetScrollBars();
     void EnableScrollBars(int nBar, bool bEnable = true);
     int  GetScrollPos32(int nBar, bool bGetTrackPos = false);
@@ -689,6 +685,9 @@ protected:
     virtual void paintEvent(QPaintEvent *event);
     virtual void keyPressEvent(QKeyEvent *event);
     virtual void keyReleaseEvent(QKeyEvent *event);
+    virtual void mousePressEvent(QMouseEvent *event);
+    virtual void mouseReleaseEvent(QMouseEvent *event);
+    virtual void moveEvent(QMoveEvent *event);
  /*
     //重载函数 对应windows的消息映射函数
     virtual void enterEvent(QEvent *event);

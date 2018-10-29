@@ -123,6 +123,12 @@ typedef struct _GV_ITEM {
 #define QMAKELONG(a, b) ((long)(((ushort)(((ulong)(a)) & 0xffff)) | ((quint32)((ushort)(((quint32)(b)) & 0xffff))) << 16))
 
 
+//定义滚动条相关信息
+#define QWM_HSCROLL    0x0110 //行滚动条
+#define QWM_VSCROLL    0x0111 //列滚动条
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////
 // Conditional includes
 ///////////////////////////////////////////////////////////////////////////////////
