@@ -8,9 +8,7 @@ class HGridCell : public HGridCellBase
 {
     Q_OBJECT
 public:
-    explicit HGridCell(QObject *parent = 0);
-public:
-    HGridCell();
+    HGridCell(HGridCellBase *parent = 0);
     virtual ~HGridCell();
 
 // Attributes
@@ -19,7 +17,7 @@ public:
 
     virtual void  setText(const QString& szText)            { m_strText = szText;  }
     virtual void  setImage(int nImage)                      { m_nImage = nImage;   }
-    virtual void  setData(const QVariant& var)              { m_lParam = var;   }
+    virtual void  setData(const QVariant& var)              { m_lParam = var;      }
     virtual void  setGrid(HGridCtrl* pGrid)                 { m_pGrid = pGrid;     }
     // virtual void SetState(const DWORD nState);  -  use base class version
     virtual void  setFormat(quint32 nFormat)                { m_nFormat = nFormat; }
@@ -30,8 +28,7 @@ public:
     //virtual CWnd* GetEditWnd() const             { return m_pEditWnd;   }
     virtual void  setCoords(int /*nRow*/, int /*nCol*/) {}  // don't need to know the row and
                                                             // column for base implementation
-    virtual void setWidth(int width)                        { m_Size.setWidth(width); }
-    virtual void setHeight(int height)                      { m_Size.setHeight(height); }
+
 
     virtual QString     text()    const                     { return m_strText; }
     virtual int         image()   const                     { return m_nImage;  }
@@ -41,9 +38,7 @@ public:
     virtual QColor      textClr() const                     { return m_crFgClr; } // TODO: change to use default cell
     virtual QColor      backClr() const                     { return m_crBkClr; }
     virtual QFont       font()    const                     { return m_plfFont; }
-    virtual uint        margin()  const                     { return m_nMargin; }
-    virtual int         width()   const                     { return m_Size.width(); }
-    virtual int         height()  const                     { return m_Size.height(); }
+    virtual int         margin()  const                     { return m_nMargin; }
 
     //单元格边框相关属性
     virtual void   setBorderStyle(short style)              { m_nBorderStyle = style; }
@@ -80,18 +75,19 @@ public:
     virtual QColor   borderLeftColor()     const            { return m_crLeftBoderClr;    }
 
 
-    virtual	void   clearBorderColor()       = {};
-    virtual	void   clearBorderBottomColor() = {};
-    virtual	void   clearBorderRightColor()  = {};
-    virtual	void   clearBorderTopColor()    = {};
-    virtual	void   clearBorderLeftColor()   = {};
+    virtual	void   clearBorderColor()       {return;}
+    virtual	void   clearBorderBottomColor() {return ;}
+    virtual	void   clearBorderRightColor()  {;}
+    virtual	void   clearBorderTopColor()    {;}
+    virtual	void   clearBorderLeftColor()   {;}
 
+    virtual bool   isDefaultFont()       const   {return false;}
     virtual bool   isEditing() const           { return m_bEditing; }
     virtual void   reset();
 
 // editing cells
 public:
-    virtual bool edit(int nRow, int nCol, CRect rect, CPoint point, UINT nID, UINT nChar);
+    virtual bool edit(int nRow, int nCol, const QRect& rect, const QPoint& point, uint nID, uint nChar);
     virtual void endEdit();
 protected:
     virtual void onEndEdit();
@@ -132,7 +128,7 @@ protected:
 
 // This class is for storing grid default values. It's a little heavy weight, so
 // don't use it in bulk
-/*
+
 class HGridDefaultCell : public HGridCell
 {
 // Construction/Destruction
@@ -142,11 +138,11 @@ public:
 
 public:
     virtual quint32 style() const                         { return m_dwStyle;      }
-    virtual void    setStyle(DWORD dwStyle)               { m_dwStyle = dwStyle;   }
-    virtual int     width() const                         { return m_Size.cx;      }
-    virtual int     geight() const                        { return m_Size.cy;      }
-    virtual void    setWidth(int nWidth)                  { m_Size.cx = nWidth;    }
-    virtual void    setHeight(int nHeight)                { m_Size.cy = nHeight;   }
+    virtual void    setStyle(quint32 dwStyle)               { m_dwStyle = dwStyle;   }
+    virtual int     width() const                         { return m_Size.width();      }
+    virtual int     height() const                        { return m_Size.height();      }
+    virtual void    setWidth(int nWidth)                  { m_Size.setWidth(nWidth);    }
+    virtual void    setHeight(int nHeight)                { m_Size.setHeight(nHeight);   }
 
     // Disable these properties
     virtual void     setData(HLPARAM )           { Q_ASSERT(false);         }
@@ -160,5 +156,5 @@ protected:
     QFont   m_Font;       // Cached font
     quint32 m_dwStyle;    // Cell Style - unused
 };
-*/
+
 #endif // HGRIDCELL_H

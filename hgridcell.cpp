@@ -1,6 +1,6 @@
 #include "hgridcell.h"
 
-HGridCell::HGridCell(QObject *parent) : QObject(parent)
+HGridCell::HGridCell(HGridCellBase *parent) : HGridCellBase(parent)
 {
 
 }
@@ -64,12 +64,12 @@ void HGridCell::reset()
 /*
  * 编辑的时候是生成一个QLineEdit 移动到对应的rect里面
 */
-bool HGridCell::Edit(int nRow, int nCol, QRect rect, QPoint point , uint nID, uint nChar)
+bool HGridCell::edit(int nRow, int nCol, const QRect& rect, const QPoint& point, uint nID, uint nChar)
 {
     if ( m_bEditing )
     {
-        if (m_pEditWnd)
-            m_pEditWnd->SendMessage ( WM_CHAR, nChar );
+        //if (m_pEditWnd)
+        //    m_pEditWnd->SendMessage ( WM_CHAR, nChar );
     }
     else
     {
@@ -77,20 +77,20 @@ bool HGridCell::Edit(int nRow, int nCol, QRect rect, QPoint point , uint nID, ui
         m_bEditing = true;
 
         // InPlaceEdit auto-deletes itself
-        HGridCtrl* pGrid = grid();
-        m_pEditWnd = new CInPlaceEdit(pGrid, rect, dwStyle, nID, nRow, nCol, GetText(), nChar);
+        //HGridCtrl* pGrid = grid();
+        //m_pEditWnd = new CInPlaceEdit(pGrid, rect, dwStyle, nID, nRow, nCol, GetText(), nChar);
     }
     return true;
 }
 
-void HGridCell::EndEdit()
+void HGridCell::endEdit()
 {
-    if (m_pEditWnd)
-        ((CInPlaceEdit*)m_pEditWnd)->EndEdit();
+    //if (m_pEditWnd)
+     //   ((CInPlaceEdit*)m_pEditWnd)->EndEdit();
 }
 
-void HGridCell::OnEndEdit()
+void HGridCell::onEndEdit()
 {
     m_bEditing = false;
-    m_pEditWnd = NULL;
+    //m_pEditWnd = NULL;
 }

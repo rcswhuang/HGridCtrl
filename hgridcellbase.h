@@ -8,7 +8,7 @@ class HGridCellBase : public QObject
     Q_OBJECT
     friend class HGridCtrl;
 public:
-    HGridCellBase();
+    HGridCellBase(QObject* parent = 0);
     virtual ~HGridCellBase();
 
 // 单元格相关属性
@@ -18,31 +18,27 @@ public:
     virtual void setData(const QVariant & )    = 0 ; //设置数据
     virtual void setState(quint32 nState)      { m_nState = nState; }
     virtual void setFormat(quint32 )           = 0 ; //格式
-    virtual void setTextClr(const QColor)      = 0 ; //文字颜色
-    virtual void setBackClr(const QColor )     = 0 ; //背景颜色
-    virtual void setFont(const QFont )         = 0 ;
+    virtual void setTextClr(const QColor&)      = 0 ; //文字颜色
+    virtual void setBackClr(const QColor& )     = 0 ; //背景颜色
+    virtual void setFont(const QFont& )         = 0 ;
     virtual void setMargin( uint )             = 0 ;
     virtual void setGrid(HGridCtrl* )          = 0 ;
     virtual void setCoords( int, int)          = 0 ; //row,col
-    virtual void setAlignment(int)             = 0 ;
-    virtual void setWidth(int)                 = 0 ;
-    virtual void setHeight(int)                = 0 ;
+
     
     
     virtual QString    text()       const      = 0 ;
-    virtual QString    tipText()    const      { return getText(); } // may override TitleTip return
+    virtual QString    tipText()    const      { return text(); } // may override TitleTip return
     virtual int        image()      const      = 0 ;
     virtual QVariant   data()       const      = 0 ;
-    virtual ulong      state()      const      { return m_nState;  }
-    virtual ulong      format()     const      = 0 ;
+    virtual quint32      state()      const      { return m_nState;  }
+    virtual quint32      format()     const      = 0 ;
     virtual QColor     textClr()    const      = 0 ;
     virtual QColor     backClr()    const      = 0 ;
     virtual QFont      font()       const      = 0 ;
     virtual HGridCtrl* grid()    const      = 0 ;
-    virtual uint       margin()  const      = 0 ;
-    virtual int        alignment()  const      = 0 ;
-    virtual int        width()      const      = 0 ;
-    virtual int        height()     const      = 0 ;
+    virtual int       margin()   const  =0;
+
     
     //virtual CWnd     * GetEditWnd()    const                = 0 ;
     //virtual CFont    * GetFontObject() const                = 0 ;
@@ -101,13 +97,13 @@ public:
 
 
     //设置网格类型
-    virtual void    setCellType(int nType)                =0;
+    /*virtual void    setCellType(int nType)                =0;
     virtual void    setCellTypeEx(long nType)             =0;
     virtual int     getCellType()              const      =0;
     virtual long    getCellTypeEx()            const      =0;
     virtual	bool    isPropertySet(long flag)              =0;
     virtual	long    getPropertyFlags()                    =0;
-    virtual short   getBorderStyle()           const      =0;
+    virtual short   getBorderStyle()           const      =0;*/
 
 public:
    virtual HGridCellBase* defaultCell() const;

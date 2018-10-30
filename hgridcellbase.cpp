@@ -1,6 +1,6 @@
 ﻿ #include "hgridcellbase.h"
 #include "hgridctrl.h"
- HGridCellBase::HGridCellBase()
+ HGridCellBase::HGridCellBase(QObject* parent)
  {
 
  }
@@ -13,7 +13,7 @@ HGridCellBase::~HGridCellBase()
 HGridCellBase* HGridCellBase::defaultCell() const
 {
     if (grid())
-        return grid()->defaultCell(IsFixedRow(), IsFixedCol());
+        return grid()->defaultCell(isFixedRow(), isFixedCol());
     return NULL;
 }
 
@@ -27,17 +27,17 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
     return true;
 }
     //如果是图片的话就获取对应的矩形，不是就算了。不能const引用，draw转过来的rect需要做判断 ---huangw
-bool HGridCellBase::getTextRect( QRect& rect)
+bool HGridCellBase::textRect( QRect& rect)
 {
     return true;
 }
 
-QSize HGridCellBase::getTextExtent(QString& str, QPainter* painter = NULL)
+QSize HGridCellBase::textExtent(QString& str, QPainter* painter)
 {
     return QSize();
 }
 
-QSize HGridCellBase::getCellExtent(QPainter* painter)
+QSize HGridCellBase::cellExtent(QPainter* painter)
 {
     return QSize();
 }

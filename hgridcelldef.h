@@ -18,6 +18,7 @@ using namespace std;
 #include <QKeyEvent>
 #include <QClipboard>
 #include <QScrollBar>
+#include <math.h>
 typedef unsigned int HWPARAM;
 typedef qlonglong HLPARAM; //统一64位平台
 
@@ -70,7 +71,7 @@ enum eMouseModes { MOUSE_NOTHING, MOUSE_SELECT_ALL, MOUSE_SELECT_COL, MOUSE_SELE
 };
 
 //比较函数
-typedef int (CALLBACK *QPFNLVCOMPARE)(HLPARAM, HLPARAM, HLPARAM);
+typedef int (*QPFNLVCOMPARE)(HLPARAM, HLPARAM, HLPARAM);
 //相关列表定义
 typedef  QList<QImage*>  QImageList;
 
@@ -157,40 +158,13 @@ typedef struct _GV_ITEM {
 #define QSB_ENDSCROLL        8
 
 
-///////////////////////////////////////////////////////////////////////////////////
-// Conditional includes
-///////////////////////////////////////////////////////////////////////////////////
 
-#ifndef GRIDCONTROL_NO_TITLETIPS
-#   include "TitleTip.h"
-#endif
-
-#ifndef GRIDCONTROL_NO_DRAGDROP
-#   include "GridDropTarget.h"
-#   undef QT_NO_CLIPBOARD     // Force clipboard functions on
-#endif
-
-#ifndef QT_NO_CLIPBOARD
-#   include <afxole.h>
-#endif
-
-
-///////////////////////////////////////////////////////////////////////////////////
-// Helper functions
-///////////////////////////////////////////////////////////////////////////////////
-
-// Handy functions
-#define IsSHIFTpressed() ( (GetKeyState(VK_SHIFT) & (1 << (sizeof(SHORT)*8-1))) != 0   )
-#define IsCTRLpressed()  ( (GetKeyState(VK_CONTROL) & (1 << (sizeof(SHORT)*8-1))) != 0 )
-
-// Backwards compatibility for pre 2.20 grid versions
-#define DDX_GridControl(pDX, nIDC, rControl)  DDX_Control(pDX, nIDC, rControl)
 
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Structures
 ///////////////////////////////////////////////////////////////////////////////////
-
+/*
 // This structure sent to Grid's parent in a WM_NOTIFY message
 typedef struct tagNM_GRIDVIEW {
     NMHDR hdr;
@@ -209,14 +183,14 @@ typedef struct tagGV_CACHEHINT {
     NMHDR      hdr;
     HCellRange range;
 } GV_CACHEHINT;
-
+*/
 // storage typedef for each row in the grid
 //typedef CTypedPtrArray<CObArray, CGridCellBase*> GRID_ROW;
 //typedef QList<HGridCellBase*> GRID_ROW;
 
 
 // For virtual mode callback
-typedef bool (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
+//typedef bool (*GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Defines
@@ -237,7 +211,7 @@ typedef bool (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 #define QDT_CALCRECT                 0x00000400
 #define QDT_NOPREFIX                 0x00000800
 #define QDT_INTERNAL                 0x00001000
-
+/*
 #if(WINVER >= 0x0400)
 #define QDT_EDITCONTROL              0x00002000
 #define QDT_PATH_ELLIPSIS            0x00004000
@@ -250,7 +224,7 @@ typedef bool (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 #if(_WIN32_WINNT >= 0x0500)
 #define QDT_HIDEPREFIX               0x00100000
 #define QDT_PREFIXONLY               0x00200000
-
+*/
 // Grid line/scrollbar selection
 #define GVL_NONE                0L      // Neither
 #define GVL_HORZ                1L      // Horizontal line or scrollbar
@@ -291,7 +265,7 @@ typedef bool (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 #define GVHT_BELOW              0x0100
 
 // Messages sent to the grid's parent (More will be added in future)
-#define GVN_BEGINDRAG           LVN_BEGINDRAG        // LVN_FIRST-9
+/*#define GVN_BEGINDRAG           LVN_BEGINDRAG        // LVN_FIRST-9
 #define GVN_BEGINLABELEDIT      LVN_BEGINLABELEDIT   // LVN_FIRST-5
 #define GVN_BEGINRDRAG          LVN_BEGINRDRAG
 #define GVN_COLUMNCLICK         LVN_COLUMNCLICK
@@ -300,5 +274,7 @@ typedef bool (CALLBACK* GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 #define GVN_SELCHANGING         LVN_ITEMCHANGING
 #define GVN_SELCHANGED          LVN_ITEMCHANGED
 #define GVN_GETDISPINFO         LVN_GETDISPINFO
-#define GVN_ODCACHEHINT         LVN_ODCACHEHINT
+#define GVN_ODCACHEHINT         LVN_ODCACHEHINT*/
+
+
 #endif

@@ -10,7 +10,7 @@
 //      mailto:chinajoe@aol.com
 //      http://users.aol.com/chinajoe
 
-
+#include <QtGlobal>
 //表格ID类，仿Qt风格编写
 
 class HCellID
@@ -83,7 +83,7 @@ inline void HCellRange::set(int minRow, int minCol, int maxRow, int maxCol)
 
 inline void HCellRange::operator=(const HCellRange& rhs)
 {
-    if (this != &rhs) Set(rhs.m_nMinRow, rhs.m_nMinCol, rhs.m_nMaxRow, rhs.m_nMaxCol);
+    if (this != &rhs) set(rhs.m_nMinRow, rhs.m_nMinCol, rhs.m_nMaxRow, rhs.m_nMaxCol);
 }
 
 inline int HCellRange::operator==(const HCellRange& rhs)
@@ -110,7 +110,7 @@ inline int HCellRange::inRange(int row, int col) const
 
 inline int HCellRange::inRange(const HCellID& cellID) const
 {
-     return InRange(cellID.row, cellID.col);
+     return inRange(cellID.row, cellID.col);
 }
 
 inline HCellID HCellRange::topLeft() const
@@ -120,8 +120,9 @@ inline HCellID HCellRange::topLeft() const
 
 inline HCellRange HCellRange::intersect(const HCellRange& rhs) const
 {
-     return HCellRange(max(m_nMinRow,rhs.m_nMinRow), max(m_nMinCol,rhs.m_nMinCol),
-                       min(m_nMaxRow,rhs.m_nMaxRow), min(m_nMaxCol,rhs.m_nMaxCol));
+
+     return HCellRange(qMax(m_nMinRow,rhs.m_nMinRow), qMax(m_nMinCol,rhs.m_nMinCol),
+                       qMin(m_nMaxRow,rhs.m_nMaxRow), qMin(m_nMaxCol,rhs.m_nMaxCol));
 }
 
 #endif // !defined(HCELLRANGE_H_)
