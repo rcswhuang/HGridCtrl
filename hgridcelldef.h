@@ -197,21 +197,56 @@ typedef struct tagGV_CACHEHINT {
 // Defines
 ///////////////////////////////////////////////////////////////////////////////////
 //绘制文字 仿windows----左中右对齐，上中下对齐
-#define QDT_TOP                      0x00000000
-#define QDT_LEFT                     0x00000000
-#define QDT_CENTER                   0x00000001
-#define QDT_RIGHT                    0x00000002
-#define QDT_VCENTER                  0x00000004
-#define QDT_BOTTOM                   0x00000008
-#define QDT_WORDBREAK                0x00000010
-#define QDT_SINGLELINE               0x00000020
-#define QDT_EXPANDTABS               0x00000040
+#define QDT_TOP                      Qt::AlignTop
+#define QDT_LEFT                     Qt::AlignLeft
+#define QDT_CENTER                   Qt::AlignHCenter
+#define QDT_RIGHT                    Qt::AlignRight
+#define QDT_VCENTER                  Qt::AlignVCenter
+#define QDT_BOTTOM                   Qt::AlignBottom
+#define QDT_WORDBREAK                Qt::TextWrapAnywhere
+#define QDT_SINGLELINE               Qt::TextSingleLine
+#define QDT_EXPANDTABS               Qt::TextExpandTabs
 #define QDT_TABSTOP                  0x00000080
 #define QDT_NOCLIP                   0x00000100
 #define QDT_EXTERNALLEADING          0x00000200
 #define QDT_CALCRECT                 0x00000400
-#define QDT_NOPREFIX                 0x00000800
+#define QDT_NOPREFIX                 Qt::TextHideMnemonic
 #define QDT_INTERNAL                 0x00001000
+
+/*
+ *
+Qt::TextSingleLine
+0x0100
+Treats all whitespace as spaces and prints just one line.
+Qt::TextDontClip
+0x0200
+If it's impossible to stay within the given bounds, it prints outside.
+Qt::TextExpandTabs
+0x0400
+Makes the U+0009 (ASCII tab) character move to the next tab stop.
+Qt::TextShowMnemonic
+0x0800
+Displays the string "&P" as P For an ampersand, use "&&".
+Qt::TextWordWrap
+0x1000
+Breaks lines at appropriate points, e.g. at word boundaries.
+Qt::TextWrapAnywhere
+0x2000
+Breaks lines anywhere, even within words.
+Qt::TextHideMnemonic
+0x8000
+Same as Qt::TextShowMnemonic but doesn't draw the underlines.
+Qt::TextDontPrint
+0x4000
+Treat this text as "hidden" and don't print it.
+Qt::TextIncludeTrailingSpaces
+0x08000000
+When this option is set, QTextLine::naturalTextWidth() and QTextLine::naturalTextRect() will return a value that includes the width of trailing spaces in the text; otherwise this width is excluded.
+Qt::TextJustificationForced
+0x10000
+Ensures that text lines are justified.
+
+*/
 /*
 #if(WINVER >= 0x0400)
 #define QDT_EDITCONTROL              0x00002000

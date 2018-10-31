@@ -72,8 +72,73 @@ bool HGridCellBase::textRect( QRect& rect)
     return true;
 }
 
-QSize HGridCellBase::textExtent(const QString& str, QPainter* painter)
+QSize HGridCellBase::textExtent(const QString& szText, QPainter* painter)
 {
+    HGridCtrl* pGrid = grid();
+    Q_ASSERT(pGrid);
+
+    if (painter == NULL || szText.isEmpty())
+    {
+        HGridDefaultCell* pDefCell = (HGridDefaultCell*) defaultCell();
+        Q_ASSERT(pDefCell);
+        return QSize(pDefCell->width(), pDefCell->height());
+    }
+
+    CFont *pOldFont = NULL,
+          *pFont = GetFontObject();
+    if (pFont)
+        pOldFont = pDC->SelectObject(pFont);
+
+    QSize size;
+    int nFormat = format();
+
+    painter->setFont(font());
+    QFontMetrics fontMetrics(font());
+    // If the cell is a multiline cell, then use the width of the cell
+    // to get the height
+    if ((nFormat & QDT_WORDBREAK) && !(nFormat & QDT_SINGLELINE))
+    {
+        QString str = szText;
+        int nMaxWidth = 0;
+        //需要这样做吗？--huangw
+        while (true)
+        {
+            int nPos = str.indexOf(_T('\n'));
+            QString TempStr = (nPos < 0)? str : str.left(nPos);
+            int nTempWidth = fontMetrics.width(TempStr);
+            if (nTempWidth > nMaxWidth)
+                nMaxWidth = nTempWidth;
+
+            if (nPos < 0)
+                break;
+            str = str.mid(nPos + 1);    // Bug fix by Thomas Steinborn
+        }
+
+        QRect rect;
+        rect.setRect(0,0, nMaxWidth+1, 0);
+        QRect boundingRect;
+        painter->drawText(rect,nFormat,szText,&boundingRect);
+        size = boundingRect.size();
+    }
+
+    size = fontMetrics.size(nFormat,szText);
+
+    size += QSize(4*margin(), 2*margin());
+
+    // Kludge for vertical text
+    LOGFONT *pLF = GetFont();
+    if (pLF->lfEscapement == 900 || pLF->lfEscapement == -900)
+    {
+        int nTemp = size.cx;
+        size.cx = size.cy;
+        size.cy = nTemp;
+        size += CSize(0, 4*GetMargin());
+    }
+
+    if (bReleaseDC)
+        pGrid->ReleaseDC(pDC);
+
+    return size;
     return QSize();
 }
 

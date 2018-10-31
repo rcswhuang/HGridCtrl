@@ -97,6 +97,7 @@ protected:
     QVariant   m_lParam;       // 32-bit value to associate with item
     int        m_nImage;       // Index of the list view item icon
     quint32    m_nFormat;    //格式
+    quint32    m_nTextOption; //文字环绕标志 多行
     QColor     m_crFgClr;    //前景颜色就是文字颜色
     QColor     m_crBkClr;    //背景颜色
     QFont      m_plfFont;    //字体
