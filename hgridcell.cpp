@@ -60,7 +60,10 @@ void HGridCell::reset()
 
 /////////////////////////////////////////////////////////////////////////////
 // GridCell Operations
-
+quint32 HGridCell::format()  const
+{
+    return 0;
+}
 /*
  * 编辑的时候是生成一个QLineEdit 移动到对应的rect里面
 */
@@ -93,4 +96,21 @@ void HGridCell::onEndEdit()
 {
     m_bEditing = false;
     //m_pEditWnd = NULL;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// HGridDefaultCell
+HGridDefaultCell::HGridDefaultCell()
+{
+
+    m_nFormat = QDT_LEFT|QDT_VCENTER|QDT_SINGLELINE|QDT_NOPREFIX;
+    m_crFgClr = QColor(QCLR_DEFAULT);
+    m_crBkClr = QColor(QCLR_DEFAULT);
+    m_Size    = QSize(30,10);
+    m_dwStyle = 0;
+    m_Font = QFont("宋体",10,QFont::Normal);
+}
+
+HGridDefaultCell::~HGridDefaultCell()
+{
 }

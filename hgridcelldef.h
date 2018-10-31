@@ -19,6 +19,7 @@ using namespace std;
 #include <QClipboard>
 #include <QScrollBar>
 #include <math.h>
+#include <iterator>
 typedef unsigned int HWPARAM;
 typedef qlonglong HLPARAM; //统一64位平台
 
@@ -195,7 +196,7 @@ typedef struct tagGV_CACHEHINT {
 ///////////////////////////////////////////////////////////////////////////////////
 // Defines
 ///////////////////////////////////////////////////////////////////////////////////
-//绘制文字 仿windows
+//绘制文字 仿windows----左中右对齐，上中下对齐
 #define QDT_TOP                      0x00000000
 #define QDT_LEFT                     0x00000000
 #define QDT_CENTER                   0x00000001

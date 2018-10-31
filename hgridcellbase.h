@@ -121,7 +121,7 @@ public:
     //如果是图片的话就获取对应的矩形，不是就算了。不能const引用，draw转过来的rect需要做判断 ---huangw
     virtual bool textRect( QRect& rect);    // i/o:  i=dims of cell rect; o=dims of text rect
     virtual bool tipTextRect( QRect&  rect) { return textRect( rect); }  // may override for btns, etc.
-    virtual QSize textExtent(QString& str, QPainter* painter = NULL);
+    virtual QSize textExtent(const QString& str, QPainter* painter = NULL);
     virtual QSize cellExtent(QPainter* painter);
 
     // Editing
@@ -138,15 +138,6 @@ public:
 
 protected:
     virtual void OnEndEdit();
-    virtual void OnMouseEnter();
-    virtual void OnMouseOver();
-    virtual void OnMouseLeave();
-    virtual void OnClick( QPoint PointCellRelative);
-    virtual void OnClickDown( QPoint PointCellRelative);
-    virtual void OnRClick( QPoint PointCellRelative);
-    virtual void OnDblClick( QPoint PointCellRelative);
-    virtual bool OnSetCursor();
-
 public:
     /*bool IsMerged();
 	void SetMergeRange(HCellRange range);

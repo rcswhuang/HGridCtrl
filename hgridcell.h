@@ -137,20 +137,20 @@ public:
     virtual ~HGridDefaultCell();
 
 public:
-    virtual quint32 style() const                         { return m_dwStyle;      }
-    virtual void    setStyle(quint32 dwStyle)               { m_dwStyle = dwStyle;   }
-    virtual int     width() const                         { return m_Size.width();      }
-    virtual int     height() const                        { return m_Size.height();      }
-    virtual void    setWidth(int nWidth)                  { m_Size.setWidth(nWidth);    }
-    virtual void    setHeight(int nHeight)                { m_Size.setHeight(nHeight);   }
+    virtual quint32 style() const                         { return m_dwStyle;         }
+    virtual void    setStyle(quint32 dwStyle)             { m_dwStyle = dwStyle;      }
+    virtual int     width() const                         { return m_Size.width();    }
+    virtual int     height() const                        { return m_Size.height();   }
+    virtual void    setWidth(int nWidth)                  { m_Size.setWidth(nWidth);  }
+    virtual void    setHeight(int nHeight)                { m_Size.setHeight(nHeight);}
 
     // Disable these properties
-    virtual void     setData(HLPARAM )           { Q_ASSERT(false);         }
-    virtual void     setState(quint32 )          { Q_ASSERT(false);         }
-    virtual quint32  state() const                         { return HGridCell::state()|GVIS_READONLY; }
-    virtual void     setCoords( int row, int col)  { Q_ASSERT(false);         }
-    virtual void     setFont(const QFont& plf);
-    virtual QFont    font() const;
+    virtual void     setData(HLPARAM )                    { Q_ASSERT(false);          }
+    virtual void     setState(quint32 )                   { Q_ASSERT(false);          }
+    virtual quint32  state() const                        { return HGridCell::state()|GVIS_READONLY; }
+    virtual void     setCoords( int row, int col)         { Q_ASSERT(false);          }
+    virtual void     setFont(const QFont& plf)            { m_Font = plf;             }
+    virtual QFont    font() const                         { return m_Font;            }
 protected:
     QSize   m_Size;       // Default Size
     QFont   m_Font;       // Cached font

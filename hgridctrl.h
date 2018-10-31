@@ -76,7 +76,7 @@ public:
     long virtualHeight() const;
 
     //获取行列单元格字符串的宽度 ok
-    QSize textExtent(int nRow, int nCol, QString& str);
+    QSize textExtent(int nRow, int nCol,const QString& str);
     inline QSize cellTextExtent(int nRow, int nCol)  { return textExtent(nRow, nCol, itemText(nRow,nCol)); }// EFW - Get extent of current text in cell
 
     //设置网格背景颜色、网格线颜色 ok
@@ -377,13 +377,13 @@ public:
 
     //多表格(区域表格)操作 ok
     HCellRange cellRange() const;
-    HCellRange selectedCellRange() const;
+    HCellRange selectedCellRange();
     void setSelectedRange(const HCellRange& Range, bool bForceRepaint = false, bool bselectCells = true);
     void setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMaxCol,
                           bool bForceRepaint = false, bool bselectCells = true);
     void resetSelectedRange();
 
-    bool cellRangeRect(const HCellRange& cellRange, const QRect& lpRect);
+    bool cellRangeRect(const HCellRange& cellRange, QRect& lpRect);
     bool isValid(int nRow, int nCol) const;
     bool isValid(const HCellID& cell) const;
     bool isValid(const HCellRange& range) const;
@@ -639,7 +639,7 @@ protected:
     bool        m_bAllowRowResize, m_bAllowColumnResize;
     int         m_nRowsPerWheelNotch;
     //CMap<DWORD,DWORD, HCellID, HCellID&> m_SelectedCellMap, m_PrevSelectedCellMap;
-    QMap<quint32,HCellID&> m_SelectedCellMap, m_PrevSelectedCellMap;
+    QMap<quint32,HCellID> m_SelectedCellMap, m_PrevSelectedCellMap;
 
 #ifndef GRIDCONTROL_NO_TITLETIPS
     //CTitleTip   m_TitleTip;             // Title tips for cells
@@ -691,7 +691,7 @@ protected:
     virtual void keyReleaseEvent(QKeyEvent *event);
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
-    virtual void moveEvent(QMoveEvent *event);
+    virtual void mouseMoveEvent(QMoveEvent *event);
  /*
     //重载函数 对应windows的消息映射函数
     virtual void enterEvent(QEvent *event);

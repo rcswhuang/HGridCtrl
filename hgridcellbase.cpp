@@ -2,12 +2,35 @@
 #include "hgridctrl.h"
  HGridCellBase::HGridCellBase(QObject* parent)
  {
-
+     reset();
  }
 
 HGridCellBase::~HGridCellBase()
 {
 
+}
+
+void HGridCellBase::operator=( HGridCellBase& cell)
+{
+    if (this == &cell) return;
+
+    setGrid(cell.grid());    // do first in case of dependencies
+
+    setText(cell.text());
+    setImage(cell.image());
+    setData(cell.data());
+    setState(cell.state());
+    setFormat(cell.format());
+    setTextClr(cell.textClr());
+    setBackClr(cell.backClr());
+    setFont(cell.font());
+    setMargin(cell.margin());
+
+    /*
+    SetMergeCellID(cell.GetMergeCellID());
+    SetMergeRange(cell.GetMergeRange());
+    Show(cell.IsShow());
+    */
 }
 
 HGridCellBase* HGridCellBase::defaultCell() const
@@ -19,20 +42,37 @@ HGridCellBase* HGridCellBase::defaultCell() const
 
 void HGridCellBase::reset()
 {
-
+    m_nState  = 0;
 }
 
 bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool bEraseBkgnd)
 {
     return true;
 }
-    //如果是图片的话就获取对应的矩形，不是就算了。不能const引用，draw转过来的rect需要做判断 ---huangw
+
+//对rect进行判断如果是图片就要重新计算rect,如果不是照片就正常返回
 bool HGridCellBase::textRect( QRect& rect)
 {
+    if (image() >= 0)
+    {
+
+       HGridCtrl* pGrid = grid();
+       QImageList* pImageList = pGrid->imageList();
+       if(pImageList)
+       {
+           QImage *image1 = pImageList->value(image());
+           if(!image1->isNull())
+           {
+               int nImageWidth = image1->width()+1;
+               rect.setLeft(rect.left() + nImageWidth + margin());
+           }
+       }
+    }
+
     return true;
 }
 
-QSize HGridCellBase::textExtent(QString& str, QPainter* painter)
+QSize HGridCellBase::textExtent(const QString& str, QPainter* painter)
 {
     return QSize();
 }
@@ -56,44 +96,4 @@ bool HGridCellBase::printCell(QPainter* painter, int nRow, int nCol, QRect& rect
 void HGridCellBase::OnEndEdit()
 {
 
-}
-
-void HGridCellBase::OnMouseEnter()
-{
-
-}
-
-void HGridCellBase::OnMouseOver()
-{
-
-}
-
-void HGridCellBase::OnMouseLeave()
-{
-
-}
-
-void HGridCellBase::OnClick( QPoint PointCellRelative)
-{
-
-}
-
-void HGridCellBase::OnClickDown( QPoint PointCellRelative)
-{
-
-}
-
-void HGridCellBase::OnRClick( QPoint PointCellRelative)
-{
-
-}
-
-void HGridCellBase::OnDblClick( QPoint PointCellRelative)
-{
-
-}
-
-bool HGridCellBase::OnSetCursor()
-{
-    return true;
 }
