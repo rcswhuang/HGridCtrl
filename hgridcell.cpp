@@ -2,7 +2,7 @@
 
 HGridCell::HGridCell(HGridCellBase *parent) : HGridCellBase(parent)
 {
-
+    reset();
 }
 
 /*
@@ -34,8 +34,8 @@ void HGridCell::reset()
     //m_pEditWnd = NULL;
 
     m_nFormat = Qt::AlignLeft;           // Use default from CGridDefaultCell
-    m_crBkClr = QColor(Qt::white);     // Background colour (or CLR_DEFAULT)
-    m_crFgClr = QColor(Qt::black);     // Forground colour (or CLR_DEFAULT)
+    m_crBkClr = QColor(QCLR_DEFAULT);     // Background colour (or CLR_DEFAULT)
+    m_crFgClr = QColor(QCLR_DEFAULT);     // Forground colour (or CLR_DEFAULT)
     m_nMargin = (uint)-1;              // Use default from CGridDefaultCell
     m_plfFont = QFont(QStringLiteral("宋体"),10, QFont::Normal);
     m_lParam  = QVariant();
@@ -106,7 +106,7 @@ HGridDefaultCell::HGridDefaultCell()
     m_nFormat = QDT_LEFT|QDT_VCENTER|QDT_SINGLELINE|QDT_NOPREFIX;
     m_crFgClr = QColor(QCLR_DEFAULT);
     m_crBkClr = QColor(QCLR_DEFAULT);
-    m_Size    = QSize(30,10);
+    m_Size    = QSize(104,25);
     m_dwStyle = 0;
     m_Font = QFont("宋体",10,QFont::Normal);
 }

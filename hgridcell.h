@@ -25,7 +25,7 @@ public:
     virtual void  setBackClr(const QColor& clr)             { m_crBkClr = clr;     }
     virtual void  setFont(const QFont& font)                { m_plfFont = font;    }
     virtual void  setMargin(uint nMargin)                   { m_nMargin = nMargin; }
-    //virtual CWnd* GetEditWnd() const             { return m_pEditWnd;   }
+    //virtual CWnd* GetEditWnd() const                      { return m_pEditWnd;   }
     virtual void  setCoords(int /*nRow*/, int /*nCol*/) {}  // don't need to know the row and
                                                             // column for base implementation
 

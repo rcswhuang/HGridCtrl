@@ -31,13 +31,13 @@ public:
     virtual QString    tipText()    const      { return text(); } // may override TitleTip return
     virtual int        image()      const      = 0 ;
     virtual QVariant   data()       const      = 0 ;
-    virtual quint32      state()      const      { return m_nState;  }
-    virtual quint32      format()     const      = 0 ;
+    virtual quint32    state()      const      { return m_nState;  }
+    virtual quint32    format()     const      = 0 ;
     virtual QColor     textClr()    const      = 0 ;
     virtual QColor     backClr()    const      = 0 ;
     virtual QFont      font()       const      = 0 ;
     virtual HGridCtrl* grid()    const      = 0 ;
-    virtual int       margin()   const  =0;
+    virtual int        margin()   const  =0;
 
     
     //virtual CWnd     * GetEditWnd()    const                = 0 ;

@@ -9,14 +9,15 @@ QT       += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = gridctrl
-TEMPLATE = lib
+TEMPLATE = app
 
 INCLUDEPATH += \
                 ../include \
 
 SOURCES +=  hgridcellbase.cpp \
             hgridcell.cpp   \
-            hgridctrl.cpp
+            hgridctrl.cpp \
+    main.cpp
 
 HEADERS  +=    \
             hcellrange.h \

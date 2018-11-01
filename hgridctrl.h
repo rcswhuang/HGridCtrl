@@ -513,9 +513,9 @@ protected:
     bool mouseOverColumnResizeArea(QPoint& point);
 
     HCellID topleftNonFixedCell(bool bForceRecalculation = false);
-  /*  HCellRange GetUnobstructedNonFixedCellRange(bool bForceRecalculation = false);
-    HCellRange GetVisibleNonFixedCellRange(LPRECT pRect = NULL, bool bForceRecalculation = false);
-
+    //HCellRange GetUnobstructedNonFixedCellRange(bool bForceRecalculation = false);
+    HCellRange visibleNonFixedCellRange(QRect& pRect , bool bForceRecalculation = false);
+/*
     bool IsVisibleVScroll() { return ( (m_nBarState & GVL_VERT) > 0); }
     bool IsVisibleHScroll() { return ( (m_nBarState & GVL_HORZ) > 0); }*/
 

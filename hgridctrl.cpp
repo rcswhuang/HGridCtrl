@@ -24,6 +24,8 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     // the gridctrl colours have been changed from the system colours.
     // If they have, then leave them, otherwise change them to reflect
     // the new system colours.
+    QWidget* widget = new QWidget;
+    setViewport(widget);
     m_crWindowText        = QColor(QCOLOR_WINDOWTEXT);
     m_crWindowColour      = QColor(QCOLOR_WINDOW);
     //m_cr3DFace            = QColor(QCOLOR_3DFACE); //huangw
@@ -59,6 +61,7 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     m_bAllowColumnResize  = true;
     m_bSortOnClick        = false;      // Sort on header row click
     m_bHandleTabKey       = true;
+    m_bDoubleBuffer       = false;
     /*
 #ifdef _WIN32_WCE
     m_bDoubleBuffer       = false;      // Use double buffering to avoid flicker?
@@ -182,7 +185,7 @@ void HGridCtrl::setupDefaultCells()
 
 void HGridCtrl::paintEvent(QPaintEvent* event)
 {
-    QPainter painter(this);      // device context for painting
+    QPainter painter(viewport());      // device context for painting
 
     if (m_bDoubleBuffer)    // Use a memory DC to remove flicker
     {
@@ -201,61 +204,63 @@ void HGridCtrl::paintEvent(QPaintEvent* event)
 // selected bitmap with colour, then all sorts of vis problems would occur
 void HGridCtrl::eraseBkgnd(QPainter* pDC)
 {
-    /*CRect  VisRect, ClipRect, rect;
-    CBrush FixedRowColBack(GetDefaultCell(true, true)->GetBackClr()),
-           FixedRowBack(GetDefaultCell(true, false)->GetBackClr()),
-           FixedColBack(GetDefaultCell(false, true)->GetBackClr()),
-           TextBack(GetDefaultCell(false, false)->GetBackClr());
-    CBrush Back(GetGridBkColor()); 
+    return;
+    QRect  VisRect, ClipRect, rect;
+    QBrush FixedRowColBack(defaultCell(true, true)->backClr()),
+           FixedRowBack(defaultCell(true, false)->backClr()),
+           FixedColBack(defaultCell(false, true)->backClr()),
+           TextBack(defaultCell(false, false)->backClr());
+    QBrush Back(gridBkColor());
     //CBrush Back(GetTextBkColor());
 
-    if (pDC->GetClipBox(ClipRect) == ERROR)
+    if (NULL == viewport())
         return;
-    GetVisibleNonFixedCellRange(VisRect);
+    ClipRect = viewport()->rect();
+    visibleNonFixedCellRange(VisRect);
 
-    int nFixedColumnWidth = GetFixedColumnWidth();
-    int nFixedRowHeight = GetFixedRowHeight();
+    int nFixedColumnWidth = fixedColumnWidth();
+    int nFixedRowHeight = fixedRowHeight();
 
     // Draw Fixed row/column background
-    if (ClipRect.left < nFixedColumnWidth && ClipRect.top < nFixedRowHeight)
-        pDC->FillRect(CRect(ClipRect.left, ClipRect.top, 
+    if (ClipRect.left() < nFixedColumnWidth && ClipRect.top() < nFixedRowHeight)
+        pDC->fillRect(QRect(ClipRect.left(), ClipRect.top(),
                       nFixedColumnWidth, nFixedRowHeight),
-                      &FixedRowColBack);
-
+                      FixedRowColBack);
+    return;
     // Draw Fixed columns background
-    if (ClipRect.left < nFixedColumnWidth && ClipRect.top < VisRect.bottom)
-        pDC->FillRect(CRect(ClipRect.left, ClipRect.top, 
-                      nFixedColumnWidth, VisRect.bottom),
-                      &FixedColBack);
+    if (ClipRect.left() < nFixedColumnWidth && ClipRect.top() < VisRect.bottom())
+        pDC->fillRect(QRect(ClipRect.left(), ClipRect.top(),
+                      nFixedColumnWidth, VisRect.bottom()),
+                      FixedColBack);
         
     // Draw Fixed rows background
-    if (ClipRect.top < nFixedRowHeight && 
-        ClipRect.right > nFixedColumnWidth && ClipRect.left < VisRect.right)
-        pDC->FillRect(CRect(nFixedColumnWidth-1, ClipRect.top,
-                      VisRect.right, nFixedRowHeight),
-                      &FixedRowBack);
+    if (ClipRect.top() < nFixedRowHeight &&
+        ClipRect.right() > nFixedColumnWidth && ClipRect.left() < VisRect.right())
+        pDC->fillRect(QRect(nFixedColumnWidth-1, ClipRect.top(),
+                      VisRect.right(), nFixedRowHeight),
+                      FixedRowBack);
 
     // Draw non-fixed cell background
-    if (rect.IntersectRect(VisRect, ClipRect)) 
+    if ((rect = VisRect.intersected(ClipRect)).isValid())
     {
-        CRect CellRect(max(nFixedColumnWidth, rect.left), 
-                       max(nFixedRowHeight, rect.top),
-                       rect.right, rect.bottom);
-        pDC->FillRect(CellRect, &TextBack);
+        QRect CellRect(max(nFixedColumnWidth, rect.left()),
+                       max(nFixedRowHeight, rect.top()),
+                       rect.right(), rect.bottom());
+        pDC->fillRect(CellRect, TextBack);
     }
 
     // Draw right hand side of window outside grid
-    if (VisRect.right < ClipRect.right) 
-        pDC->FillRect(CRect(VisRect.right, ClipRect.top, 
-                      ClipRect.right, ClipRect.bottom),
-                      &Back);
+    if (VisRect.right() < ClipRect.right())
+        pDC->fillRect(QRect(VisRect.right(), ClipRect.top(),
+                      ClipRect.right(), ClipRect.bottom()),
+                      Back);
 
     // Draw bottom of window below grid
-    if (VisRect.bottom < ClipRect.bottom && ClipRect.left < VisRect.right) 
-        pDC->FillRect(CRect(ClipRect.left, VisRect.bottom,
-                      VisRect.right, ClipRect.bottom),
-                      &Back);
-                      */
+    if (VisRect.bottom() < ClipRect.bottom() && ClipRect.left() < VisRect.right())
+        pDC->fillRect(QRect(ClipRect.left(), VisRect.bottom(),
+                      VisRect.right(), ClipRect.bottom()),
+                      Back);
+
 }
 
 HCellID HGridCtrl::setFocusCell(HCellID cell)
@@ -1257,7 +1262,7 @@ void HGridCtrl::onDraw(QPainter* painter)
         minVisibleCol = idTopLeft.col;
 
     QRect VisRect;
-    HCellRange VisCellRange;// = GetVisibleNonFixedCellRange(VisRect);//huangw
+    HCellRange VisCellRange = visibleNonFixedCellRange(VisRect);//huangw
     int maxVisibleRow = VisCellRange.maxRow(),
         maxVisibleCol = VisCellRange.maxCol();
 
@@ -1268,6 +1273,7 @@ void HGridCtrl::onDraw(QPainter* painter)
     QPen pen(m_crGridLineColour);
     pen.setWidth(0);
     pen.setStyle(Qt::SolidLine);
+    painter->setPen(pen);
 
     //1.先画垂直水平线条，每个格子画一个
     // draw vertical lines (drawn at ends of cells)
@@ -1418,7 +1424,7 @@ void HGridCtrl::onDraw(QPainter* painter)
             if (pCell)
             {
                 pCell->setCoords(row,col);
-                pCell->draw(painter, row, col, rect, true);
+                pCell->draw(painter, row, col, rect, false);
             }
             /* huangw
             if (pCell)
@@ -1497,7 +1503,7 @@ void HGridCtrl::onDraw(QPainter* painter)
             if (pCell)
             {
                 pCell->setCoords(row,col);
-                pCell->draw(painter, row, col, rect, true);
+                pCell->draw(painter, row, col, rect, false);
             }
             /*
             if (pCell)
@@ -1807,7 +1813,7 @@ void HGridCtrl::setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
 	// Only redraw visible cells
     HCellRange VisCellRange;
 	if (IsWindow(GetSafeHwnd()))
-		VisCellRange = GetVisibleNonFixedCellRange();
+        VisCellRange = visibleNonFixedCellRange();
    
     // EFW - Bug fix - Don't allow selection of fixed rows
     if(nMinRow >= 0 && nMinRow < GetFixedRowCount())
@@ -2652,52 +2658,54 @@ HCellID HGridCtrl::topleftNonFixedCell(bool bForceRecalculation )
     return m_idTopLeftCell;
 }
 
-/*
+
 // This gets even partially visible cells
-HCellRange HGridCtrl::GetVisibleNonFixedCellRange(LPRECT pRect ,
+HCellRange HGridCtrl::visibleNonFixedCellRange(QRect& pRect,
                                                   bool bForceRecalculation )
 {
-    CRect rect;
-    GetClientRect(rect);
+    QRect rect = viewport()->rect();
+    //GetClientRect(rect);
 
-    HCellID idTopLeft = GetTopleftNonFixedCell(bForceRecalculation);
+    HCellID idTopLeft = topleftNonFixedCell(bForceRecalculation);
 
     // calc bottom
-    int bottom = GetFixedRowHeight();
+    int bottom = fixedRowHeight();
 	int i;
-    for (i = idTopLeft.row; i < GetRowCount(); i++)
+    for (i = idTopLeft.row; i < rowCount(); i++)
     {
-        bottom += GetRowHeight(i);
-        if (bottom >= rect.bottom)
+        bottom += rowHeight(i);
+        if (bottom >= rect.bottom())
         {
-            bottom = rect.bottom;
+            bottom = rect.bottom();
             break;
         }
     }
-    int maxVisibleRow = min(i, GetRowCount() - 1);
+    int maxVisibleRow = min(i, rowCount() - 1);
 
     // calc right
-    int right = GetFixedColumnWidth();
-    for (i = idTopLeft.col; i < GetColumnCount(); i++)
+    int right = fixedColumnWidth();
+    for (i = idTopLeft.col; i < columnCount(); i++)
     {
-        right += GetColumnWidth(i);
-        if (right >= rect.right)
+        right += columnWidth(i);
+        if (right >= rect.right())
         {
-            right = rect.right;
+            right = rect.right();
             break;
         }
     }
-    int maxVisibleCol = min(i, GetColumnCount() - 1);
-    if (pRect)
+    int maxVisibleCol = min(i, columnCount() - 1);
+    if (!pRect.isValid())
     {
-        pRect->left = pRect->top = 0;
-        pRect->right = right;
-        pRect->bottom = bottom;
+        pRect.setTop(0);
+        pRect.setLeft(0);
+        pRect.setRight(right);
+        pRect.setBottom(bottom);
     }
 
     return HCellRange(idTopLeft.row, idTopLeft.col, maxVisibleRow, maxVisibleCol);
 }
 
+/*
 // used by ResetScrollBars() - This gets only fully visible cells
 HCellRange HGridCtrl::GetUnobstructedNonFixedCellRange(bool bForceRecalculation )
 {
@@ -3299,11 +3307,12 @@ bool HGridCtrl::setRowCount(int nRows)
                 {
                     m_arRowHeights[row] = m_cellDefault.height();
 
-                    m_RowData[row] = new GRID_ROW;
+                    GRID_ROW *gridRow = new GRID_ROW;
+                    m_RowData.insert(row,gridRow);
                     //m_RowData[row]->SetSize(m_nCols); //不要设置列
                     for (int col = 0; col < m_nCols; col++)
                     {
-                        GRID_ROW* pRow = m_RowData[row];
+                        GRID_ROW* pRow = m_RowData.at(col);
                         if (pRow && !isVirtualMode())
                             pRow->insert(col, createCell(row, col));
                     }
@@ -3473,6 +3482,7 @@ bool HGridCtrl::setColumnCount(int nCols)
     try
     { 
         // 增加列
+        m_arColWidths.resize(nCols);
         if (addedCols > 0)
         {
             //列宽
@@ -5082,7 +5092,7 @@ void HGridCtrl::EnsureVisible(int nRow, int nCol)
     // it back. (Damir)
     /*CWnd* pFocusWnd = GetFocus();
 
-    HCellRange VisibleCells = GetVisibleNonFixedCellRange();
+    HCellRange VisibleCells = visibleNonFixedCellRange();
 
     int right = nCol - VisibleCells.GetMaxCol();
     int left  = VisibleCells.GetMinCol() - nCol;
@@ -5821,7 +5831,7 @@ void HGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
         if (GetColumnWidth(GetColumnCount()-1) < m_nResizeCaptureRange)
         {
             CRect VisRect;
-            GetVisibleNonFixedCellRange(VisRect);
+            visibleNonFixedCellRange(VisRect);
             if (abs(point.x - VisRect.right) < m_nResizeCaptureRange)
                 m_LeftClickDownCell.col = GetColumnCount()-1;
         }
@@ -5913,7 +5923,7 @@ void HGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
         if (GetRowHeight(GetRowCount()-1) < m_nResizeCaptureRange)
         {
             CRect VisRect;
-            GetVisibleNonFixedCellRange(VisRect);
+            visibleNonFixedCellRange(VisRect);
             if (abs(point.y - VisRect.bottom) < m_nResizeCaptureRange)
                 m_LeftClickDownCell.row = GetRowCount()-1;
         }

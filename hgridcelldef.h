@@ -59,6 +59,9 @@ const Q_DECL_UNUSED QRgb  QCOLOR_GRADIENTACTIVECAPTION      = 0x000080;    //Gra
 const Q_DECL_UNUSED QRgb  QCOLOR_GRADIENTINACTIVECAPTION    = 0x808080;    //GradientInactiveTitle
 const Q_DECL_UNUSED QRgb  QCOLOR_MENUHILIGHT                = 0xFF9933;    //MenuHilight
 const Q_DECL_UNUSED QRgb  QCOLOR_MENUBAR                    = 0xF0F0F0;    //MenuBar
+const Q_DECL_UNUSED QRgb  QCOLOR_3DHIGHLIGHT                = 0xFFFFFF;    //ButtonHighlight
+const Q_DECL_UNUSED QRgb  QCOLOR_3DHILIGHT                  = 0xFFFFFF;    //ButtonHighlight
+const Q_DECL_UNUSED QRgb  QCOLOR_3DSHADOW                   = 0x808080;    //ButtonShadow
 
 
 enum eMouseModes { MOUSE_NOTHING, MOUSE_SELECT_ALL, MOUSE_SELECT_COL, MOUSE_SELECT_ROW,
@@ -158,10 +161,6 @@ typedef struct _GV_ITEM {
 #define QSB_RIGHT            7
 #define QSB_ENDSCROLL        8
 
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////////
 // Structures
 ///////////////////////////////////////////////////////////////////////////////////
@@ -215,20 +214,15 @@ typedef struct tagGV_CACHEHINT {
 
 /*
  *
-Qt::TextSingleLine
-0x0100
+Qt::TextSingleLine 0x0100
 Treats all whitespace as spaces and prints just one line.
-Qt::TextDontClip
-0x0200
+Qt::TextDontClip 0x0200
 If it's impossible to stay within the given bounds, it prints outside.
-Qt::TextExpandTabs
-0x0400
+Qt::TextExpandTabs 0x0400
 Makes the U+0009 (ASCII tab) character move to the next tab stop.
-Qt::TextShowMnemonic
-0x0800
+Qt::TextShowMnemonic 0x0800
 Displays the string "&P" as P For an ampersand, use "&&".
-Qt::TextWordWrap
-0x1000
+Qt::TextWordWrap 0x1000
 Breaks lines at appropriate points, e.g. at word boundaries.
 Qt::TextWrapAnywhere
 0x2000
