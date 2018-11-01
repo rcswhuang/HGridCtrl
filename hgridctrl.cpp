@@ -26,10 +26,11 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     // the new system colours.
     QWidget* widget = new QWidget;
     setViewport(widget);
+
     m_crWindowText        = QColor(QCOLOR_WINDOWTEXT);
     m_crWindowColour      = QColor(QCOLOR_WINDOW);
-    //m_cr3DFace            = QColor(QCOLOR_3DFACE); //huangw
-    //m_crShadow            = QColor(QCOLOR_3DSHADOW);
+    m_cr3DFace            = QColor(QCOLOR_3DFACE);
+    m_crShadow            = QColor(QCOLOR_3DSHADOW);
     m_crGridLineColour    = QColor(192,192,192);
 
     m_nRows               = 0;
@@ -204,7 +205,7 @@ void HGridCtrl::paintEvent(QPaintEvent* event)
 // selected bitmap with colour, then all sorts of vis problems would occur
 void HGridCtrl::eraseBkgnd(QPainter* pDC)
 {
-    return;
+
     QRect  VisRect, ClipRect, rect;
     QBrush FixedRowColBack(defaultCell(true, true)->backClr()),
            FixedRowBack(defaultCell(true, false)->backClr()),
@@ -226,7 +227,7 @@ void HGridCtrl::eraseBkgnd(QPainter* pDC)
         pDC->fillRect(QRect(ClipRect.left(), ClipRect.top(),
                       nFixedColumnWidth, nFixedRowHeight),
                       FixedRowColBack);
-    return;
+
     // Draw Fixed columns background
     if (ClipRect.left() < nFixedColumnWidth && ClipRect.top() < VisRect.bottom())
         pDC->fillRect(QRect(ClipRect.left(), ClipRect.top(),
@@ -249,16 +250,17 @@ void HGridCtrl::eraseBkgnd(QPainter* pDC)
         pDC->fillRect(CellRect, TextBack);
     }
 
+    //note:注意bottom+1,right+1,如果不+1,右下有两条白线
     // Draw right hand side of window outside grid
     if (VisRect.right() < ClipRect.right())
         pDC->fillRect(QRect(VisRect.right(), ClipRect.top(),
-                      ClipRect.right(), ClipRect.bottom()),
+                      ClipRect.right(), ClipRect.bottom()+1),
                       Back);
 
     // Draw bottom of window below grid
     if (VisRect.bottom() < ClipRect.bottom() && ClipRect.left() < VisRect.right())
         pDC->fillRect(QRect(ClipRect.left(), VisRect.bottom(),
-                      VisRect.right(), ClipRect.bottom()),
+                      VisRect.right()+1, ClipRect.bottom()),
                       Back);
 
 }
@@ -1235,12 +1237,13 @@ void HGridCtrl::onDraw(QPainter* painter)
         return;
 
 
-   // CRect clipRect;
+
     //if (pDC->GetClipBox(&clipRect) == ERROR)
      //   return;
     //如果滚动区域为空
     if(NULL == viewport())
         return;
+    QRect clipRect = viewport()->rect();
 
     eraseBkgnd(painter);            // OnEraseBkgnd does nothing, so erase bkgnd here.
     // This necessary since we may be using a Memory DC.
@@ -1276,7 +1279,6 @@ void HGridCtrl::onDraw(QPainter* painter)
     painter->setPen(pen);
 
     //1.先画垂直水平线条，每个格子画一个
-    // draw vertical lines (drawn at ends of cells)
     //绘制垂直线条
     if (m_nGridLines == GVL_BOTH || m_nGridLines == GVL_VERT)
     {
@@ -1286,13 +1288,10 @@ void HGridCtrl::onDraw(QPainter* painter)
             if (columnWidth(col) <= 0) continue;
 
             x += columnWidth(col);
-            //pDC->MoveTo(x-1, nFixedRowHeight);
-            //pDC->LineTo(x-1, VisRect.bottom);
             painter->drawLine(QPoint(x-1,nFixedRowHeight),QPoint(x-1,VisRect.bottom()));
         }
     }
 
-    // draw horizontal lines (drawn at bottom of each cell)
     //绘制水平线条
     if (m_nGridLines == GVL_BOTH || m_nGridLines == GVL_HORZ)
     {
@@ -1302,15 +1301,11 @@ void HGridCtrl::onDraw(QPainter* painter)
             if (rowHeight(row) <= 0) continue;
 
             y += rowHeight(row);
-            //pDC->MoveTo(nFixedColWidth, y-1);
-            //pDC->LineTo(VisRect.right,  y-1);
             painter->drawLine(QPoint(nFixedColWidth,y-1),QPoint(VisRect.right(),y-1));
         }
     }
 
-    //pDC->SelectStockObject(NULL_PEN);
-
-    // draw rest of non-fixed cells
+    painter->setPen(Qt::NoPen);
     //2.绘制单元格里面的内容
     rect.setBottom(nFixedRowHeight-1);
     for (row = minVisibleRow; row <= maxVisibleRow; row++)
@@ -1320,14 +1315,11 @@ void HGridCtrl::onDraw(QPainter* painter)
         rect.setTop(rect.bottom()+1);
         rect.setBottom(rect.top() + rowHeight(row)-1);
 
-        //huangw
-        /*
         // rect.bottom = bottom pixel of previous row
-        if (rect.top > clipRect.bottom)
+        if (rect.top() > clipRect.bottom())
             break;                // Gone past cliprect
-        if (rect.bottom < clipRect.top)
+        if (rect.bottom() < clipRect.top())
             continue;
-            */// Reached cliprect yet?
 
         rect.setRight(nFixedColWidth-1);
         for (col = minVisibleCol; col <= maxVisibleCol; col++)
@@ -1337,13 +1329,10 @@ void HGridCtrl::onDraw(QPainter* painter)
             rect.setLeft(rect.right()+1);
             rect.setRight(rect.left() + columnWidth(col)-1);
 
-            //huangw
-            /*
-            if (rect.left > clipRect.right)
+            if (rect.left() > clipRect.right())
                 break;        // gone past cliprect
-            if (rect.right < clipRect.left)
+            if (rect.right() < clipRect.left())
                 continue;     // Reached cliprect yet?
-                */
 
             pCell = getCell(row, col);
             if (pCell)
@@ -2830,13 +2819,13 @@ void HGridCtrl::enableScrollBars(int nBar, bool bEnable )
 {
     if (bEnable)
     {
-        if (!IsVisibleHScroll() && (nBar == SB_HORZ || nBar == SB_BOTH))
+        if (!isVisibleHScroll() && (nBar == SB_HORZ || nBar == SB_BOTH))
         {
             m_nBarState |= GVL_HORZ;
             CWnd::EnableScrollBarCtrl(SB_HORZ, bEnable);
         }
         
-        if (!IsVisibleVScroll() && (nBar == SB_VERT || nBar == SB_BOTH))
+        if (!isVisibleVScroll() && (nBar == SB_VERT || nBar == SB_BOTH))
         {
             m_nBarState |= GVL_VERT;
             CWnd::EnableScrollBarCtrl(SB_VERT, bEnable);
@@ -2844,118 +2833,95 @@ void HGridCtrl::enableScrollBars(int nBar, bool bEnable )
     }
     else
     {
-        if ( IsVisibleHScroll() && (nBar == SB_HORZ || nBar == SB_BOTH))
+        if ( isVisibleHScroll() && (nBar == SB_HORZ || nBar == SB_BOTH))
         {
             m_nBarState &= ~GVL_HORZ; 
             CWnd::EnableScrollBarCtrl(SB_HORZ, bEnable);
         }
         
-        if ( IsVisibleVScroll() && (nBar == SB_VERT || nBar == SB_BOTH))
+        if ( isVisibleVScroll() && (nBar == SB_VERT || nBar == SB_BOTH))
         {
             m_nBarState &= ~GVL_VERT;
             CWnd::EnableScrollBarCtrl(SB_VERT, bEnable);
         }
     }
 }
-*//*
+*/
 // If resizing or cell counts/sizes change, call this - it'll fix up the scroll bars
 void HGridCtrl::resetScrollBars()
 {
     // Force a refresh.
     m_idTopLeftCell.row = -1;
 
-    if (!m_bAllowDraw || !::IsWindow(GetSafeHwnd())) 
+    if (!m_bAllowDraw)
         return;
-    
-    CRect rect;
-    
+
+    QRect rect;
+    rect = viewport()->rect();
     // This would have caused OnSize event - Brian 
     //EnableScrollBars(SB_BOTH, false);
     
-    GetClientRect(rect);
-    
-    if (rect.left == rect.right || rect.top == rect.bottom)
+    if (rect.left() == rect.right() || rect.top() == rect.bottom())
         return;
+    //把垂直滚动条的宽度要加到rect里面
+    if (isVisibleVScroll())
+        rect.setRight(rect.right() + verticalScrollBar()->width());
     
-    if (IsVisibleVScroll())
-        rect.right += GetSystemMetrics(SM_CXVSCROLL) + GetSystemMetrics(SM_CXBORDER);
+    if (isVisibleHScroll())
+        rect.setBottom(rect.bottom() + horizontalScrollBar()->height());
     
-    if (IsVisibleHScroll())
-        rect.bottom += GetSystemMetrics(SM_CYHSCROLL) + GetSystemMetrics(SM_CYBORDER);
-    
-    rect.left += GetFixedColumnWidth();
-    rect.top += GetFixedRowHeight();
+    rect.setLeft(rect.left() + fixedColumnWidth());
+    rect.setTop(rect.top() + fixedRowHeight());
     
     
-    if (rect.left >= rect.right || rect.top >= rect.bottom)
+    if (rect.left() >= rect.right() || rect.top() >= rect.bottom())
     {
-        EnableScrollBarCtrl(SB_BOTH, false);
+        //EnableScrollBarCtrl(SB_BOTH, false);
         return;
     }
     
-    CRect VisibleRect(GetFixedColumnWidth(), GetFixedRowHeight(), 
-		              rect.right, rect.bottom);
-    CRect VirtualRect(GetFixedColumnWidth(), GetFixedRowHeight(),
-		              GetVirtualWidth(), GetVirtualHeight());
+    QRect VisibleRect(fixedColumnWidth(), fixedRowHeight(),
+                      rect.right(), rect.bottom());
+    QRect VirtualRect(fixedColumnWidth(), fixedRowHeight(),
+                      virtualWidth(), virtualHeight());
     
     // Removed to fix single row scrollbar problem (Pontus Goffe)
-    // HCellRange visibleCells = GetUnobstructedNonFixedCellRange();
-    // if (!isValid(visibleCells)) return;
-        
-    //TRACE(_T("Visible: %d x %d, Virtual %d x %d.  H %d, V %d\n"), 
-    //      VisibleRect.Width(), VisibleRect.Height(),
-    //      VirtualRect.Width(), VirtualRect.Height(),
-    //      IsVisibleHScroll(), IsVisibleVScroll());
-
     // If vertical scroll bar, horizontal space is reduced
-    if (VisibleRect.Height() < VirtualRect.Height())
-        VisibleRect.right -= ::GetSystemMetrics(SM_CXVSCROLL);
+    if (VisibleRect.height() < VirtualRect.height())
+        VisibleRect.setRight(VisibleRect.right() - verticalScrollBar()->width());
+
     // If horz scroll bar, vert space is reduced
-    if (VisibleRect.Width() < VirtualRect.Width())
-        VisibleRect.bottom -= ::GetSystemMetrics(SM_CYHSCROLL);
+    if (VisibleRect.width() < VirtualRect.width())
+        VisibleRect.setBottom(VisibleRect.bottom() - horizontalScrollBar()->height());
     
-    // Recheck vertical scroll bar
-    //if (VisibleRect.Height() < VirtualRect.Height())
-    // VisibleRect.right -= ::GetSystemMetrics(SM_CXVSCROLL);
-    
-    if (VisibleRect.Height() < VirtualRect.Height())
+    if (VisibleRect.height() < VirtualRect.height())
     {
-        EnableScrollBars(SB_VERT, true);
-        m_nVScrollMax = VirtualRect.Height() - 1;
+        //EnableScrollBars(SB_VERT, true);
+        m_nVScrollMax = VirtualRect.height() - 1;
     }
     else
     {
-        EnableScrollBars(SB_VERT, false);
+        //EnableScrollBars(SB_VERT, false);
         m_nVScrollMax = 0;
     }
 
-    if (VisibleRect.Width() < VirtualRect.Width())
+    if (VisibleRect.width() < VirtualRect.width())
     {
-        EnableScrollBars(SB_HORZ, true);
-        m_nHScrollMax = VirtualRect.Width() - 1;
+        //EnableScrollBars(SB_HORZ, true);
+        m_nHScrollMax = VirtualRect.width() - 1;
     }
     else
     {
-        EnableScrollBars(SB_HORZ, false);
+        //EnableScrollBars(SB_HORZ, false);
         m_nHScrollMax = 0;
     }
 
     Q_ASSERT(m_nVScrollMax < INT_MAX && m_nHScrollMax < INT_MAX); // This should be fine
-*/
-    /* Old code - CJM  alreay ---huangw
-    SCROLLINFO si;
-    si.cbSize = sizeof(SCROLLINFO);
-    si.fMask = SIF_PAGE;
-    si.nPage = (m_nHScrollMax>0)? VisibleRect.Width() : 0;
-    SetScrollInfo(SB_HORZ, &si, false);
-    si.nPage = (m_nVScrollMax>0)? VisibleRect.Height() : 0;
-    SetScrollInfo(SB_VERT, &si, false);
 
-    SetScrollRange(SB_VERT, 0, m_nVScrollMax, true);
-    SetScrollRange(SB_HORZ, 0, m_nHScrollMax, true);
-    */
-
-    // New code - Paul Runstedler 
+    horizontalScrollBar()->setPageStep(VisibleRect.width());
+    horizontalScrollBar()->setRange(0,m_nHScrollMax);
+    verticalScrollBar()->setPageStep(VisibleRect.height());
+    verticalScrollBar()->setRange(0,m_nVScrollMax);
 
    /* SCROLLINFO si;
     si.cbSize = sizeof(SCROLLINFO);
@@ -2969,9 +2935,9 @@ void HGridCtrl::resetScrollBars()
     si.nPage = (m_nVScrollMax>0)? VisibleRect.Height() : 0;
     si.nMin = 0;
     si.nMax = m_nVScrollMax;
-    SetScrollInfo(SB_VERT, &si, true);
+    SetScrollInfo(SB_VERT, &si, true);*/
 }
-*/
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Row/Column position functions
 
@@ -3329,7 +3295,7 @@ bool HGridCtrl::setRowCount(int nRows)
 
     //----huangw
     //setModified();
-    //resetScrollBars();
+    resetScrollBars();
     //refresh();
 
     return bResult;
@@ -3513,7 +3479,7 @@ bool HGridCtrl::setColumnCount(int nCols)
 
     //--huangw
     setModified();
-    //ResetScrollBars();
+    resetScrollBars();
     refresh();
 
     return bResult;

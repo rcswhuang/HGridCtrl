@@ -515,9 +515,9 @@ protected:
     HCellID topleftNonFixedCell(bool bForceRecalculation = false);
     //HCellRange GetUnobstructedNonFixedCellRange(bool bForceRecalculation = false);
     HCellRange visibleNonFixedCellRange(QRect& pRect , bool bForceRecalculation = false);
-/*
-    bool IsVisibleVScroll() { return ( (m_nBarState & GVL_VERT) > 0); }
-    bool IsVisibleHScroll() { return ( (m_nBarState & GVL_HORZ) > 0); }*/
+
+    bool isVisibleVScroll() { return ( (m_nBarState & GVL_VERT) > 0); }
+    bool isVisibleHScroll() { return ( (m_nBarState & GVL_HORZ) > 0); }
 
     //设置滚动条位置
     void setScrollBarValue(uint Msg,HWPARAM wParam,HLPARAM IParam );
@@ -525,8 +525,8 @@ protected:
     void onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar);
     int  scrollPos32(int nBar, bool bGetTrackPos = false);
     bool setScrollPos32(int nBar, int nPos, bool bRedraw = true);
-    /*void ResetScrollBars();
-    void EnableScrollBars(int nBar, bool bEnable = true);
+    void resetScrollBars();
+    /*void EnableScrollBars(int nBar, bool bEnable = true);
 
 
     bool SortTextItems(int nCol, bool bAscending, int low, int high);
@@ -677,6 +677,8 @@ protected:
     int         m_nHeaderHeight, m_nFooterHeight, m_nLeftMargin,
                 m_nRightMargin, m_nTopMargin, m_nBottomMargin, m_nGap;
 
+    QScrollBar* m_horizontalScrollBar;
+    QScrollBar* m_verticalScrollBar;
 protected:
 
     void selectAllCells();

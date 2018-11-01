@@ -231,7 +231,6 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
             {
                 painter->drawImage(rect,*mImage);
             }
-            //rect.left += nImageWidth+GetMargin();
         }
     }
 

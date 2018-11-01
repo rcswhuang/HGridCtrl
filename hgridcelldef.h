@@ -62,6 +62,7 @@ const Q_DECL_UNUSED QRgb  QCOLOR_MENUBAR                    = 0xF0F0F0;    //Men
 const Q_DECL_UNUSED QRgb  QCOLOR_3DHIGHLIGHT                = 0xFFFFFF;    //ButtonHighlight
 const Q_DECL_UNUSED QRgb  QCOLOR_3DHILIGHT                  = 0xFFFFFF;    //ButtonHighlight
 const Q_DECL_UNUSED QRgb  QCOLOR_3DSHADOW                   = 0x808080;    //ButtonShadow
+const Q_DECL_UNUSED QRgb  QCOLOR_3DFACE                     = 0xC0C0C0;
 
 
 enum eMouseModes { MOUSE_NOTHING, MOUSE_SELECT_ALL, MOUSE_SELECT_COL, MOUSE_SELECT_ROW,
