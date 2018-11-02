@@ -432,7 +432,47 @@ bool HGridCellBase::printCell(QPainter* painter, int nRow, int nCol, QRect& rect
     return true;
 }
 
-void HGridCellBase::OnEndEdit()
+void HGridCellBase::onMouseEnter()
+{
+
+}
+
+void HGridCellBase::onMouseOver()
+{
+
+}
+
+void HGridCellBase::onMouseLeave()
+{
+
+}
+
+void HGridCellBase::onClick( QPoint PointCellRelative)
+{
+
+}
+
+void HGridCellBase::onClickDown( QPoint PointCellRelative)
+{
+
+}
+
+void HGridCellBase::onRClick( QPoint PointCellRelative)
+{
+
+}
+
+void HGridCellBase::onDblClick( QPoint PointCellRelative)
+{
+
+}
+
+bool HGridCellBase::onSetCursor()
+{
+    return false;
+}
+
+void HGridCellBase::onEndEdit()
 {
 
 }

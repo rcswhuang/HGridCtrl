@@ -205,7 +205,8 @@ void HGridCtrl::paintEvent(QPaintEvent* event)
 // selected bitmap with colour, then all sorts of vis problems would occur
 void HGridCtrl::eraseBkgnd(QPainter* pDC)
 {
-
+    if(NULL == pDC)
+        return;
     QRect  VisRect, ClipRect, rect;
     QBrush FixedRowColBack(defaultCell(true, true)->backClr()),
            FixedRowBack(defaultCell(true, false)->backClr()),
@@ -280,34 +281,34 @@ HCellID HGridCtrl::setFocusCell(HCellID cell)
 
     m_idCurrentCell = cell;
 
-    /*
+
     if (isValid(idPrev))
     {
         setItemState(idPrev.row, idPrev.col,
             itemState(idPrev.row, idPrev.col) & ~GVIS_FOCUSED);
-        RedrawCell(idPrev); // comment to reduce flicker
+        redrawCell(idPrev); // comment to reduce flicker
 
-        if (GetTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
+        if (isTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
             for (int row = 0; row < m_nFixedRows; row++)
-                RedrawCell(row, idPrev.col);
-        if (GetTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
+                redrawCell(row, idPrev.col);
+        if (isTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
             for (int col = 0; col < m_nFixedCols; col++)
-                RedrawCell(idPrev.row, col);
+                redrawCell(idPrev.row, col);
     }
 
     if (isValid(m_idCurrentCell))
     {
-        SetItemState(m_idCurrentCell.row, m_idCurrentCell.col,
-            GetItemState(m_idCurrentCell.row, m_idCurrentCell.col) | GVIS_FOCUSED);
+        setItemState(m_idCurrentCell.row, m_idCurrentCell.col,
+            itemState(m_idCurrentCell.row, m_idCurrentCell.col) | GVIS_FOCUSED);
 
-        RedrawCell(m_idCurrentCell); // comment to reduce flicker
+        redrawCell(m_idCurrentCell); // comment to reduce flicker
 
-        if (GetTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
+        if (isTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
             for (int row = 0; row < m_nFixedRows; row++)
-                RedrawCell(row, m_idCurrentCell.col);
-        if (GetTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
+                redrawCell(row, m_idCurrentCell.col);
+        if (isTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
             for (int col = 0; col < m_nFixedCols; col++)
-                RedrawCell(m_idCurrentCell.row, col);
+                redrawCell(m_idCurrentCell.row, col);
 
         // EFW - New addition.  If in list mode, make sure the selected
         // row highlight follows the cursor.
@@ -323,7 +324,7 @@ HCellID HGridCtrl::setFocusCell(HCellID cell)
             // m_MouseMode = MOUSE_NOTHING;
         //}
 
-    }*/
+    }
 
     return idPrev;
 }
@@ -1106,8 +1107,7 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
             update();
         }
         break;
-        
-        
+
     default: 
         break;
     }
@@ -1233,13 +1233,9 @@ void HGridCtrl::onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
 //最核心函数
 void HGridCtrl::onDraw(QPainter* painter)
 {
-    if (!m_bAllowDraw)
+    if(!m_bAllowDraw)
         return;
 
-
-
-    //if (pDC->GetClipBox(&clipRect) == ERROR)
-     //   return;
     //如果滚动区域为空
     if(NULL == viewport())
         return;
@@ -1660,14 +1656,11 @@ bool HGridCtrl::isValid(const HCellRange& range) const
         range.minRow() <= range.maxRow() && range.minCol() <= range.maxCol());
 }
 
-/*
+
 // Enables/Disables redraw for certain operations like columns auto-sizing etc,
 // but not for user caused things such as selection changes.
-void HGridCtrl::SetRedraw(bool bAllowDraw, bool bResetScrollBars  )
+void HGridCtrl::setRedraw(bool bAllowDraw, bool bResetScrollBars  )
 {
-//    TRACE(_T("%s: Setting redraw to %s\n"),
-//             GetRuntimeClass()->m_lpszClassName, bAllowDraw? _T("true") : _T("false"));
-
     if (bAllowDraw && !m_bAllowDraw)
     {
         m_bAllowDraw = true;
@@ -1676,107 +1669,86 @@ void HGridCtrl::SetRedraw(bool bAllowDraw, bool bResetScrollBars  )
 
     m_bAllowDraw = bAllowDraw;
     if (bResetScrollBars)
-        ResetScrollBars();
+        resetScrollBars();
 }
 
 // Forces a redraw of a cell immediately (using a direct DC construction,
 // or the supplied dc)
-bool HGridCtrl::RedrawCell(const HCellID& cell, CDC* pDC )
+bool HGridCtrl::redrawCell(const HCellID& cell, QPainter* pDC )
 {
-    return RedrawCell(cell.row, cell.col, pDC);
+    return redrawCell(cell.row, cell.col, pDC);
 }
 
-bool HGridCtrl::RedrawCell(int nRow, int nCol, CDC* pDC )
+bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
 {
     bool bResult = true;
-    bool bMustReleaseDC = false;
-
     if (!m_bAllowDraw || !isCellVisible(nRow, nCol))
         return false;
 
-    CRect rect;
-    if (!GetCellRect(nRow, nCol, rect))
+    QRect rect;
+    if (!cellRect(nRow, nCol, rect))
         return false;
-
-    if (!pDC)
-    {
-        pDC = GetDC();
-        if (pDC)
-            bMustReleaseDC = true;
-    }
-
     if (pDC)
     {
         // Redraw cells directly
         if (nRow < m_nFixedRows || nCol < m_nFixedCols)
         {
-            CGridCellBase* pCell = GetCell(nRow, nCol);
+            HGridCellBase* pCell = getCell(nRow, nCol);
             if (pCell)
-                bResult = pCell->Draw(pDC, nRow, nCol, rect, true);
+                bResult = pCell->draw(pDC, nRow, nCol, rect, true);
         }
         else
         {
-            CGridCellBase* pCell = GetCell(nRow, nCol);
+            HGridCellBase* pCell = getCell(nRow, nCol);
             if (pCell)
-                bResult = pCell->Draw(pDC, nRow, nCol, rect, true);
+                bResult = pCell->draw(pDC, nRow, nCol, rect, true);
 
             // Since we have erased the background, we will need to redraw the gridlines
-            CPen pen;
-            pen.CreatePen(PS_SOLID, 0, m_crGridLineColour);
-
-            CPen* pOldPen = (CPen*) pDC->SelectObject(&pen);
+            pDC->save();
+            QPen pen(m_crGridLineColour,0,Qt::SolidLine);
+            //pen.CreatePen(PS_SOLID, 0, m_crGridLineColour);
+            //CPen* pOldPen = (CPen*) pDC->SelectObject(&pen);
+            pDC->setPen(pen);
             if (m_nGridLines == GVL_BOTH || m_nGridLines == GVL_HORZ)
             {
-                pDC->MoveTo(rect.left,    rect.bottom);
-                pDC->LineTo(rect.right + 1, rect.bottom);
+                pDC->drawLine(QPoint(rect.left(),rect.bottom()),QPoint(rect.right() + 1, rect.bottom()));
+                //pDC->LineTo(rect.right + 1, rect.bottom);
             }
             if (m_nGridLines == GVL_BOTH || m_nGridLines == GVL_VERT)
             {
-                pDC->MoveTo(rect.right, rect.top);
-                pDC->LineTo(rect.right, rect.bottom + 1);
+                pDC->drawLine(QPoint(rect.right(), rect.top()),QPoint(rect.right(), rect.bottom() + 1));
+                //pDC->LineTo(rect.right, rect.bottom + 1);
             }
-            pDC->SelectObject(pOldPen);
+            pDC->restore();
+            //pDC->SelectObject(pOldPen);
+
         }
     } else
-        InvalidateRect(rect, true);     // Could not get a DC - invalidate it anyway
+        viewport()->update(rect);     // Could not get a DC - invalidate it anyway
     // and hope that OnPaint manages to get one
-
-    if (bMustReleaseDC)
-        ReleaseDC(pDC);
-
     return bResult;
 }
 
 // redraw a complete row
-bool HGridCtrl::RedrawRow(int row)
+bool HGridCtrl::redrawRow(int row)
 {
     bool bResult = true;
 
-    CDC* pDC = GetDC();
-    for (int col = 0; col < GetColumnCount(); col++)
-        bResult = RedrawCell(row, col, pDC) && bResult;
-    if (pDC)
-        ReleaseDC(pDC);
-
+    QPainter pDC(viewport());
+    for (int col = 0; col < columnCount(); col++)
+        bResult = redrawCell(row, col, &pDC) && bResult;
     return bResult;
 }
 
 // redraw a complete column
-bool HGridCtrl::RedrawColumn(int col)
+bool HGridCtrl::redrawColumn(int col)
 {
     bool bResult = true;
-
-    CDC* pDC = GetDC();
-    for (int row = 0; row < GetRowCount(); row++)
-        bResult = RedrawCell(row, col, pDC) && bResult;
-    if (pDC)
-        ReleaseDC(pDC);
-
+    QPainter pDC(viewport());
+    for (int row = 0; row < rowCount(); row++)
+        bResult = redrawCell(row, col, &pDC) && bResult;
     return bResult;
 }
-
-*/
-
 
 // Sets the range of currently selected cells
 void HGridCtrl::setSelectedRange(const HCellRange& Range,
@@ -1792,63 +1764,61 @@ void HGridCtrl::setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
 {
     if (!m_bEnableSelection)
         return;
-/*
-	CWaitCursor wait; // Thomas Haase 
 
-    CDC* pDC = NULL;
+    //CWaitCursor wait; // Thomas Haase
+
+    QPainter* pDC = NULL;
     if (bForceRepaint)
-        pDC = GetDC();
+        pDC = new QPainter(viewport());
 
 	// Only redraw visible cells
     HCellRange VisCellRange;
-	if (IsWindow(GetSafeHwnd()))
-        VisCellRange = visibleNonFixedCellRange();
+    VisCellRange = visibleNonFixedCellRange();
    
     // EFW - Bug fix - Don't allow selection of fixed rows
-    if(nMinRow >= 0 && nMinRow < GetFixedRowCount())
-        nMinRow = GetFixedRowCount();
-    if(nMaxRow >= 0 && nMaxRow < GetFixedRowCount())
-        nMaxRow = GetFixedRowCount();
-    if(nMinCol >= 0 && nMinCol < GetFixedColumnCount())
-        nMinCol = GetFixedColumnCount();
-    if(nMaxCol >= 0 && nMaxCol < GetFixedColumnCount())
-        nMaxCol = GetFixedColumnCount();
+    if(nMinRow >= 0 && nMinRow < fixedRowCount())
+        nMinRow = fixedRowCount();
+    if(nMaxRow >= 0 && nMaxRow < fixedRowCount())
+        nMaxRow = fixedRowCount();
+    if(nMinCol >= 0 && nMinCol < fixedColumnCount())
+        nMinCol = fixedColumnCount();
+    if(nMaxCol >= 0 && nMaxCol < fixedColumnCount())
+        nMaxCol = fixedColumnCount();
 
     // If we are selecting cells, then first clear out the list of currently selected cells, then
     if (bselectCells)
     {
-        POSITION pos;
-
+        QMap<quint32,HCellID>::iterator it = m_SelectedCellMap.begin();
         // Unselect all previously selected cells
-        for (pos = m_SelectedCellMap.GetStartPosition(); pos != NULL; )
+        for (;it != m_SelectedCellMap.end(); it++)
         {
-            DWORD key;
+            quint32 key = it.key();
             HCellID cell;
-            m_SelectedCellMap.GetNextAssoc(pos, key, (HCellID&)cell);
+            cell = m_SelectedCellMap.value(key);
 
             // Reset the selection flag on the cell
             if (isValid(cell))
             {
                 // This will remove the cell from the m_SelectedCellMap map
-                SetItemState(cell.row, cell.col,
-                    GetItemState(cell.row, cell.col) & ~GVIS_SELECTED);
+                setItemState(cell.row, cell.col,
+                    itemState(cell.row, cell.col) & ~GVIS_SELECTED);
 
                 // If this is to be reselected, continue on past the redraw
                 if (nMinRow <= cell.row && cell.row <= nMaxRow &&
                     nMinCol <= cell.col && cell.col <= nMaxCol)
                     continue;
 
-                if ( VisCellRange.isValid() && VisCellRange.InRange( cell ) )
+                if ( VisCellRange.isValid() && VisCellRange.inRange( cell ) )
 				{
 					if (bForceRepaint && pDC)                    // Redraw NOW
-						RedrawCell(cell.row, cell.col, pDC);
+                        redrawCell(cell.row, cell.col, pDC);
 					else
                         invalidateCellRect(cell);                // Redraw at leisure
 				}
             }
             else
             {
-                m_SelectedCellMap.RemoveKey( key);  // if it's not valid, get rid of it!
+                m_SelectedCellMap.remove(key);  // if it's not valid, get rid of it!
             }
         }
 
@@ -1857,28 +1827,29 @@ void HGridCtrl::setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
         // all these cells as selected
         // Note that if we are list mode, single row selection, then we won't be adding 
         // the previous cells. Only the current row of cells will be added (see below)
-        if (!GetSingleRowSelection() &&
+        if (!isSingleRowSelection() &&
             nMinRow >= 0 && nMinCol >= 0 && nMaxRow >= 0 && nMaxCol >= 0)
         {
-            for (pos = m_PrevSelectedCellMap.GetStartPosition(); pos != NULL; )
+            QMap<quint32,HCellID>::iterator it = m_PrevSelectedCellMap.begin();
+            for (;it != m_PrevSelectedCellMap.end();it++ )
             {
-                DWORD key;
+                quint32 key = it.key();
                 HCellID cell;
-                m_PrevSelectedCellMap.GetNextAssoc(pos, key, (HCellID&)cell);
+                cell = m_PrevSelectedCellMap.value(key);
 
                 if (!isValid(cell))
                     continue;
 
-                int nState = GetItemState(cell.row, cell.col);
+                int nState = itemState(cell.row, cell.col);
 
                 // Set state as Selected. This will add the cell to m_SelectedCellMap
-                SetItemState(cell.row, cell.col, nState | GVIS_SELECTED);
+                setItemState(cell.row, cell.col, nState | GVIS_SELECTED);
 
-                if ( VisCellRange.isValid() && VisCellRange.InRange( cell ) )
+                if ( VisCellRange.isValid() && VisCellRange.inRange( cell ) )
 				{
 					// Redraw (immediately or at leisure)
 					if (bForceRepaint && pDC)
-					    RedrawCell(cell.row, cell.col, pDC);
+                        redrawCell(cell.row, cell.col, pDC);
 					else
                         invalidateCellRect(cell);
 				}
@@ -1896,21 +1867,21 @@ void HGridCtrl::setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
         for (int row = nMinRow; row <= nMaxRow; row++)
             for (int col = nMinCol; col <= nMaxCol; col++)
             {
-                bool bCellSelected = IsCellSelected(row, col);
+                bool bCellSelected = isCellSelected(row, col);
                 if (bselectCells == bCellSelected)
                     continue;    // Already selected or deselected - ignore
 
                 // Set the selected state. This will add/remove the cell to m_SelectedCellMap
                 if (bselectCells)
-                    SetItemState(row, col, GetItemState(row, col) | GVIS_SELECTED);
+                    setItemState(row, col, itemState(row, col) | GVIS_SELECTED);
                 else
-                    SetItemState(row, col, GetItemState(row, col) & ~GVIS_SELECTED);
+                    setItemState(row, col, itemState(row, col) & ~GVIS_SELECTED);
 
-                if ( VisCellRange.isValid() && VisCellRange.InRange(row, col) )
+                if ( VisCellRange.isValid() && VisCellRange.inRange(row, col) )
 				{
 	                // Redraw (immediately or at leisure)
 	                if (bForceRepaint && pDC)
-	                    RedrawCell(row, col, pDC);
+                        redrawCell(row, col, pDC);
 	                else
                         invalidateCellRect(row, col);
 				}
@@ -1919,8 +1890,10 @@ void HGridCtrl::setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
     //    TRACE(_T("%d cells selected.\n"), m_SelectedCellMap.GetCount());
 
     if (pDC != NULL)
-        ReleaseDC(pDC);
-    */
+    {
+        delete pDC;
+        pDC = NULL;
+    }
 }
 
 
@@ -2031,7 +2004,7 @@ void HGridCtrl::onSelecting(const HCellID& currentCell)
     }
 
     // EFW - Bug fix [REMOVED CJM: this will cause infinite loop in list mode]
-    // SetFocusCell(max(currentCell.row, m_nFixedRows), max(currentCell.col, m_nFixedCols));
+    setFocusCell(max(currentCell.row, m_nFixedRows), max(currentCell.col, m_nFixedCols));
 }
 
 void HGridCtrl::validateAndModifyCellContents(int nRow, int nCol, const QString& strText)
@@ -3096,6 +3069,11 @@ bool HGridCtrl::cellRect(int nRow, int nCol, QRect& pRect)
 	{
         cellRangeRect(pCell->m_MergeRange,pRect);
     }*/
+
+    pRect.setLeft(CellOrigin.x());
+    pRect.setTop(CellOrigin.y());
+    pRect.setRight(CellOrigin.x() + columnWidth(nCol)-1);
+    pRect.setBottom(CellOrigin.y() + rowHeight(nRow)-1);
     return true;
 }
 
@@ -3373,8 +3351,7 @@ bool HGridCtrl::setFixedColumnCount(int nFixedCols)
     if (m_idCurrentCell.col < nFixedCols)
         setFocusCell(-1, - 1);
 
-    //resetSelectedRange(); //--huangw
-
+    resetSelectedRange();
     // Force recalculation
     m_idTopLeftCell.col = -1;
 
@@ -5296,7 +5273,341 @@ bool HGridCtrl::invalidateCellRect(const HCellRange& cellRange)
 // CGridCtrl Mouse stuff
 void HGridCtrl::mousePressEvent(QMouseEvent *event)
 {
+#ifdef GRIDCONTROL_USE_TITLETIPS
+    // EFW - Bug Fix
+    //m_TitleTip.Hide();  // hide any titletips
+#endif
 
+    // TRACE0("HGridCtrl::OnLButtonDown\n");
+    // CWnd::OnLButtonDown(nFlags, point);
+
+    //SetFocus();
+
+    m_bLMouseButtonDown   = true;
+    m_LeftClickDownPoint = event->pos(); //注意了
+    m_LeftClickDownCell  = cellFromPt(m_LeftClickDownPoint);
+    if (!isValid(m_LeftClickDownCell))
+        return;
+
+    // If the SHIFT key is not down, then the start of the selection area should be the
+    // cell just clicked. Otherwise, keep the previous selection-start-cell so the user
+    // can add to their previous cell selections in an intuitive way. If no selection-
+    // start-cell has been specified, then set it's value here and now.
+    if(Qt::ShiftModifier == event->modifiers())
+        m_SelectionStartCell = m_LeftClickDownCell;
+    else
+    {
+        if (!isValid(m_SelectionStartCell))
+            m_SelectionStartCell = m_idCurrentCell;
+    }
+
+    //EndEditing();//huangw
+
+    // tell the cell about it
+    HGridCellBase* pCell = getCell(m_LeftClickDownCell.row, m_LeftClickDownCell.col);
+    if (pCell)
+        pCell->onClickDown(pointClicked( m_LeftClickDownCell.row, m_LeftClickDownCell.col, m_LeftClickDownPoint));
+
+    // Clicked in the text area? Only then will cell selection work
+    bool bInTextArea = false;
+    if (pCell)
+    {
+        QRect rectCell;
+        if (cellRect(m_LeftClickDownCell.row, m_LeftClickDownCell.col, rectCell) &&
+            pCell->textRect(rectCell))
+        {
+            bInTextArea = rectCell.contains(m_LeftClickDownPoint);
+        }
+    }
+
+    //如果第一选择cell，第二次又点了同样cell 此处返回，进入cell编辑状态
+    if (m_LeftClickDownCell == m_idCurrentCell &&  !(Qt::ControlModifier == event->modifiers()) &&
+                                bInTextArea &&isCellEditable(m_LeftClickDownCell))
+    {
+        m_MouseMode = MOUSE_PREPARE_EDIT;
+        return;
+    }
+    // If the user clicks on a selected cell, then prepare to drag it.
+    // (If the user moves the mouse, then dragging occurs)
+    else if (isCellSelected(m_LeftClickDownCell))
+    {
+        // If control is pressed then unselect the cell or row (depending on the list mode)
+        if (Qt::ControlModifier == event->modifiers())
+        {
+            setFocusCell(m_LeftClickDownCell);
+            if (isListMode())
+                selectRows(m_LeftClickDownCell, true, false);
+            else
+                selectCells(m_LeftClickDownCell, true, false);
+            return;
+        }
+        /*
+#ifndef GRIDCONTROL_NO_DRAGDROP
+        else if (m_bAllowDragAndDrop)
+            m_MouseMode = MOUSE_PREPARE_DRAG;
+#endif*/
+    }
+    else if (m_MouseMode != MOUSE_OVER_COL_DIVIDE &&
+             m_MouseMode != MOUSE_OVER_ROW_DIVIDE)
+    {
+        if (m_LeftClickDownCell.row >= fixedRowCount() &&
+            m_LeftClickDownCell.col >= fixedColumnCount())
+        {
+            setFocusCell(m_LeftClickDownCell.row, m_LeftClickDownCell.col);
+        }
+        else
+            setFocusCell(-1, -1);
+    }
+
+    //SetCapture();
+
+    if (m_MouseMode == MOUSE_NOTHING)
+    {
+        if (m_bAllowColumnResize && mouseOverColumnResizeArea(m_LeftClickDownPoint))
+        {
+            if (m_MouseMode != MOUSE_OVER_COL_DIVIDE)
+            {
+                setCursor(Qt::SizeHorCursor);
+                m_MouseMode = MOUSE_OVER_COL_DIVIDE;
+            }
+        }
+        else if (m_bAllowRowResize && mouseOverRowResizeArea(m_LeftClickDownPoint))
+        {
+            if (m_MouseMode != MOUSE_OVER_ROW_DIVIDE)
+            {
+                setCursor(Qt::SizeVerCursor);
+                m_MouseMode = MOUSE_OVER_ROW_DIVIDE;
+            }
+        }
+    }
+
+    if (m_MouseMode == MOUSE_OVER_COL_DIVIDE) // sizing column
+    {
+        m_MouseMode = MOUSE_SIZING_COL;
+
+        // Kludge for if we are over the last column...
+        if (columnWidth(columnCount()-1) < m_nResizeCaptureRange)
+        {
+            QRect VisRect;
+            visibleNonFixedCellRange(VisRect);
+            if (abs(m_LeftClickDownPoint.x() - VisRect.right()) < m_nResizeCaptureRange)
+                m_LeftClickDownCell.col = columnCount()-1;
+        }
+
+        QPoint start;
+        if (!cellOrigin(0, m_LeftClickDownCell.col, start))
+            return;
+
+        if( !m_bHiddenColUnhide)
+        {
+            //  ignore columns that are hidden and look left towards first visible column
+            bool bLookForVisible = true;
+            bool bIsCellRightBorder = m_LeftClickDownPoint.x() - start.x() >= m_nResizeCaptureRange;
+
+            if( bIsCellRightBorder && m_LeftClickDownCell.col + 1 >= columnCount() )
+            {
+                // clicked on last column's right border
+
+                // if last column is visible, don't do anything
+                if( m_LeftClickDownCell.col >= 0)
+                    bLookForVisible = false;
+            }
+
+            if( bLookForVisible)
+            {
+                // clicked on column divider other than last right border
+                bool bFoundVisible = false;
+                int iOffset = 1;
+
+                if( bIsCellRightBorder)
+                    iOffset = 0;
+
+                while( m_LeftClickDownCell.col - iOffset >= 0)
+                {
+                    if( columnWidth( m_LeftClickDownCell.col - iOffset) > 0)
+                    {
+                        bFoundVisible = true;
+                        break;
+                    }
+                    m_LeftClickDownCell.col--;
+                }
+                if( !bFoundVisible)
+                    return;
+            }
+        }
+
+
+        QRect rect;
+        rect = viewport()->rect();
+        QRect invertedRect(m_LeftClickDownPoint.x(), rect.top(), m_LeftClickDownPoint.x() + 2, rect.bottom());
+
+        QPainter pDC(viewport());
+        pDC.save();
+        if (pDC.isActive())
+        {
+            pDC.save();
+            pDC.setCompositionMode(QPainter::CompositionMode_Difference);
+            pDC.fillRect(invertedRect,pDC.pen().color());
+            pDC.restore();
+        }
+
+        // If we clicked to the right of the colimn divide, then reset the click-down cell
+        // as the cell to the left of the column divide - UNLESS we clicked on the last column
+        // and the last column is teensy (kludge fix)
+        if (m_LeftClickDownPoint.x() - start.x() < m_nResizeCaptureRange)
+        {
+            if (m_LeftClickDownCell.col < columnCount()-1 ||
+                columnWidth(columnCount()-1) >= m_nResizeCaptureRange)
+            {
+                if (!cellOrigin(0, --m_LeftClickDownCell.col, start))
+                    return;
+            }
+        }
+
+        // Allow a cell resize width no greater than that which can be viewed within
+        // the grid itself
+        //int nMaxCellWidth = rect.width() - fixedColumnWidth();
+        //rect.left  = start.x + 1;
+        //rect.right = rect.left + nMaxCellWidth;
+
+        //ClientToScreen(rect);
+#ifndef _WIN32_WCE_NO_CURSOR
+       // ClipCursor(rect);
+#endif
+    }
+    else if (m_MouseMode == MOUSE_OVER_ROW_DIVIDE) // sizing row
+    {
+        m_MouseMode = MOUSE_SIZING_ROW;
+
+        // Kludge for if we are over the last column...
+        if (rowHeight(rowCount()-1) < m_nResizeCaptureRange)
+        {
+            QRect VisRect;
+            visibleNonFixedCellRange(VisRect);
+            if (abs(m_LeftClickDownPoint.y() - VisRect.bottom()) < m_nResizeCaptureRange)
+                m_LeftClickDownCell.row = rowCount()-1;
+        }
+
+        QPoint start;
+        if (!cellOrigin(m_LeftClickDownCell, start))
+            return;
+
+        if( !m_bHiddenRowUnhide)
+        {
+            //  ignore rows that are hidden and look up towards first visible row
+            bool bLookForVisible = true;
+            bool bIsCellBottomBorder = m_LeftClickDownPoint.y() - start.y() >= m_nResizeCaptureRange;
+
+            if( bIsCellBottomBorder
+                && m_LeftClickDownCell.row + 1 >= rowCount() )
+            {
+                // clicked on last row's bottom border
+
+                // if last row is visible, don't do anything
+                if( m_LeftClickDownCell.row >= 0)
+                    bLookForVisible = false;
+            }
+
+            if( bLookForVisible)
+            {
+                // clicked on row divider other than last bottom border
+                bool bFoundVisible = false;
+                int iOffset = 1;
+
+                if( bIsCellBottomBorder)
+                    iOffset = 0;
+
+                while( m_LeftClickDownCell.row - iOffset >= 0)
+                {
+                    if( rowHeight( m_LeftClickDownCell.row - iOffset) > 0)
+                    {
+                        bFoundVisible = true;
+                        break;
+                    }
+                    m_LeftClickDownCell.row--;
+                }
+                if( !bFoundVisible)
+                    return;
+            }
+        }
+
+
+        QRect rect;
+        rect = viewport()->rect();
+        QRect invertedRect( rect.left(),m_LeftClickDownPoint.y(), rect.right(), m_LeftClickDownPoint.y() + 2);
+
+        QPainter pDC(viewport());
+        pDC.save();
+        if (pDC.isActive())
+        {
+            pDC.save();
+            pDC.setCompositionMode(QPainter::CompositionMode_Difference);
+            pDC.fillRect(invertedRect,pDC.pen().color());
+            pDC.restore();
+        }
+
+        // If we clicked below the row divide, then reset the click-down cell
+        // as the cell above the row divide - UNLESS we clicked on the last row
+        // and the last row is teensy (kludge fix)
+        if (m_LeftClickDownPoint.y() - start.y() < m_nResizeCaptureRange)            // clicked below border
+        {
+            if (m_LeftClickDownCell.row < rowCount()-1 ||
+                rowHeight(rowCount()-1) >= m_nResizeCaptureRange)
+            {
+                if (!cellOrigin(--m_LeftClickDownCell.row, 0, start))
+                    return;
+            }
+        }
+
+        //int nMaxCellHeight = rect.Height()-GetFixedRowHeight();
+        //rect.top = start.y + 1;
+       // rect.bottom = rect.top + nMaxCellHeight;
+
+       // ClientToScreen(rect);
+
+#ifndef _WIN32_WCE_NO_CURSOR
+        //ClipCursor(rect);
+#endif
+    }
+    else
+#ifndef GRIDCONTROL_NO_DRAGDROP
+    if (m_MouseMode != MOUSE_PREPARE_DRAG) // not sizing or editing -- selecting
+#endif
+    {
+        //SendMessageToParent(m_LeftClickDownCell.row, m_LeftClickDownCell.col, GVN_SELCHANGING);
+
+        // If Ctrl pressed, save the current cell selection. This will get added
+        // to the new cell selection at the end of the cell selection process
+        m_PrevSelectedCellMap.clear();
+        if (Qt::ControlModifier == event->modifiers())
+        {
+            QMap<quint32,HCellID>::iterator it = m_SelectedCellMap.begin();
+            for (; it != m_SelectedCellMap.end(); ++it)
+            {
+                quint32 key = it.key();
+                HCellID cell;
+                cell = m_SelectedCellMap.value(key);
+                m_PrevSelectedCellMap.insert(key, cell);
+            }
+        }
+
+        if (m_LeftClickDownCell.row < fixedRowCount())
+        {
+            //fixedRowClick(m_LeftClickDownCell);
+        }
+        else if (m_LeftClickDownCell.col < fixedColumnCount())
+        {
+           //OnFixedColumnClick(m_LeftClickDownCell);
+        }
+        else
+        {
+            m_MouseMode = m_bListMode? MOUSE_SELECT_ROW : MOUSE_SELECT_CELLS;
+            onSelecting(m_LeftClickDownCell);
+
+            //m_nTimerID = SetTimer(WM_LBUTTONDOWN, m_nTimerInterval, 0);
+        }
+    }
+    m_LastMousePoint = event->pos();
 }
 
 void HGridCtrl::mouseReleaseEvent(QMouseEvent *event)
@@ -5535,19 +5846,20 @@ void HGridCtrl::OnMouseMove(UINT nFlags, CPoint point)
 
     m_LastMousePoint = point;
 }
-
+*/
 // Returns the point inside the cell that was clicked (coords relative to cell top left)
-CPoint HGridCtrl::GetPointClicked(int nRow, int nCol, const CPoint& point)
+QPoint HGridCtrl::pointClicked(int nRow, int nCol, const QPoint& point)
 {
-    CPoint PointCellOrigin;
-    if( !GetCellOrigin( nRow, nCol, &PointCellOrigin)  )
-        return CPoint( 0, 0);
+    QPoint PointCellOrigin;
+    if( !cellOrigin( nRow, nCol, PointCellOrigin)  )
+        return QPoint( 0, 0);
 
-    CPoint PointClickedCellRelative( point);
+    QPoint PointClickedCellRelative( point);
     PointClickedCellRelative -= PointCellOrigin;
     return PointClickedCellRelative;
 }
 
+/*
 void HGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
     TRACE0("HGridCtrl::OnLButtonDblClk\n");
@@ -5622,7 +5934,7 @@ void HGridCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
     else if (m_MouseMode == MOUSE_NOTHING)
     {
         CPoint pointClickedRel;
-        pointClickedRel = GetPointClicked( cell.row, cell.col, point);
+        pointClickedRel = pointClicked( cell.row, cell.col, point);
 
         CGridCellBase* pCell = NULL;
         if (isValid(cell))
@@ -5698,7 +6010,7 @@ void HGridCtrl::OnLButtonDown(UINT nFlags, CPoint point)
     // tell the cell about it 
     CGridCellBase* pCell = GetCell(m_LeftClickDownCell.row, m_LeftClickDownCell.col);
     if (pCell)
-        pCell->OnClickDown(GetPointClicked( m_LeftClickDownCell.row, m_LeftClickDownCell.col, point));
+        pCell->OnClickDown(pointClicked( m_LeftClickDownCell.row, m_LeftClickDownCell.col, point));
 
     // Clicked in the text area? Only then will cell selection work
     bool bInTextArea = false;
@@ -6027,7 +6339,7 @@ void HGridCtrl::OnLButtonUp(UINT nFlags, CPoint point)
     }
 
     CPoint pointClickedRel;
-    pointClickedRel = GetPointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point);
+    pointClickedRel = pointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point);
 
     // m_MouseMode == MOUSE_PREPARE_EDIT only if user clicked down on current cell
     // and then didn't move mouse before clicking up (releasing button)
@@ -6042,7 +6354,7 @@ void HGridCtrl::OnLButtonUp(UINT nFlags, CPoint point)
     {
         CGridCellBase* pCell = GetCell(m_idCurrentCell.row, m_idCurrentCell.col);
         if (pCell)
-            pCell->OnClick( GetPointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point) );
+            pCell->OnClick( pointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point) );
         SendMessageToParent(m_LeftClickDownCell.row, m_LeftClickDownCell.col, NM_CLICK);
 	    SendMessageToParent(m_LeftClickDownCell.row, m_LeftClickDownCell.col, GVN_SELCHANGING);
         resetSelectedRange();
@@ -6119,7 +6431,7 @@ void HGridCtrl::OnLButtonUp(UINT nFlags, CPoint point)
 
         CGridCellBase* pCell = GetCell(m_idCurrentCell.row, m_idCurrentCell.col);
         if (pCell)
-            pCell->OnClick( GetPointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point) );
+            pCell->OnClick( pointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point) );
         SendMessageToParent(m_LeftClickDownCell.row, m_LeftClickDownCell.col, NM_CLICK);
     }
     
@@ -6175,7 +6487,7 @@ void HGridCtrl::OnRButtonUp(UINT nFlags, CPoint point)
         // tell the cell about it
         CGridCellBase* pCell = GetCell(FocusCell.row, FocusCell.col);
         if (pCell)
-            pCell->OnRClick( GetPointClicked( FocusCell.row, FocusCell.col, point) );
+            pCell->OnRClick( pointClicked( FocusCell.row, FocusCell.col, point) );
 
         SendMessageToParent(FocusCell.row, FocusCell.col, NM_RCLICK);
     }

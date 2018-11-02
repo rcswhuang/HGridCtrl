@@ -137,7 +137,15 @@ public:
     //LRESULT SendMessageToParent(int nRow, int nCol, int nMessage);
 
 protected:
-    virtual void OnEndEdit();
+    virtual void onMouseEnter();
+    virtual void onMouseOver();
+    virtual void onMouseLeave();
+    virtual void onClick( QPoint PointCellRelative);
+    virtual void onClickDown( QPoint PointCellRelative);
+    virtual void onRClick( QPoint PointCellRelative);
+    virtual void onDblClick( QPoint PointCellRelative);
+    virtual bool onSetCursor();
+    virtual void onEndEdit();
 public:
     /*bool IsMerged();
 	void SetMergeRange(HCellRange range);

@@ -21,7 +21,6 @@ class HGridCtrl;
  * HGridCtrl为了能有滚动条的效果，继承QAbstractScrollArea
 */
 
-
 /////////////////////////////////////////////////////////////////////////////
 class HGridCtrl :public QAbstractScrollArea
 {
@@ -355,7 +354,7 @@ public:
     bool isCellSelected(int nRow, int nCol) const;
     bool isCellSelected(HCellID &cell) const;
 
-    /*
+
     // SetRedraw stops/starts redraws on things like changing the # rows/columns
     // and autosizing, but not for user-intervention such as resizes
     //重绘操作
@@ -364,7 +363,7 @@ public:
     bool redrawCell(const HCellID& cell, QPainter* painter = NULL);
     bool redrawRow(int row);
     bool redrawColumn(int col);
-
+/*
     //表格存储 ???
     bool save(const char* filename, char chSeparator = _T(','));
     bool load(const char* filename, char chSeparator = _T(','));
@@ -514,7 +513,7 @@ protected:
 
     HCellID topleftNonFixedCell(bool bForceRecalculation = false);
     //HCellRange GetUnobstructedNonFixedCellRange(bool bForceRecalculation = false);
-    HCellRange visibleNonFixedCellRange(QRect& pRect , bool bForceRecalculation = false);
+    HCellRange visibleNonFixedCellRange(QRect& pRect = QRect(), bool bForceRecalculation = false);
 
     bool isVisibleVScroll() { return ( (m_nBarState & GVL_VERT) > 0); }
     bool isVisibleHScroll() { return ( (m_nBarState & GVL_HORZ) > 0); }
@@ -526,6 +525,9 @@ protected:
     int  scrollPos32(int nBar, bool bGetTrackPos = false);
     bool setScrollPos32(int nBar, int nPos, bool bRedraw = true);
     void resetScrollBars();
+
+
+    QPoint pointClicked(int nRow, int nCol, const QPoint& point);
     /*void EnableScrollBars(int nBar, bool bEnable = true);
 
 
@@ -533,7 +535,7 @@ protected:
     bool SortItems(PFNLVCOMPARE pfnCompare, int nCol, bool bAscending, LPARAM data,
                    int low, int high);
 
-    CPoint GetPointClicked(int nRow, int nCol, const CPoint& point);
+
 
 // Overrrides
     // ClassWizard generated virtual function overrides
