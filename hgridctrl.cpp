@@ -1618,7 +1618,7 @@ void HGridCtrl::onDraw(QPainter* painter)
             }*/
 		}
 	}
-
+    painter->restore();
     // Let parent know it can discard it's data if it needs to.
     //if (isVirtualMode())
     //   SendCacheHintToParent(HCellRange(-1,-1,-1,-1));
@@ -1688,6 +1688,10 @@ bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
     QRect rect;
     if (!cellRect(nRow, nCol, rect))
         return false;
+    if(NULL == pDC)
+    {
+        pDC = new QPainter(viewport());
+    }
     if (pDC)
     {
         // Redraw cells directly
@@ -1726,6 +1730,11 @@ bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
     } else
         viewport()->update(rect);     // Could not get a DC - invalidate it anyway
     // and hope that OnPaint manages to get one
+    if(pDC)
+    {
+        delete pDC;
+        pDC = NULL;
+    }
     return bResult;
 }
 
@@ -5293,7 +5302,7 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
     // cell just clicked. Otherwise, keep the previous selection-start-cell so the user
     // can add to their previous cell selections in an intuitive way. If no selection-
     // start-cell has been specified, then set it's value here and now.
-    if(Qt::ShiftModifier == event->modifiers())
+    if(Qt::ShiftModifier != event->modifiers())
         m_SelectionStartCell = m_LeftClickDownCell;
     else
     {
@@ -5442,7 +5451,6 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
         QRect invertedRect(m_LeftClickDownPoint.x(), rect.top(), m_LeftClickDownPoint.x() + 2, rect.bottom());
 
         QPainter pDC(viewport());
-        pDC.save();
         if (pDC.isActive())
         {
             pDC.save();
@@ -5537,7 +5545,6 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
         QRect invertedRect( rect.left(),m_LeftClickDownPoint.y(), rect.right(), m_LeftClickDownPoint.y() + 2);
 
         QPainter pDC(viewport());
-        pDC.save();
         if (pDC.isActive())
         {
             pDC.save();
