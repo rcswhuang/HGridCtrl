@@ -1,4 +1,4 @@
-#include "hgridcell.h"
+﻿#include "hgridcell.h"
 
 HGridCell::HGridCell(HGridCellBase *parent) : HGridCellBase(parent)
 {

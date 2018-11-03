@@ -1,4 +1,4 @@
-// GridCtrl.cpp : implementation file
+﻿// GridCtrl.cpp : implementation file
 //
 // MFC Grid Control v2.24
 //
@@ -25,8 +25,9 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     // If they have, then leave them, otherwise change them to reflect
     // the new system colours.
     QWidget* widget = new QWidget;
-    setViewport(widget);
-
+    setViewport(widget); 
+    setMouseTracking(true);
+    return;
     m_crWindowText        = QColor(QCOLOR_WINDOWTEXT);
     m_crWindowColour      = QColor(QCOLOR_WINDOW);
     m_cr3DFace            = QColor(QCOLOR_3DFACE);
@@ -122,15 +123,15 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     setPrintMarginInfo(2, 2, 4, 4, 1, 1, 1);
 #endif*/
 
-    try
+    //try
     {
         m_arRowHeights.resize(m_nRows);    // initialize row heights
         m_arColWidths.resize(m_nCols);     // initialize column widths
     }
-    catch (exception &e)
+    //catch (exception &e)
     {
-        e.what();
-        return;
+     //   e.what();
+      //  return;
     }
 
     int i;
@@ -186,6 +187,7 @@ void HGridCtrl::setupDefaultCells()
 
 void HGridCtrl::paintEvent(QPaintEvent* event)
 {
+    return;
     QPainter painter(viewport());      // device context for painting
 
     if (m_bDoubleBuffer)    // Use a memory DC to remove flicker
@@ -555,6 +557,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
 注意对于里面特殊的按键处理没有调用QWidget类的keyReleaseEvent来处理
 而是通过自己调整滚动工作条即可。
 */
+    return;
     if (!isValid(m_idCurrentCell))
     {
         QWidget::keyReleaseEvent(event);
@@ -1688,10 +1691,14 @@ bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
     QRect rect;
     if (!cellRect(nRow, nCol, rect))
         return false;
+    bool bDC = false;
+        return false;
     if(NULL == pDC)
     {
         pDC = new QPainter(viewport());
+        bDC = true;
     }
+
     if (pDC)
     {
         // Redraw cells directly
@@ -1730,7 +1737,7 @@ bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
     } else
         viewport()->update(rect);     // Could not get a DC - invalidate it anyway
     // and hope that OnPaint manages to get one
-    if(pDC)
+    if(pDC && bDC)
     {
         delete pDC;
         pDC = NULL;
@@ -5282,6 +5289,7 @@ bool HGridCtrl::invalidateCellRect(const HCellRange& cellRange)
 // CGridCtrl Mouse stuff
 void HGridCtrl::mousePressEvent(QMouseEvent *event)
 {
+    return;
 #ifdef GRIDCONTROL_USE_TITLETIPS
     // EFW - Bug Fix
     //m_TitleTip.Hide();  // hide any titletips
@@ -5617,14 +5625,193 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
     m_LastMousePoint = event->pos();
 }
 
+#include <QDebug>
 void HGridCtrl::mouseReleaseEvent(QMouseEvent *event)
 {
-
+    qDebug()<<"mouseReleaseEvent move......";
 }
+
 
 void HGridCtrl::mouseMoveEvent(QMoveEvent *event)
 {
+    qDebug()<<"mouse move......";
+    QPoint point = event->pos();
+    QRect rect;
+    rect = viewport()->rect();
 
+#ifndef GRIDCONTROL_NO_DRAGDROP
+    // If outside client area, return (unless we are drag n dropping)
+    if (m_MouseMode != MOUSE_DRAGGING && !rect.contains(point))
+        return;
+#endif
+
+    // Sometimes a MOUSEMOVE message can come after the left buttons
+    // has been let go, but before the BUTTONUP message hs been processed.
+    // We'll keep track of mouse buttons manually to avoid this.
+    // All bMouseButtonDown's have been replaced with the member m_bLMouseButtonDown
+    // BOOL bMouseButtonDown = ((nFlags & MK_LBUTTON) == MK_LBUTTON);
+
+    // If the left mouse button is up, then test to see if row/column sizing is imminent
+    if (!m_bLMouseButtonDown || (m_bLMouseButtonDown && m_MouseMode == MOUSE_NOTHING))
+    {
+        if (m_bAllowColumnResize && mouseOverColumnResizeArea(point))
+        {
+            if (m_MouseMode != MOUSE_OVER_COL_DIVIDE)
+            {
+                setCursor(Qt::SizeHorCursor);
+                m_MouseMode = MOUSE_OVER_COL_DIVIDE;
+            }
+        }
+        else if (m_bAllowRowResize && mouseOverRowResizeArea(point))
+        {
+            if (m_MouseMode != MOUSE_OVER_ROW_DIVIDE)
+            {
+                setCursor(Qt::SizeVerCursor);
+                m_MouseMode = MOUSE_OVER_ROW_DIVIDE;
+            }
+        }
+        else if (m_MouseMode != MOUSE_NOTHING)
+        {
+            setCursor(Qt::ArrowCursor);
+            m_MouseMode = MOUSE_NOTHING;
+        }
+
+        if (m_MouseMode == MOUSE_NOTHING)
+        {
+            HGridCellBase* pCell = NULL;
+            HCellID idCurrentCell;
+            if (!isVirtualMode() || m_bTitleTips)
+            {
+                // Let the cell know that a big fat cursor is currently hovering
+                // over it.
+                idCurrentCell = cellFromPt(point);
+                pCell = getCell(idCurrentCell.row, idCurrentCell.col);
+                if (pCell)
+                    pCell->onMouseOver();
+            }
+ /*
+#ifndef GRIDCONTROL_NO_TITLETIPS
+            // Titletips anyone? anyone?
+           if (m_bTitleTips)
+            {
+                CRect TextRect, CellRect;
+                if (pCell)
+                {
+                    LPCTSTR szTipText = pCell->GetTipText();
+                    if (!m_bRMouseButtonDown
+                        && szTipText && szTipText[0]
+                        && !pCell->IsEditing()
+                        && GetCellRect( idCurrentCell.row, idCurrentCell.col, &TextRect)
+                        && pCell->GetTipTextRect( &TextRect)
+                        && GetCellRect(idCurrentCell.row, idCurrentCell.col, CellRect) )
+                    {
+                        TRACE0("Showing TitleTip\n");
+                        m_TitleTip.Show(TextRect, pCell->GetTipText(),  0, CellRect,
+                                        pCell->GetFont(),  GetTitleTipTextClr(), GetTitleTipBackClr());
+                    }
+                }
+            }
+#endif*/
+        }
+
+        m_LastMousePoint = point;
+        return;
+    }
+
+    if (!isValid(m_LeftClickDownCell))
+    {
+        m_LastMousePoint = point;
+        return;
+    }
+
+    // If the left mouse button is down, then process appropriately
+    if (m_bLMouseButtonDown)
+    {
+        switch (m_MouseMode)
+        {
+        case MOUSE_SELECT_ALL:
+            break;
+
+        case MOUSE_SELECT_COL:
+        case MOUSE_SELECT_ROW:
+        case MOUSE_SELECT_CELLS:
+            {
+                HCellID idCurrentCell = cellFromPt(point);
+                if (!isValid(idCurrentCell))
+                    return;
+
+                if (idCurrentCell != focusCell())
+                {
+                    onSelecting(idCurrentCell);
+
+                    // EFW - BUG FIX - Keep the appropriate cell row and/or
+                    // column focused.  A fix in SetFocusCell() will place
+                    // the cursor in a non-fixed cell as needed.
+                    if((idCurrentCell.row >= m_nFixedRows &&
+                      idCurrentCell.col >= m_nFixedCols) ||
+                      m_MouseMode==MOUSE_SELECT_COL ||
+                      m_MouseMode==MOUSE_SELECT_ROW)
+                    {
+                        setFocusCell(idCurrentCell);
+                    }
+                }
+                break;
+            }
+
+        case MOUSE_SIZING_COL:
+            {
+                QPainter *painter = new QPainter(viewport());
+                QRect oldInvertedRect(m_LastMousePoint.x(), rect.top(),
+                    m_LastMousePoint.x() + 2, rect.bottom());
+                painter->save();
+                painter->setCompositionMode(QPainter::CompositionMode_Difference);
+                painter->fillRect(oldInvertedRect,painter->pen().color());
+
+                painter->setCompositionMode(QPainter::CompositionMode_Difference);
+                QRect newInvertedRect(point.x(), rect.top(),point.x() + 2, rect.bottom());
+                painter->fillRect(newInvertedRect,painter->pen().color());
+                painter->restore();
+                if(painter)
+                {
+                    delete painter;
+                    painter = NULL;
+                }
+            }
+            break;
+
+        case MOUSE_SIZING_ROW:
+            {
+
+                QPainter *painter = new QPainter(viewport());
+                QRect oldInvertedRect(rect.left(), m_LastMousePoint.y(),
+                                      rect.right(), m_LastMousePoint.y() + 2);
+                painter->save();
+                painter->setCompositionMode(QPainter::CompositionMode_Difference);
+                painter->fillRect(oldInvertedRect,painter->pen().color());
+
+                painter->setCompositionMode(QPainter::CompositionMode_Difference);
+                QRect newInvertedRect(rect.left(), point.y(),rect.right(), point.y() + 2);
+                painter->fillRect(newInvertedRect,painter->pen().color());
+                painter->restore();
+                if(painter)
+                {
+                    delete painter;
+                    painter = NULL;
+                }
+            }
+            break;
+/*
+#ifndef GRIDCONTROL_NO_DRAGDROP
+        case MOUSE_PREPARE_EDIT:
+        case MOUSE_PREPARE_DRAG:
+            m_MouseMode = MOUSE_PREPARE_DRAG;
+            OnBeginDrag();
+            break;
+#endif*/
+        }
+    }
+
+    m_LastMousePoint = point;
 }
 
 /*

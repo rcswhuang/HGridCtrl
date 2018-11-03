@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////////////
+﻿/////////////////////////////////////////////////////////////////////////////
 // HGridCtrl.h : header file
 //
 // Grid Control - main header
@@ -679,8 +679,6 @@ protected:
     int         m_nHeaderHeight, m_nFooterHeight, m_nLeftMargin,
                 m_nRightMargin, m_nTopMargin, m_nBottomMargin, m_nGap;
 
-    QScrollBar* m_horizontalScrollBar;
-    QScrollBar* m_verticalScrollBar;
 protected:
 
     void selectAllCells();

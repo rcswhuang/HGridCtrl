@@ -1,4 +1,4 @@
-#ifndef HGRIDCELL_H
+﻿#ifndef HGRIDCELL_H
 #define HGRIDCELL_H
 
 class HGridCellBase;

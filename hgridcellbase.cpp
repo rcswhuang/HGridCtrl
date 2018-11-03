@@ -65,7 +65,6 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
     if( rect.width() <= 0 || rect.height() <= 0)  // prevents imagelist item from drawing even
         return false;                             //  though cell is hidden
 
-    //TRACE3("Drawing %scell %d, %d\n", IsFixed()? _T("Fixed ") : _T(""), nRow, nCol);
     //单元格的边框可以在这里绘制，如果设置了边框颜色和线条格式，就按照设置项绘制，注意：如果绘制bottom要获取同列的下一行表格，top要设置和bottom一样的风格。
     painter->save();
     painter->setBackgroundMode(Qt::TransparentMode);
@@ -102,48 +101,34 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         }
 
         //rect.right++; rect.bottom++;    // FillRect doesn't draw RHS or bottom
-        //rect.adjust(0,-1,0,-1);
-        rect.setRight(rect.right() + 1);
-        rect.setBottom(rect.bottom() + 1);
+        rect = rect.adjusted(1,1,-2,-2);
         if (bEraseBkgnd)
         {
             QBrush brush(TextBkClr);
-            //painter->fillRect(rect, brush);
+            painter->fillRect(rect, brush);
         }
 
         // Don't adjust frame rect if no grid lines so that the
         // whole cell is enclosed.
         if(pGrid->gridLines() != GVL_NONE)
         {
-            //rect.adjust(0,-1,0,-1);
-            rect.setRight(rect.right() - 1);
-            rect.setBottom(rect.bottom() - 1);
+            rect.adjust(-1,-1,2,2);
         }
 
-        if (pGrid->isFrameFocusCell())
-        {
-            // Use same color as text to outline the cell so that it shows
-            // up if the background is black.
-            //画焦点单元格的边框。填充了之后还要花一个边框
-            painter->setPen(QPen(Qt::white));
-            QPainterPath p;
-            p.addRect(rect);
-            painter->drawRect(rect);
-        }
         painter->setPen(QPen(TextClr));
 
         // Adjust rect after frame draw if no grid lines
         if(pGrid->gridLines() == GVL_NONE)
         {
-            //rect.adjust(0,-1,0,-1);
+            rect.adjust(0,-1,0,-1);
         }
         //rect = rect.marginsAdded(QMargins(0,1,1,1));
     }
     else if ((state() & GVIS_SELECTED))//设置多个单元格选中的颜色，和文字颜色
     {
-        //rect.adjust(0,1,0,1);    // FillRect doesn't draw RHS or bottom
+        rect.adjust(1,1,-2,-2);    // FillRect doesn't draw RHS or bottom
         painter->fillRect(rect, QColor(QCOLOR_HIGHLIGHT));//也可以用brush
-        //rect.adjust(0,-1,0,-1);
+        rect.adjust(-1,-1,2,2);
         painter->setPen(QPen(QColor(QCOLOR_HIGHLIGHTTEXT)));//设置画笔的颜色
     }
     else
