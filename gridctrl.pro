@@ -17,13 +17,15 @@ INCLUDEPATH += \
 SOURCES +=  hgridcellbase.cpp \
             hgridcell.cpp   \
             hgridctrl.cpp \
-    main.cpp
+            hinplaceedit.cpp  \
+            main.cpp
 
 HEADERS  +=    \
             hcellrange.h \
             hgridcelldef.h \
             hgridcellbase.h \
             hgridcell.h     \
+            hinplaceedit.h  \
             hgridctrl.h
 
 

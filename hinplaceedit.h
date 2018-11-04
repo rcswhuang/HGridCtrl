@@ -1,24 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 // InPlaceEdit.h : header file
-//
-// MFC Grid Control - inplace editing class
-//
-// Written by Chris Maunder <cmaunder@mail.com>
-// Copyright (c) 1998-2002. All Rights Reserved.
-//
-// This code may be used in compiled form in any way you desire. This
-// file may be redistributed unmodified by any means PROVIDING it is 
-// not sold for profit without the authors written consent, and 
-// providing that this notice and the authors name and all copyright 
-// notices remains intact. 
-//
-// An email letting me know how you are using it would be nice as well. 
-//
-// This file is provided "as is" with no expressed or implied warranty.
-// The author accepts no liability for any damage/loss of business that
-// this product may cause.
-//
-// For use with CGridCtrl v2.10+
+//单元格编辑框
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -28,20 +10,21 @@
 #if _MSC_VER >= 1000
 #pragma once
 #endif // _MSC_VER >= 1000
+#include <QLineEdit>
 
-class CInPlaceEdit : public CEdit
+class HInPlaceEdit : public QLineEdit
 {
 // Construction
 public:
-    CInPlaceEdit(CWnd* pParent, CRect& rect, DWORD dwStyle, UINT nID,
-                 int nRow, int nColumn, CString sInitText, UINT nFirstChar);
+    HInPlaceEdit(QWidget* pParent, QRect& rect, quint32 dwStyle, uint nID,
+                 int nRow, int nColumn, QString sInitText, uint nFirstChar);
 
 // Attributes
 public:
  
 // Operations
 public:
-     void EndEdit();
+     void endEdit();
  
 // Overrides
      // ClassWizard generated virtual function overrides
@@ -59,10 +42,12 @@ public:
 // Generated message map functions
 protected:
     //{{AFX_MSG(CInPlaceEdit)
+     /*
     afx_msg void OnKillFocus(CWnd* pNewWnd);
     afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
     afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg UINT OnGetDlgCode();
+    */
 	//}}AFX_MSG
     DECLARE_MESSAGE_MAP()
 

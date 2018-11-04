@@ -27,7 +27,7 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     QWidget* widget = new QWidget;
     setViewport(widget); 
     setMouseTracking(true);
-    return;
+
     m_crWindowText        = QColor(QCOLOR_WINDOWTEXT);
     m_crWindowColour      = QColor(QCOLOR_WINDOW);
     m_cr3DFace            = QColor(QCOLOR_3DFACE);
@@ -187,8 +187,8 @@ void HGridCtrl::setupDefaultCells()
 
 void HGridCtrl::paintEvent(QPaintEvent* event)
 {
-    return;
     QPainter painter(viewport());      // device context for painting
+    m_painter = &painter;
 
     if (m_bDoubleBuffer)    // Use a memory DC to remove flicker
     {
@@ -1277,6 +1277,7 @@ void HGridCtrl::onDraw(QPainter* painter)
     pen.setStyle(Qt::SolidLine);
     painter->setPen(pen);
 
+
     //1.先画垂直水平线条，每个格子画一个
     //绘制垂直线条
     if (m_nGridLines == GVL_BOTH || m_nGridLines == GVL_VERT)
@@ -1621,6 +1622,26 @@ void HGridCtrl::onDraw(QPainter* painter)
             }*/
 		}
 	}
+
+
+    //本来放在mouseMoveEvent里面的，但QPainter指针只能在paintEvent里面，所以放在此处
+    if (m_bLMouseButtonDown)
+    {
+        switch (m_MouseMode){
+        case MOUSE_SIZING_COL:{
+                QRect newInvertedRect(QPoint(m_CurMousePoint.x(), clipRect.top()),QPoint(m_CurMousePoint.x() + 1, clipRect.bottom()));
+                painter->fillRect(newInvertedRect,Qt::black);
+            }
+            break;
+        case MOUSE_SIZING_ROW:{
+            QRect newInvertedRect(QPoint(clipRect.left(), m_CurMousePoint.y()),QPoint(clipRect.right(), m_CurMousePoint.y() +1 ));
+            painter->fillRect(newInvertedRect,Qt::darkBlue);
+            break;
+        }
+        }
+    }
+
+
     painter->restore();
     // Let parent know it can discard it's data if it needs to.
     //if (isVirtualMode())
@@ -1691,12 +1712,12 @@ bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
     QRect rect;
     if (!cellRect(nRow, nCol, rect))
         return false;
-    bool bDC = false;
-        return false;
+
+    return false;
+    //redrawCell函数好像没什么用 待确定
     if(NULL == pDC)
     {
-        pDC = new QPainter(viewport());
-        bDC = true;
+        pDC = m_painter;
     }
 
     if (pDC)
@@ -1737,11 +1758,6 @@ bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
     } else
         viewport()->update(rect);     // Could not get a DC - invalidate it anyway
     // and hope that OnPaint manages to get one
-    if(pDC && bDC)
-    {
-        delete pDC;
-        pDC = NULL;
-    }
     return bResult;
 }
 
@@ -1750,9 +1766,9 @@ bool HGridCtrl::redrawRow(int row)
 {
     bool bResult = true;
 
-    QPainter pDC(viewport());
+    QPainter *pDC = m_painter;
     for (int col = 0; col < columnCount(); col++)
-        bResult = redrawCell(row, col, &pDC) && bResult;
+        bResult = redrawCell(row, col, pDC) && bResult;
     return bResult;
 }
 
@@ -1760,9 +1776,9 @@ bool HGridCtrl::redrawRow(int row)
 bool HGridCtrl::redrawColumn(int col)
 {
     bool bResult = true;
-    QPainter pDC(viewport());
+    QPainter *pDC = m_painter;
     for (int row = 0; row < rowCount(); row++)
-        bResult = redrawCell(row, col, &pDC) && bResult;
+        bResult = redrawCell(row, col, pDC) && bResult;
     return bResult;
 }
 
@@ -1785,7 +1801,7 @@ void HGridCtrl::setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
 
     QPainter* pDC = NULL;
     if (bForceRepaint)
-        pDC = new QPainter(viewport());
+        pDC = m_painter;
 
 	// Only redraw visible cells
     HCellRange VisCellRange;
@@ -5289,7 +5305,7 @@ bool HGridCtrl::invalidateCellRect(const HCellRange& cellRange)
 // CGridCtrl Mouse stuff
 void HGridCtrl::mousePressEvent(QMouseEvent *event)
 {
-    return;
+
 #ifdef GRIDCONTROL_USE_TITLETIPS
     // EFW - Bug Fix
     //m_TitleTip.Hide();  // hide any titletips
@@ -5358,11 +5374,6 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
                 selectCells(m_LeftClickDownCell, true, false);
             return;
         }
-        /*
-#ifndef GRIDCONTROL_NO_DRAGDROP
-        else if (m_bAllowDragAndDrop)
-            m_MouseMode = MOUSE_PREPARE_DRAG;
-#endif*/
     }
     else if (m_MouseMode != MOUSE_OVER_COL_DIVIDE &&
              m_MouseMode != MOUSE_OVER_ROW_DIVIDE)
@@ -5452,21 +5463,6 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
                     return;
             }
         }
-
-
-        QRect rect;
-        rect = viewport()->rect();
-        QRect invertedRect(m_LeftClickDownPoint.x(), rect.top(), m_LeftClickDownPoint.x() + 2, rect.bottom());
-
-        QPainter pDC(viewport());
-        if (pDC.isActive())
-        {
-            pDC.save();
-            pDC.setCompositionMode(QPainter::CompositionMode_Difference);
-            pDC.fillRect(invertedRect,pDC.pen().color());
-            pDC.restore();
-        }
-
         // If we clicked to the right of the colimn divide, then reset the click-down cell
         // as the cell to the left of the column divide - UNLESS we clicked on the last column
         // and the last column is teensy (kludge fix)
@@ -5479,17 +5475,6 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
                     return;
             }
         }
-
-        // Allow a cell resize width no greater than that which can be viewed within
-        // the grid itself
-        //int nMaxCellWidth = rect.width() - fixedColumnWidth();
-        //rect.left  = start.x + 1;
-        //rect.right = rect.left + nMaxCellWidth;
-
-        //ClientToScreen(rect);
-#ifndef _WIN32_WCE_NO_CURSOR
-       // ClipCursor(rect);
-#endif
     }
     else if (m_MouseMode == MOUSE_OVER_ROW_DIVIDE) // sizing row
     {
@@ -5547,23 +5532,6 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
             }
         }
 
-
-        QRect rect;
-        rect = viewport()->rect();
-        QRect invertedRect( rect.left(),m_LeftClickDownPoint.y(), rect.right(), m_LeftClickDownPoint.y() + 2);
-
-        QPainter pDC(viewport());
-        if (pDC.isActive())
-        {
-            pDC.save();
-            pDC.setCompositionMode(QPainter::CompositionMode_Difference);
-            pDC.fillRect(invertedRect,pDC.pen().color());
-            pDC.restore();
-        }
-
-        // If we clicked below the row divide, then reset the click-down cell
-        // as the cell above the row divide - UNLESS we clicked on the last row
-        // and the last row is teensy (kludge fix)
         if (m_LeftClickDownPoint.y() - start.y() < m_nResizeCaptureRange)            // clicked below border
         {
             if (m_LeftClickDownCell.row < rowCount()-1 ||
@@ -5573,21 +5541,9 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
                     return;
             }
         }
-
-        //int nMaxCellHeight = rect.Height()-GetFixedRowHeight();
-        //rect.top = start.y + 1;
-       // rect.bottom = rect.top + nMaxCellHeight;
-
-       // ClientToScreen(rect);
-
-#ifndef _WIN32_WCE_NO_CURSOR
-        //ClipCursor(rect);
-#endif
     }
     else
-#ifndef GRIDCONTROL_NO_DRAGDROP
     if (m_MouseMode != MOUSE_PREPARE_DRAG) // not sizing or editing -- selecting
-#endif
     {
         //SendMessageToParent(m_LeftClickDownCell.row, m_LeftClickDownCell.col, GVN_SELCHANGING);
 
@@ -5608,11 +5564,11 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
 
         if (m_LeftClickDownCell.row < fixedRowCount())
         {
-            //fixedRowClick(m_LeftClickDownCell);
+            onFixedRowClick(m_LeftClickDownCell);
         }
         else if (m_LeftClickDownCell.col < fixedColumnCount())
         {
-           //OnFixedColumnClick(m_LeftClickDownCell);
+            onFixedColumnClick(m_LeftClickDownCell);
         }
         else
         {
@@ -5628,13 +5584,91 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
 #include <QDebug>
 void HGridCtrl::mouseReleaseEvent(QMouseEvent *event)
 {
-    qDebug()<<"mouseReleaseEvent move......";
+    // TRACE0("HGridCtrl::OnLButtonUp\n");
+
+    QAbstractScrollArea::mouseReleaseEvent(event);
+    QPoint point = event->pos();
+    m_bLMouseButtonDown = false;
+
+    /*if (GetCapture()->GetSafeHwnd() == GetSafeHwnd())
+    {
+        ReleaseCapture();
+        KillTimer(m_nTimerID);
+        m_nTimerID = 0;
+    }*/
+
+    QPoint pointClickedRel;
+    pointClickedRel = pointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point);
+
+    // m_MouseMode == MOUSE_PREPARE_EDIT only if user clicked down on current cell
+    // and then didn't move mouse before clicking up (releasing button)
+    if (m_MouseMode == MOUSE_PREPARE_EDIT)
+    {
+        //OnEditCell(m_idCurrentCell.row, m_idCurrentCell.col, pointClickedRel, VK_LBUTTON);
+    }
+    else if (m_MouseMode == MOUSE_SIZING_COL)
+    {
+        QRect rect;
+        rect = viewport()->rect();
+        if (m_LeftClickDownPoint != point && (point.x() != 0 || point.y() != 0)) // 0 pt fix by email1@bierling.net
+        {
+            QPoint start;
+            //Used for merge cells
+            //by Huang Wei
+            //m_LeftClickDownCell=GetMergeCellID(m_LeftClickDownCell);
+            if (!cellOrigin(m_LeftClickDownCell, start))
+                return;
+
+            int nColumnWidth = max(point.x() - start.x(), m_bAllowColHide? 0 : 1);
+            //Used for merge cells
+            //by Huang Wei
+            //int mergewidth=GetMergeCellWidth(m_LeftClickDownCell)-GetColumnWidth(m_LeftClickDownCell.col);
+            setColumnWidth(m_LeftClickDownCell.col, nColumnWidth);
+
+            resetScrollBars();
+            update();
+        }
+    }
+    else if (m_MouseMode == MOUSE_SIZING_ROW)
+    {
+        QRect rect;
+        rect = viewport()->rect();
+        if (m_LeftClickDownPoint != point  && (point.x() != 0 || point.y() != 0)) // 0 pt fix by email1@bierling.net
+        {
+            QPoint start;
+            //Used for merge cells
+            //by Huang Wei
+            //m_LeftClickDownCell=GetMergeCellID(m_LeftClickDownCell);
+            if (!cellOrigin(m_LeftClickDownCell, start))
+                return;
+
+            int nRowHeight = max(point.y() - start.y(), m_bAllowRowHide? 0 : 1);
+            //Used for merge cells
+            //by Huang Wei
+            //int mergeheight=GetMergeCellHeight(m_LeftClickDownCell)-GetRowHeight(m_LeftClickDownCell.row);
+
+            setRowHeight(m_LeftClickDownCell.row, nRowHeight);
+            resetScrollBars();
+            update();
+        }
+    }
+    else
+    {
+        HGridCellBase* pCell = getCell(m_idCurrentCell.row, m_idCurrentCell.col);
+        if (pCell)
+            pCell->onClick( pointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point) );
+    }
+
+    m_MouseMode = MOUSE_NOTHING;
+    setCursor(Qt::ArrowCursor);
+
+    if (!isValid(m_LeftClickDownCell))
+        return;
 }
 
 
-void HGridCtrl::mouseMoveEvent(QMoveEvent *event)
+void HGridCtrl::mouseMoveEvent(QMouseEvent *event)
 {
-    qDebug()<<"mouse move......";
     QPoint point = event->pos();
     QRect rect;
     rect = viewport()->rect();
@@ -5689,31 +5723,7 @@ void HGridCtrl::mouseMoveEvent(QMoveEvent *event)
                 if (pCell)
                     pCell->onMouseOver();
             }
- /*
-#ifndef GRIDCONTROL_NO_TITLETIPS
-            // Titletips anyone? anyone?
-           if (m_bTitleTips)
-            {
-                CRect TextRect, CellRect;
-                if (pCell)
-                {
-                    LPCTSTR szTipText = pCell->GetTipText();
-                    if (!m_bRMouseButtonDown
-                        && szTipText && szTipText[0]
-                        && !pCell->IsEditing()
-                        && GetCellRect( idCurrentCell.row, idCurrentCell.col, &TextRect)
-                        && pCell->GetTipTextRect( &TextRect)
-                        && GetCellRect(idCurrentCell.row, idCurrentCell.col, CellRect) )
-                    {
-                        TRACE0("Showing TitleTip\n");
-                        m_TitleTip.Show(TextRect, pCell->GetTipText(),  0, CellRect,
-                                        pCell->GetFont(),  GetTitleTipTextClr(), GetTitleTipBackClr());
-                    }
-                }
-            }
-#endif*/
         }
-
         m_LastMousePoint = point;
         return;
     }
@@ -5743,10 +5753,6 @@ void HGridCtrl::mouseMoveEvent(QMoveEvent *event)
                 if (idCurrentCell != focusCell())
                 {
                     onSelecting(idCurrentCell);
-
-                    // EFW - BUG FIX - Keep the appropriate cell row and/or
-                    // column focused.  A fix in SetFocusCell() will place
-                    // the cursor in a non-fixed cell as needed.
                     if((idCurrentCell.row >= m_nFixedRows &&
                       idCurrentCell.col >= m_nFixedCols) ||
                       m_MouseMode==MOUSE_SELECT_COL ||
@@ -5759,55 +5765,12 @@ void HGridCtrl::mouseMoveEvent(QMoveEvent *event)
             }
 
         case MOUSE_SIZING_COL:
-            {
-                QPainter *painter = new QPainter(viewport());
-                QRect oldInvertedRect(m_LastMousePoint.x(), rect.top(),
-                    m_LastMousePoint.x() + 2, rect.bottom());
-                painter->save();
-                painter->setCompositionMode(QPainter::CompositionMode_Difference);
-                painter->fillRect(oldInvertedRect,painter->pen().color());
-
-                painter->setCompositionMode(QPainter::CompositionMode_Difference);
-                QRect newInvertedRect(point.x(), rect.top(),point.x() + 2, rect.bottom());
-                painter->fillRect(newInvertedRect,painter->pen().color());
-                painter->restore();
-                if(painter)
-                {
-                    delete painter;
-                    painter = NULL;
-                }
-            }
-            break;
-
         case MOUSE_SIZING_ROW:
-            {
-
-                QPainter *painter = new QPainter(viewport());
-                QRect oldInvertedRect(rect.left(), m_LastMousePoint.y(),
-                                      rect.right(), m_LastMousePoint.y() + 2);
-                painter->save();
-                painter->setCompositionMode(QPainter::CompositionMode_Difference);
-                painter->fillRect(oldInvertedRect,painter->pen().color());
-
-                painter->setCompositionMode(QPainter::CompositionMode_Difference);
-                QRect newInvertedRect(rect.left(), point.y(),rect.right(), point.y() + 2);
-                painter->fillRect(newInvertedRect,painter->pen().color());
-                painter->restore();
-                if(painter)
-                {
-                    delete painter;
-                    painter = NULL;
-                }
-            }
+        {
+            m_CurMousePoint = point;
+            update();
+        }
             break;
-/*
-#ifndef GRIDCONTROL_NO_DRAGDROP
-        case MOUSE_PREPARE_EDIT:
-        case MOUSE_PREPARE_DRAG:
-            m_MouseMode = MOUSE_PREPARE_DRAG;
-            OnBeginDrag();
-            break;
-#endif*/
         }
     }
 
@@ -7612,12 +7575,14 @@ CImageList* HGridCtrl::CreateDragImage(CPoint *pHotSpot)
     return pList;
 }
 #endif
-
-void HGridCtrl::OnFixedRowClick(HCellID& cell)
+*/
+void HGridCtrl::onFixedRowClick(HCellID& cell)
 {
     if (!isValid(cell))
         return;
 
+    //不排序了
+    /*
     if (GetHeaderSort())
     {
         CWaitCursor waiter;
@@ -7626,13 +7591,13 @@ void HGridCtrl::OnFixedRowClick(HCellID& cell)
         else
             SortItems(cell.col, true);
         Invalidate();
-    }
+    }*/
 
 	// Did the user click on a fixed column cell (so the cell was within the overlap of
 	// fixed row and column cells) - (fix by David Pritchard)
-    if (GetFixedColumnSelection())
+    if (isFixedColumnSelection())
     {
-        if (cell.col < GetFixedColumnCount())
+        if (cell.col < fixedColumnCount())
         {
             m_MouseMode = MOUSE_SELECT_ALL;
             onSelecting(cell);
@@ -7645,22 +7610,15 @@ void HGridCtrl::OnFixedRowClick(HCellID& cell)
     }
 }
 
-void HGridCtrl::OnFixedColumnClick(HCellID& cell)
+void HGridCtrl::onFixedColumnClick(HCellID& cell)
 {
     if (!isValid(cell))
         return;
-
-//    if (m_bListMode && (GetItemState(cell.row, m_nFixedCols) & GVNI_SELECTED))
-//    {
-//        OnEditCell(cell.row, cell.col, VK_LBUTTON);
-//        return;
-//    }
-
 	// Did the user click on a fixed row cell (so the cell was within the overlap of
 	// fixed row and column cells) - (fix by David Pritchard)
-    if (GetFixedRowSelection())
+    if (isFixedRowSelection())
     {
-        if (cell.row < GetFixedRowCount())
+        if (cell.row < fixedRowCount())
         {
             m_MouseMode = MOUSE_SELECT_ALL;
             onSelecting(cell);
@@ -7672,7 +7630,7 @@ void HGridCtrl::OnFixedColumnClick(HCellID& cell)
         }
     }
 }
-*/
+
 // Gets the extent of the text pointed to by str (no CDC needed)
 // By default this uses the selected font (which is a bigger font)
 QSize HGridCtrl::textExtent(int nRow, int nCol, const QString& str)

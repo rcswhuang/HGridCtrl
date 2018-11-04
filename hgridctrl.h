@@ -559,11 +559,11 @@ protected:
     // Drag n' drop
     virtual CImageList* CreateDragImage(CPoint *pHotSpot);    // no longer necessary
 #endif
-
+*/
     // Mouse Clicks
-    virtual void  OnFixedColumnClick(HCellID& cell);
-    virtual void  OnFixedRowClick(HCellID& cell);
-
+    virtual void  onFixedColumnClick(HCellID& cell);
+    virtual void  onFixedRowClick(HCellID& cell);
+/*
     // Editing
     virtual void  OnEditCell(int nRow, int nCol, CPoint point, UINT nChar);
     virtual void  OnEndEditCell(int nRow, int nCol, CString str);
@@ -632,7 +632,7 @@ protected:
     // Mouse operations such as cell selection
     int         m_MouseMode;
     bool        m_bLMouseButtonDown, m_bRMouseButtonDown;
-    QPoint      m_LeftClickDownPoint, m_LastMousePoint;
+    QPoint      m_LeftClickDownPoint, m_LastMousePoint,m_CurMousePoint;
     HCellID     m_LeftClickDownCell, m_SelectionStartCell;
     HCellID     m_idCurrentCell, m_idTopLeftCell;
     int         m_nTimerID;
@@ -679,6 +679,8 @@ protected:
     int         m_nHeaderHeight, m_nFooterHeight, m_nLeftMargin,
                 m_nRightMargin, m_nTopMargin, m_nBottomMargin, m_nGap;
 
+    QPainter* m_painter;
+
 protected:
 
     void selectAllCells();
@@ -693,7 +695,7 @@ protected:
     virtual void keyReleaseEvent(QKeyEvent *event);
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
-    virtual void mouseMoveEvent(QMoveEvent *event);
+    virtual void mouseMoveEvent(QMouseEvent *event);
  /*
     //重载函数 对应windows的消息映射函数
     virtual void enterEvent(QEvent *event);
