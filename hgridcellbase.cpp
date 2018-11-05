@@ -322,16 +322,19 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
 
     // Set up text and background colours
     QColor TextClr, TextBkClr;
+    bool bMulSelect = false;
 
     TextClr = (textClr() == QColor(QCLR_DEFAULT))? pDefaultCell->textClr() : textClr();
     if (backClr() == QColor(QCLR_DEFAULT))
         TextBkClr = pDefaultCell->backClr();
     else
     {
-        //bEraseBkgnd = true;
+        bEraseBkgnd = true;
         TextBkClr = backClr();
     }
 
+    bool bF = isFocused();
+    bool bdrop = isDropHighlighted();
     if ( isFocused() || isDropHighlighted() )
     {
         // Always draw even in list mode so that we can tell where the
@@ -348,7 +351,6 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         if (bEraseBkgnd)
         {
             QBrush brush(TextBkClr);
-            painter->setCompositionMode(QPainter::CompositionMode_Difference);
             painter->fillRect(rect, brush);
 
         }
@@ -357,7 +359,7 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         // whole cell is enclosed.
         if(pGrid->gridLines() != GVL_NONE)
         {
-            //rect.adjust(0,0,-1,-1);
+            rect.adjust(0,0,-1,-1);
         }
 
         painter->setPen(QPen(TextClr));
@@ -365,26 +367,26 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         // Adjust rect after frame draw if no grid lines
         if(pGrid->gridLines() == GVL_NONE)
         {
-            //rect.adjust(0,0,-1,-1);;
+            rect.adjust(0,0,-1,-1);;
         }
         //rect = rect.marginsAdded(QMargins(0,1,1,1));
     }
     else if ((state() & GVIS_SELECTED))//设置多个单元格选中的颜色，和文字颜色
     {
-        //rect.adjust(0,0,1,1);    // FillRect doesn't draw RHS or bottom
+        rect.adjust(0,0,1,1);
         painter->setCompositionMode(QPainter::CompositionMode_Difference);
         painter->fillRect(rect, QColor(QCOLOR_HIGHLIGHT));//也可以用brush
-        //rect.adjust(0,0,-1,-1);
+        rect.adjust(0,0,-1,-1);
         painter->setPen(QPen(QColor(QCOLOR_HIGHLIGHTTEXT)));//设置画笔的颜色
     }
     else
     {
         if (bEraseBkgnd)
         {
-            //rect.adjust(0,0,1,1);    // FillRect doesn't draw RHS or bottom
+            rect.adjust(0,0,1,1);    // FillRect doesn't draw RHS or bottom
             QBrush brush(TextBkClr);
             painter->fillRect(rect,brush);//也可以用brush
-            //rect.adjust(0,0,-1,-1);
+            rect.adjust(0,0,-1,-1);
         }
         painter->setPen(QPen(TextClr));//设置画笔的颜色
     }

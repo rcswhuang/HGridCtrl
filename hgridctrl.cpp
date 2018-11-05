@@ -305,14 +305,14 @@ HCellID HGridCtrl::setFocusCell(HCellID cell)
         setItemState(m_idCurrentCell.row, m_idCurrentCell.col,
             itemState(m_idCurrentCell.row, m_idCurrentCell.col) | GVIS_FOCUSED);
 
-        redrawCell(m_idCurrentCell); // comment to reduce flicker
+        /*redrawCell(m_idCurrentCell); // comment to reduce flicker
 
         if (isTrackFocusCell() && idPrev.col != m_idCurrentCell.col)
             for (int row = 0; row < m_nFixedRows; row++)
                 redrawCell(row, m_idCurrentCell.col);
         if (isTrackFocusCell() && idPrev.row != m_idCurrentCell.row)
             for (int col = 0; col < m_nFixedCols; col++)
-                redrawCell(m_idCurrentCell.row, col);
+                redrawCell(m_idCurrentCell.row, col);*/
 
         // EFW - New addition.  If in list mode, make sure the selected
         // row highlight follows the cursor.
@@ -824,7 +824,7 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
     }
     else if (Qt::Key_F2 == event->key())
     {
-        //OnEditCell(m_idCurrentCell.row, m_idCurrentCell.col, CPoint( -1, -1), VK_LBUTTON);
+        onEditCell(m_idCurrentCell.row, m_idCurrentCell.col, QPoint( -1, -1));
     }
     else
     {
@@ -1705,17 +1705,17 @@ bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
     if (!cellRect(nRow, nCol, rect))
         return false;
 
-    return false;
+
     //redrawCell函数好像没什么用 待确定
     if(NULL == pDC)
     {
-        pDC = m_painter;
+        //pDC = new QPainter(viewport());
     }
 
     if (pDC)
     {
         // Redraw cells directly
-        if (nRow < m_nFixedRows || nCol < m_nFixedCols)
+       /* if (nRow < m_nFixedRows || nCol < m_nFixedCols)
         {
             HGridCellBase* pCell = getCell(nRow, nCol);
             if (pCell)
@@ -1746,7 +1746,7 @@ bool HGridCtrl::redrawCell(int nRow, int nCol, QPainter* pDC )
             pDC->restore();
             //pDC->SelectObject(pOldPen);
 
-        }
+        }*/
     } else
         viewport()->update(rect);     // Could not get a DC - invalidate it anyway
     // and hope that OnPaint manages to get one
@@ -1812,10 +1812,11 @@ void HGridCtrl::setSelectedRange(int nMinRow, int nMinCol, int nMaxRow, int nMax
     // If we are selecting cells, then first clear out the list of currently selected cells, then
     if (bselectCells)
     {
-        QMap<quint32,HCellID>::iterator it = m_SelectedCellMap.begin();
+         QMapIterator<quint32,HCellID> it(m_SelectedCellMap);
         // Unselect all previously selected cells
-        for (;it != m_SelectedCellMap.end(); it++)
+        while (it.hasNext())
         {
+            it.next();
             quint32 key = it.key();
             HCellID cell;
             cell = m_SelectedCellMap.value(key);
@@ -2736,7 +2737,7 @@ HCellRange HGridCtrl::selectedCellRange()
     HCellRange Selection(rowCount(), columnCount(), -1,-1);
 
     QMap<quint32,HCellID>::iterator i = m_SelectedCellMap.begin();
-    for(;i != m_SelectedCellMap.end();i++)
+    for(;i != m_SelectedCellMap.end();++i)
     {
         quint32 key = i.key();
         HCellID cell;
@@ -4347,7 +4348,7 @@ bool HGridCtrl::setItemState(int nRow, int nCol, uint state)
         HCellID cell;
         quint32 key = QMAKELONG(nRow, nCol);
         cell = m_SelectedCellMap.value(key);
-        if (!cell.isValid())
+        if (cell.isValid())
             m_SelectedCellMap.remove(key);
     }
 
@@ -5266,10 +5267,10 @@ bool HGridCtrl::invalidateCellRect(const int row, const int col)
     QRect rect;
     if (!cellRect(row, col, rect))
         return false;
-    rect.setRight(rect.right()+1);
-    rect.setBottom(rect.bottom()+1);
-    repaint(rect); //重绘 huangw
-
+    rect.setRight(rect.right()+5);
+    rect.setBottom(rect.bottom()+5);
+    //repaint(rect); //重绘 huangw
+    update();
     return true;
 }
 
@@ -5752,7 +5753,6 @@ void HGridCtrl::mouseMoveEvent(QMouseEvent *event)
                     return;
                 if (idCurrentCell != focusCell())
                 {
-                    setMulSelect(true);
                     onSelecting(idCurrentCell);
                     if((idCurrentCell.row >= m_nFixedRows &&
                       idCurrentCell.col >= m_nFixedCols) ||

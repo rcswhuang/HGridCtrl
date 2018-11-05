@@ -65,6 +65,8 @@ public:
     void operator=(const HCellRange& rhs);
     int  operator==(const HCellRange& rhs);
     int  operator!=(const HCellRange& rhs);
+
+    bool isMulRange();
     
 protected:
     int m_nMinRow;
@@ -72,6 +74,14 @@ protected:
     int m_nMaxRow;
     int m_nMaxCol;
 };
+
+inline bool HCellRange::isMulRange()
+{
+    if((m_nMinRow == m_nMaxRow) && (m_nMinCol == m_nMaxCol))
+        return false;
+    else
+        return true;
+}
 
 inline void HCellRange::set(int minRow, int minCol, int maxRow, int maxCol)
 {
