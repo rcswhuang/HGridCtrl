@@ -2,6 +2,7 @@
 #define HGRIDCELL_H
 
 class HGridCellBase;
+class HInPlaceEdit;
 #include "hgridcellbase.h"
 
 class HGridCell : public HGridCellBase
@@ -87,10 +88,8 @@ public:
 
 // editing cells
 public:
-    virtual bool edit(int nRow, int nCol, const QRect& rect, const QPoint& point, uint nID, uint nChar);
+    virtual bool edit(int nRow, int nCol, const QRect& rect, const QPoint& point);
     virtual void endEdit();
-protected:
-    virtual void onEndEdit();
 
 protected:
     QString    m_strText;      // Cell text (or binary data if you wish...)
@@ -124,7 +123,7 @@ protected:
     bool       m_bEditing;     // Cell being edited?
 
     HGridCtrl* m_pGrid;        // Parent grid control
-    //CWnd*      m_pEditWnd;
+    HInPlaceEdit *m_pEditWnd;
 };
 
 // This class is for storing grid default values. It's a little heavy weight, so

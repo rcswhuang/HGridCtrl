@@ -17,6 +17,7 @@
 typedef QList<HGridCellBase*> GRID_ROW;
 class HGridCtrl;
 
+
 /*
  * HGridCtrl为了能有滚动条的效果，继承QAbstractScrollArea
 */
@@ -30,7 +31,7 @@ class HGridCtrl :public QAbstractScrollArea
 
 // 构造、析构函数
 public:
-    HGridCtrl(int nRows = 0, int nCols = 0, int nFixedRows = 0, int nFixedCols = 0);
+    HGridCtrl(int nRows = 0, int nCols = 0, int nFixedRows = 0, int nFixedCols = 0,QWidget *parent = Q_NULLPTR);
     virtual ~HGridCtrl();
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -235,6 +236,9 @@ public:
     bool isColumnHide()                            { return m_bAllowColHide;           }
     void enableRowHide(bool bEnable = true)        { m_bAllowRowHide = bEnable;        }
     bool isRowHide()                               { return m_bAllowRowHide;           }
+
+    void setMulSelect(bool bMulSelect = false)     { m_bMulSelection = bMulSelect;     }
+    bool isMulSelect()                             { return m_bMulSelection;           }
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -563,13 +567,13 @@ protected:
     // Mouse Clicks
     virtual void  onFixedColumnClick(HCellID& cell);
     virtual void  onFixedRowClick(HCellID& cell);
-/*
+
     // Editing
-    virtual void  OnEditCell(int nRow, int nCol, CPoint point, UINT nChar);
-    virtual void  OnEndEditCell(int nRow, int nCol, CString str);
-    virtual bool  ValidateEdit(int nRow, int nCol, LPCTSTR str);
-    virtual void  EndEditing();
-*/
+    virtual void  onEditCell(int nRow, int nCol, QPoint point);
+    //virtual void  onEndEditCell(int nRow, int nCol, CString str);
+    //virtual bool  validateEdit(int nRow, int nCol, LPCTSTR str);
+    virtual void  endEditing();
+
     // Drawing
     virtual void  onDraw(QPainter* painter);
 
@@ -577,6 +581,8 @@ protected:
     virtual HGridCellBase* createCell(int nRow, int nCol);
     virtual void destroyCell(int nRow, int nCol);
 
+public slots:
+    void  onEndEditCell(int nRow, int nCol, QString str);
 // Attributes
 protected:
     // General attributes
@@ -612,6 +618,7 @@ protected:
     bool        m_bTrackFocusCell;
     bool        m_bFrameFocus;
     uint        m_nAutoSizeColumnStyle;
+    bool        m_bMulSelection;
 
     // Cell size details
     int            m_nRows, m_nFixedRows, m_nCols, m_nFixedCols;

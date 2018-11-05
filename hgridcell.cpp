@@ -1,5 +1,5 @@
 ﻿#include "hgridcell.h"
-
+#include "hinplaceedit.h"
 HGridCell::HGridCell(HGridCellBase *parent) : HGridCellBase(parent)
 {
     reset();
@@ -31,9 +31,9 @@ void HGridCell::reset()
     m_nImage   = -1;
     m_pGrid    = NULL;
     m_bEditing = false;
-    //m_pEditWnd = NULL;
+    m_pEditWnd = NULL;
 
-    m_nFormat = Qt::AlignLeft;           // Use default from CGridDefaultCell
+    m_nFormat = QDT_LEFT | QDT_CENTER;           // Use default from CGridDefaultCell
     m_crBkClr = QColor(QCLR_DEFAULT);     // Background colour (or CLR_DEFAULT)
     m_crFgClr = QColor(QCLR_DEFAULT);     // Forground colour (or CLR_DEFAULT)
     m_nMargin = (uint)-1;              // Use default from CGridDefaultCell
@@ -67,7 +67,7 @@ quint32 HGridCell::format()  const
 /*
  * 编辑的时候是生成一个QLineEdit 移动到对应的rect里面
 */
-bool HGridCell::edit(int nRow, int nCol, const QRect& rect, const QPoint& point, uint nID, uint nChar)
+bool HGridCell::edit(int nRow, int nCol, const QRect& rect, const QPoint& point)
 {
     if ( m_bEditing )
     {
@@ -76,26 +76,26 @@ bool HGridCell::edit(int nRow, int nCol, const QRect& rect, const QPoint& point,
     }
     else
     {
-        quint32 dwStyle = format();
         m_bEditing = true;
-
-        // InPlaceEdit auto-deletes itself
-        //HGridCtrl* pGrid = grid();
-        //m_pEditWnd = new CInPlaceEdit(pGrid, rect, dwStyle, nID, nRow, nCol, GetText(), nChar);
+        quint32 dwStyle = format();
+        HGridCtrl* pGrid = grid();
+        m_pEditWnd = new HInPlaceEdit((QWidget*)pGrid, rect, dwStyle, nRow, nCol, text());
+        m_pEditWnd->resize(rect.width(),rect.height());
+        m_pEditWnd->move(rect.left(),rect.top());
+        m_pEditWnd->show();
     }
     return true;
 }
 
 void HGridCell::endEdit()
 {
-    //if (m_pEditWnd)
-     //   ((CInPlaceEdit*)m_pEditWnd)->EndEdit();
-}
-
-void HGridCell::onEndEdit()
-{
+    if (m_pEditWnd)
+    {
+        ((HInPlaceEdit*)m_pEditWnd)->endEdit();
+        delete m_pEditWnd;
+        m_pEditWnd = NULL;
+    }
     m_bEditing = false;
-    //m_pEditWnd = NULL;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -106,7 +106,7 @@ HGridDefaultCell::HGridDefaultCell()
     m_nFormat = QDT_LEFT|QDT_VCENTER|QDT_SINGLELINE|QDT_NOPREFIX;
     m_crFgClr = QColor(QCLR_DEFAULT);
     m_crBkClr = QColor(QCLR_DEFAULT);
-    m_Size    = QSize(128,30);
+    m_Size    = QSize(100,25);
     m_dwStyle = 0;
     m_Font = QFont("宋体",10,QFont::Normal);
 }

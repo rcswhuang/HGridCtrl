@@ -17,7 +17,8 @@ uint getMouseScrollLines()
 
 /////////////////////////////////////////////////////////////////////////////
 // CGridCtrl
-HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
+HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols,QWidget *parent)
+    :QAbstractScrollArea(parent)
 {
     // Store the system colours in case they change. The gridctrl uses
     // these colours, and in OnSysColorChange we can check to see if
@@ -96,6 +97,7 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols)
     m_bAllowDragAndDrop   = false;      // for drag and drop - EFW - off by default
     m_bTrackFocusCell     = true;       // Track Focus cell?
     m_bFrameFocus         = true;       // Frame the selected cell?
+    m_bMulSelection       = false;
 
     //m_pRtcDefault = RUNTIME_CLASS(CGridCell);
 
@@ -557,7 +559,6 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
 注意对于里面特殊的按键处理没有调用QWidget类的keyReleaseEvent来处理
 而是通过自己调整滚动工作条即可。
 */
-    return;
     if (!isValid(m_idCurrentCell))
     {
         QWidget::keyReleaseEvent(event);
@@ -846,10 +847,10 @@ void HGridCtrl::keyReleaseEvent(QKeyEvent *event)
 
 			// Notify parent that selection is changing - Arthur Westerman/Scot Brennecke 
             //huangw
-            /*SendMessageToParent(next.row, next.col, GVN_SELCHANGING);
+            //SendMessageToParent(next.row, next.col, GVN_SELCHANGING);
             onSelecting(next);
-			SendMessageToParent(next.row, next.col, GVN_SELCHANGED);
-            */
+            //SendMessageToParent(next.row, next.col, GVN_SELCHANGED);
+
 
             m_MouseMode = MOUSE_NOTHING;
         }
@@ -1004,13 +1005,9 @@ void HGridCtrl::OnEndInPlaceEdit(NMHDR* pNMHDR, LRESULT* pResult)
 // Handle horz scrollbar notifications 水平滚动条
 void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
 {
-    /*
-    EndEditing();//huangw
 
-#ifndef GRIDCONTROL_NO_TITLETIPS
-    m_TitleTip.Hide();  // hide any titletips --huangw
-#endif
-*/
+    endEditing();//huangw
+
     int scrollPos = scrollPos32(QSB_HORZ);
 
     HCellID idTopLeft = topleftNonFixedCell();
@@ -1119,13 +1116,8 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
 // Handle vert scrollbar notifications
 void HGridCtrl::onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
 {
-    /*
-    EndEditing();
 
-#ifndef GRIDCONTROL_NO_TITLETIPS
-    m_TitleTip.Hide();  // hide any titletips
-#endif
-*/
+    endEditing();
     // Get the scroll position ourselves to ensure we get a 32 bit value
     int scrollPos = scrollPos32(QSB_VERT);
 
@@ -5334,7 +5326,7 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
             m_SelectionStartCell = m_idCurrentCell;
     }
 
-    //EndEditing();//huangw
+    endEditing();//huangw
 
     // tell the cell about it
     HGridCellBase* pCell = getCell(m_LeftClickDownCell.row, m_LeftClickDownCell.col);
@@ -5374,6 +5366,8 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
                 selectCells(m_LeftClickDownCell, true, false);
             return;
         }
+        else
+            m_MouseMode = MOUSE_PREPARE_DRAG;
     }
     else if (m_MouseMode != MOUSE_OVER_COL_DIVIDE &&
              m_MouseMode != MOUSE_OVER_ROW_DIVIDE)
@@ -5542,8 +5536,7 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
             }
         }
     }
-    else
-    if (m_MouseMode != MOUSE_PREPARE_DRAG) // not sizing or editing -- selecting
+    else if (m_MouseMode != MOUSE_PREPARE_DRAG) // not sizing or editing -- selecting
     {
         //SendMessageToParent(m_LeftClickDownCell.row, m_LeftClickDownCell.col, GVN_SELCHANGING);
 
@@ -5604,7 +5597,14 @@ void HGridCtrl::mouseReleaseEvent(QMouseEvent *event)
     // and then didn't move mouse before clicking up (releasing button)
     if (m_MouseMode == MOUSE_PREPARE_EDIT)
     {
-        //OnEditCell(m_idCurrentCell.row, m_idCurrentCell.col, pointClickedRel, VK_LBUTTON);
+        onEditCell(m_idCurrentCell.row, m_idCurrentCell.col, pointClickedRel);
+    }
+    else if (m_MouseMode == MOUSE_PREPARE_DRAG)
+    {
+        HGridCellBase* pCell = getCell(m_idCurrentCell.row, m_idCurrentCell.col);
+        if (pCell)
+            pCell->onClick( pointClicked( m_idCurrentCell.row, m_idCurrentCell.col, point) );
+        resetSelectedRange();
     }
     else if (m_MouseMode == MOUSE_SIZING_COL)
     {
@@ -5660,6 +5660,7 @@ void HGridCtrl::mouseReleaseEvent(QMouseEvent *event)
     }
 
     m_MouseMode = MOUSE_NOTHING;
+    setMulSelect(false);
     setCursor(Qt::ArrowCursor);
 
     if (!isValid(m_LeftClickDownCell))
@@ -5749,9 +5750,9 @@ void HGridCtrl::mouseMoveEvent(QMouseEvent *event)
                 HCellID idCurrentCell = cellFromPt(point);
                 if (!isValid(idCurrentCell))
                     return;
-
                 if (idCurrentCell != focusCell())
                 {
+                    setMulSelect(true);
                     onSelecting(idCurrentCell);
                     if((idCurrentCell.row >= m_nFixedRows &&
                       idCurrentCell.col >= m_nFixedCols) ||
@@ -7642,73 +7643,52 @@ QSize HGridCtrl::textExtent(int nRow, int nCol, const QString& str)
         return pCell->textExtent(str);
 }
 
-/*
-// virtual
-void HGridCtrl::OnEditCell(int nRow, int nCol, CPoint point, UINT nChar)
-{
-#ifndef GRIDCONTROL_NO_TITLETIPS
-    m_TitleTip.Hide();  // hide any titletips
-#endif
 
+// virtual
+void HGridCtrl::onEditCell(int nRow, int nCol, QPoint point)
+{
     // Can we do it?
-    HCellID getCell(nRow, nCol);
-    if (!isValid(cell) || !IsCellEditable(nRow, nCol))
+    HGridCellBase* pCell = getCell(nRow, nCol);
+    if (NULL == pCell || !isCellEditable(nRow, nCol))
         return;
 
-    // Can we see what we are doing?
-    EnsureVisible(nRow, nCol);
-    if (!isCellVisible(nRow, nCol))
+    QRect rect;
+    if (!cellRect(nRow,nCol, rect))
         return;
 
-    // Where, exactly, are we gonna do it??
-    CRect rect;
-    if (!GetCellRect(cell, rect))
-        return;
-
-    // Check we can edit...
-    if (SendMessageToParent(nRow, nCol, GVN_BEGINLABELEDIT) >= 0)
-    {
-        // Let's do it...
-        CGridCellBase* pCell = GetCell(nRow, nCol);
-        if (pCell)
-            pCell->Edit(nRow, nCol, rect, point, IDC_INPLACE_CONTROL, nChar);
-    }
-}
-
-// virtual
-void HGridCtrl::EndEditing()
-{
-    HCellID cell = GetFocusCell();
-    if (!isValid(cell)) return;
-    CGridCellBase *pCell = GetCell(cell.row, cell.col);
     if (pCell)
-        pCell->EndEdit();
+        pCell->edit(nRow, nCol, rect, point);
+
 }
 
 // virtual
-void HGridCtrl::OnEndEditCell(int nRow, int nCol, CString str)
+void HGridCtrl::endEditing()
 {
-    CString strCurrentText = itemText(nRow, nCol);
+    HCellID cell = focusCell();
+    if (!isValid(cell)) return;
+    HGridCellBase *pCell = getCell(cell.row, cell.col);
+    if (pCell)
+        pCell->endEdit();
+}
+
+// virtual
+
+void HGridCtrl::onEndEditCell(int nRow, int nCol, QString str)
+{
+    QString strCurrentText = itemText(nRow, nCol);
     if (strCurrentText != str)
     {
-        SetItemText(nRow, nCol, str);
-        if (ValidateEdit(nRow, nCol, str) && 
-            SendMessageToParent(nRow, nCol, GVN_ENDLABELEDIT) >= 0)
-        {
-            setModified(true, nRow, nCol);
-            RedrawCell(nRow, nCol);
-        }
-        else
-        {
-            SetItemText(nRow, nCol, strCurrentText);
-        }
+        setItemText(nRow, nCol, str);
+        setModified(true, nRow, nCol);
+        redrawCell(nRow, nCol);
     }
 
-    CGridCellBase* pCell = GetCell(nRow, nCol);
+    HGridCellBase* pCell = getCell(nRow, nCol);
     if (pCell)
-        pCell->OnEndEdit();
+        pCell->endEdit();
 }
 
+/*
 // If this returns false then the editing isn't allowed
 // virtual
 bool HGridCtrl::ValidateEdit(int nRow, int nCol, LPCTSTR str)
@@ -7721,7 +7701,7 @@ bool HGridCtrl::ValidateEdit(int nRow, int nCol, LPCTSTR str)
     return pCell->ValidateEdit(str);
 }
 
-
+/*
 //Merge the selected cells 
 //by Huang Wei
 HCellID HGridCtrl::GetMergeCellID(HCellID cell)

@@ -199,7 +199,8 @@ typedef struct tagGV_CACHEHINT {
 //绘制文字 仿windows----左中右对齐，上中下对齐
 #define QDT_TOP                      Qt::AlignTop
 #define QDT_LEFT                     Qt::AlignLeft
-#define QDT_CENTER                   Qt::AlignHCenter
+#define QDT_HCENTER                  Qt::AlignHCenter
+#define QDT_CENTER                   QDT_VCENTER|QDT_HCENTER
 #define QDT_RIGHT                    Qt::AlignRight
 #define QDT_VCENTER                  Qt::AlignVCenter
 #define QDT_BOTTOM                   Qt::AlignBottom

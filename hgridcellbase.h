@@ -117,7 +117,7 @@ public:
 
     virtual void reset();
 
-    virtual bool draw(QPainter* painter, int nRow, int nCol, QRect rect, bool bEraseBkgnd = true);
+    virtual bool draw(QPainter* painter, int nRow, int nCol, QRect rect, bool bEraseBkgnd = false);
     //如果是图片的话就获取对应的矩形，不是就算了。不能const引用，draw转过来的rect需要做判断 ---huangw
     virtual bool textRect( QRect& rect);    // i/o:  i=dims of cell rect; o=dims of text rect
     virtual bool tipTextRect( QRect&  rect) { return textRect( rect); }  // may override for btns, etc.
@@ -125,8 +125,7 @@ public:
     virtual QSize cellExtent(QPainter* painter);
 
     // Editing
-    virtual bool edit( int /* nRow */, int /* nCol */, QRect /* rect */, QPoint /* point */,
-                       uint /* nID */, uint /* nChar */) { Q_ASSERT( false); return false;}
+    virtual bool edit( int /* nRow */, int /* nCol */, const QRect& /* rect */, const QPoint& /* point */) { Q_ASSERT( false); return false;}
     virtual bool validateEdit(QString& str);
     virtual void endEdit() {}
 
@@ -145,7 +144,6 @@ protected:
     virtual void onRClick( QPoint PointCellRelative);
     virtual void onDblClick( QPoint PointCellRelative);
     virtual bool onSetCursor();
-    virtual void onEndEdit();
 public:
     /*bool IsMerged();
 	void SetMergeRange(HCellRange range);

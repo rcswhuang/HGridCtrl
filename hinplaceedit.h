@@ -11,53 +11,30 @@
 #pragma once
 #endif // _MSC_VER >= 1000
 #include <QLineEdit>
-
+#include <QAbstractScrollArea>
+class HGridCtrl;
 class HInPlaceEdit : public QLineEdit
 {
-// Construction
+    Q_OBJECT
 public:
-    HInPlaceEdit(QWidget* pParent, QRect& rect, quint32 dwStyle, uint nID,
-                 int nRow, int nColumn, QString sInitText, uint nFirstChar);
+    HInPlaceEdit(QWidget* pParent, const QRect& rect, quint32 dwStyle,
+                 int nRow, int nColumn, QString sInitText);
+    virtual ~HInPlaceEdit();
 
-// Attributes
 public:
- 
-// Operations
-public:
-     void endEdit();
- 
-// Overrides
-     // ClassWizard generated virtual function overrides
-     //{{AFX_VIRTUAL(CInPlaceEdit)
-	public:
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
-	protected:
-	virtual void PostNcDestroy();
-	//}}AFX_VIRTUAL
- 
-// Implementation
-public:
-     virtual ~CInPlaceEdit();
- 
-// Generated message map functions
-protected:
-    //{{AFX_MSG(CInPlaceEdit)
-     /*
-    afx_msg void OnKillFocus(CWnd* pNewWnd);
-    afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
-    afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	afx_msg UINT OnGetDlgCode();
-    */
-	//}}AFX_MSG
-    DECLARE_MESSAGE_MAP()
-
+    void endEdit();
+public slots:
+    void onEditingFinished();
+    void onTextChanged(const QString &text);
+signals:
+    void endEditCell(int nRow, int nCol, QString str);
 private:
     int     m_nRow;
     int     m_nColumn;
-    CString m_sInitText;
-    UINT    m_nLastChar;
-    BOOL    m_bExitOnArrows;
-    CRect   m_Rect;
+    QString m_sInitText;
+    uint    m_nLastChar;
+    bool    m_bExitOnArrows;
+    QRect   m_Rect;
 };
  
 /////////////////////////////////////////////////////////////////////////////
