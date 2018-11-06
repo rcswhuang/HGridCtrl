@@ -92,10 +92,15 @@ void HGridCell::endEdit()
     if (m_pEditWnd)
     {
         ((HInPlaceEdit*)m_pEditWnd)->endEdit();
-        delete m_pEditWnd;
-        m_pEditWnd = NULL;
     }
+
+}
+
+void HGridCell::OnEndEdit()
+{
     m_bEditing = false;
+    m_pEditWnd = NULL;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////

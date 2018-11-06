@@ -136,6 +136,7 @@ public:
     //LRESULT SendMessageToParent(int nRow, int nCol, int nMessage);
 
 protected:
+    virtual void OnEndEdit();
     virtual void onMouseEnter();
     virtual void onMouseOver();
     virtual void onMouseLeave();

@@ -90,6 +90,7 @@ public:
 public:
     virtual bool edit(int nRow, int nCol, const QRect& rect, const QPoint& point);
     virtual void endEdit();
+    virtual void OnEndEdit();
 
 protected:
     QString    m_strText;      // Cell text (or binary data if you wish...)

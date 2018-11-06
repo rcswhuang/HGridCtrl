@@ -29,6 +29,7 @@ public slots:
 signals:
     void endEditCell(int nRow, int nCol, QString str);
 private:
+    bool    m_bSend;
     int     m_nRow;
     int     m_nColumn;
     QString m_sInitText;

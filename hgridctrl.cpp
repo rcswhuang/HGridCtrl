@@ -141,6 +141,9 @@ HGridCtrl::HGridCtrl(int nRows, int nCols, int nFixedRows, int nFixedCols,QWidge
         m_arRowHeights[i] = m_cellDefault.height();
     for (i = 0; i < m_nCols; i++)
         m_arColWidths[i] = m_cellDefault.width();
+
+    connect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
+    connect(verticalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onVerticalScrollBarChanged);
 }
 
 //no
@@ -1027,12 +1030,12 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
                 idTopLeft.col++;
             }
             int xScroll = columnWidth(idTopLeft.col);
-            setScrollPos32(QSB_HORZ, scrollPos + xScroll);
+            setScrollPos32(QSB_HORZ, scrollPos + xScroll);//就是设置滚动条的位置
             if (scrollPos32(QSB_HORZ) == scrollPos)
                 break;          // didn't work
 
-            rect.setLeft(fixedColumnWidth());
-            update(rect);
+            //rect.setLeft(fixedColumnWidth());
+            //update();
         }
         break;
 
@@ -1049,8 +1052,8 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
 
             int xScroll = columnWidth(iColToUse);
             setScrollPos32(QSB_HORZ, max(0, scrollPos - xScroll));
-            rect.setLeft(fixedColumnWidth());
-            update(rect);
+            //rect.setLeft(fixedColumnWidth());
+            //update();
         }
         break;
 
@@ -1061,8 +1064,8 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
             int offset = rect.width();
             int pos = min(m_nHScrollMax, scrollPos + offset);
             setScrollPos32(QSB_HORZ, pos);
-            rect.setLeft(fixedColumnWidth());
-            update(rect);
+            //rect.setLeft(fixedColumnWidth());
+            //update();
         }
         break;
         
@@ -1073,8 +1076,8 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
             int offset = -rect.width();
             int pos = max(0, scrollPos + offset);
             setScrollPos32(QSB_HORZ, pos);
-            rect.setLeft(fixedColumnWidth());
-            update(rect);
+            //rect.setLeft(fixedColumnWidth());
+            //update();
         }
         break;
         
@@ -1087,7 +1090,7 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
             if (idNewTopLeft != idTopLeft)
             {
                 rect.setLeft(fixedColumnWidth());
-                update(rect);
+                update();
             }
         }
         break;
@@ -1096,7 +1099,7 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
         if (scrollPos > 0)
         {
             setScrollPos32(QSB_HORZ, 0);
-            update();
+            //update();
         }
         break;
         
@@ -1104,7 +1107,7 @@ void HGridCtrl::onHScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
         if (scrollPos < m_nHScrollMax)
         {
             setScrollPos32(QSB_HORZ, m_nHScrollMax);
-            update();
+            //update();
         }
         break;
 
@@ -1144,7 +1147,7 @@ void HGridCtrl::onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
                 break;          // didn't work
 
             rect.setTop(fixedRowHeight());
-            update(rect);
+            update();
         }
         break;
         
@@ -1162,7 +1165,7 @@ void HGridCtrl::onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
             int yScroll = rowHeight( iRowToUse);
             setScrollPos32(QSB_VERT, max(0, scrollPos - yScroll));
             rect.setTop(fixedRowHeight());
-            update(rect);
+            update();
         }
         break;
         
@@ -1173,7 +1176,7 @@ void HGridCtrl::onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
             scrollPos = min(m_nVScrollMax, scrollPos + rect.height());
             setScrollPos32(QSB_VERT, scrollPos);
             rect.setTop(fixedRowHeight());
-            update(rect);
+            update();
         }
         break;
         
@@ -1185,7 +1188,7 @@ void HGridCtrl::onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
             int pos = max(0, scrollPos + offset);
             setScrollPos32(QSB_VERT, pos);
             rect.setTop(fixedRowHeight());
-            update(rect);
+            update();
         }
         break;
         
@@ -1198,7 +1201,7 @@ void HGridCtrl::onVScroll(uint nSBCode, uint nPos, QScrollBar* pScrollBar)
             if (idNewTopLeft != idTopLeft)
             {
                 rect.setTop(fixedRowHeight());
-                update(rect);
+                update();
             }
         }
         break;
@@ -1654,7 +1657,8 @@ void HGridCtrl::onDraw(QPainter* painter)
 // of columns/rows)?
 bool HGridCtrl::isValid(int nRow, int nCol) const
 {
-    return (nRow >= 0 && nRow < m_nRows && nCol >= 0 && nCol < m_nCols);
+    bool bIsValid = (nRow >= 0 && nRow < m_nRows && nCol >= 0 && nCol < m_nCols);
+    return bIsValid;
 }
 
 bool HGridCtrl::isValid(const HCellID& cell) const
@@ -2625,9 +2629,9 @@ HCellID HGridCtrl::topleftNonFixedCell(bool bForceRecalculation )
     if (m_idTopLeftCell.isValid() && !bForceRecalculation)
         return m_idTopLeftCell;
 
-    // win32 huangw
-    int nVertScroll = 0;//GetScrollPos(SB_VERT),
-    int nHorzScroll = 0;//GetScrollPos(SB_HORZ);
+    //
+    int nHorzScroll = horizontalScrollBar()->value();
+    int nVertScroll = verticalScrollBar()->value();
 
     m_idTopLeftCell.col = m_nFixedCols;
     //有何用？ --huangw
@@ -2803,13 +2807,22 @@ int HGridCtrl::scrollPos32(int nBar, bool bGetTrackPos )
 
 bool HGridCtrl::setScrollPos32(int nBar, int nPos, bool bRedraw )
 {
-   /* m_idTopLeftCell.row = -1;
+    //为了保持与原来代码一致，未做大的变动，此处代码只作为设置滚动条的位置，但不会触发HGridCtrl的槽函数
+    //其实完全改动为Qt滚动条的方法可能会简单一点
+    if(QSB_HORZ == nBar)
+    {
+        //disconnect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
+        horizontalScrollBar()->setValue(nPos);
+        //connect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
 
-    SCROLLINFO si;
-    si.cbSize = sizeof(SCROLLINFO);
-    si.fMask  = SIF_POS;
-    si.nPos   = nPos;
-    return SetScrollInfo(nBar, &si, bRedraw);*/
+    }
+    else if(QSB_VERT == nBar)
+    {
+        disconnect(verticalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onVerticalScrollBarChanged);
+        verticalScrollBar()->setValue(nPos);
+        connect(verticalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onVerticalScrollBarChanged);
+    }
+
     return true;
 }
 /*
@@ -5287,17 +5300,32 @@ bool HGridCtrl::invalidateCellRect(const HCellRange& cellRange)
         return false;
 
     rect.right++;
-    rect.bottom++;
-    repaint(rect); //重绘 huangw
-*/
+    rect.bottom++;*/
+    update(); //重绘 huangw
+
     return true;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
+#include <QDebug>
+void  HGridCtrl::onHorizontalScrollBarChanged(int value)
+{
+    //setScrollPos32(QSB_HORZ,value);
+    //connect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
+    setScrollBarValue(QWM_HSCROLL,QSB_THUMBPOSITION,value);
+    //disconnect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
+}
+
+void  HGridCtrl::onVerticalScrollBarChanged(int value)
+{
+    setScrollBarValue(QWM_VSCROLL,QSB_THUMBPOSITION,value);
+}
+
 // CGridCtrl Mouse stuff
 void HGridCtrl::mousePressEvent(QMouseEvent *event)
 {
+    qDebug()<<"mousePressEvent";
 
 #ifdef GRIDCONTROL_USE_TITLETIPS
     // EFW - Bug Fix
@@ -5306,7 +5334,7 @@ void HGridCtrl::mousePressEvent(QMouseEvent *event)
 
     // TRACE0("HGridCtrl::OnLButtonDown\n");
     // CWnd::OnLButtonDown(nFlags, point);
-
+    QAbstractScrollArea::mousePressEvent(event);
     //SetFocus();
 
     m_bLMouseButtonDown   = true;
@@ -5665,7 +5693,10 @@ void HGridCtrl::mouseReleaseEvent(QMouseEvent *event)
     setCursor(Qt::ArrowCursor);
 
     if (!isValid(m_LeftClickDownCell))
+    {
+        QString strtest = "ddddd";
         return;
+    }
 }
 
 
@@ -7685,7 +7716,8 @@ void HGridCtrl::onEndEditCell(int nRow, int nCol, QString str)
 
     HGridCellBase* pCell = getCell(nRow, nCol);
     if (pCell)
-        pCell->endEdit();
+        pCell->OnEndEdit();
+
 }
 
 /*

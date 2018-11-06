@@ -583,6 +583,8 @@ protected:
 
 public slots:
     void  onEndEditCell(int nRow, int nCol, QString str);
+    void  onHorizontalScrollBarChanged(int value);
+    void  onVerticalScrollBarChanged(int value);
 // Attributes
 protected:
     // General attributes
@@ -703,6 +705,8 @@ protected:
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual void mouseMoveEvent(QMouseEvent *event);
+    //virtual bool event(QEvent *event);
+    //virtual void scrollContentsBy(int dx, int dy);
  /*
     //重载函数 对应windows的消息映射函数
     virtual void enterEvent(QEvent *event);

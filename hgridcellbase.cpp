@@ -552,6 +552,11 @@ bool HGridCellBase::printCell(QPainter* painter, int nRow, int nCol, QRect& rect
     return true;
 }
 
+void HGridCellBase::OnEndEdit()
+{
+
+}
+
 void HGridCellBase::onMouseEnter()
 {
 

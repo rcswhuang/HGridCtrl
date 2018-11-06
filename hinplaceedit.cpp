@@ -12,6 +12,7 @@ HInPlaceEdit::HInPlaceEdit(QWidget* pParent, const QRect& rect, quint32 dwStyle,
                            int nRow, int nColumn, QString sInitText)
     :QLineEdit(pParent)
 {
+    m_bSend = false;
     m_sInitText     = sInitText;
     m_nRow          = nRow;
     m_nColumn       = nColumn;
@@ -22,7 +23,9 @@ HInPlaceEdit::HInPlaceEdit(QWidget* pParent, const QRect& rect, quint32 dwStyle,
     setAlignment(QDT_LEFT | QDT_CENTER);
     setText(sInitText);
     setFocus();
+    setAttribute(Qt::WA_DeleteOnClose);
     connect(this,&HInPlaceEdit::endEditCell,(HGridCtrl*)pParent,&HGridCtrl::onEndEditCell);
+    connect(this, &HInPlaceEdit::editingFinished, this,&HInPlaceEdit::onEditingFinished);
 
 }
 
@@ -53,4 +56,5 @@ void HInPlaceEdit::endEdit()
     str = text();
     emit endEditCell(m_nRow, m_nColumn, str);
     bAlreadyEnding = false;
+    close();
 }
