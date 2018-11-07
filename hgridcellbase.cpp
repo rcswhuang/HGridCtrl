@@ -341,8 +341,6 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
             bEraseBkgnd = true;
         }
 
-        //rect.right++; rect.bottom++;    // FillRect doesn't draw RHS or bottom
-        //rect.adjust(0,0,1,1);
         if (bEraseBkgnd)
         {
             QBrush brush(TextBkClr);
@@ -354,7 +352,16 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         // whole cell is enclosed.
         if(pGrid->gridLines() != GVL_NONE)
         {
-            rect.adjust(0,0,-1,-1);
+            rect.adjust(0,0,-2,-2);
+        }
+
+        if (pGrid->isFrameFocusCell())
+        {
+            // Use same color as text to outline the cell so that it shows
+            // up if the background is black.
+            QPen fPen(TextClr);
+            painter->setPen(fPen);
+            painter->drawRect(rect);
         }
 
         painter->setPen(QPen(TextClr));
@@ -362,16 +369,14 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         // Adjust rect after frame draw if no grid lines
         if(pGrid->gridLines() == GVL_NONE)
         {
-            rect.adjust(0,0,-1,-1);;
+            rect.adjust(0,0,2,2);;
         }
-        //rect = rect.marginsAdded(QMargins(0,1,1,1));
+        rect = rect.marginsAdded(QMargins(0,1,1,1));
     }
     else if ((state() & GVIS_SELECTED))//设置多个单元格选中的颜色，和文字颜色
     {
-        rect.adjust(0,0,1,1);
         painter->setCompositionMode(QPainter::CompositionMode_Difference);
         painter->fillRect(rect, QColor(QCOLOR_HIGHLIGHT));//也可以用brush
-        rect.adjust(0,0,-1,-1);
         painter->setPen(QPen(QColor(QCOLOR_HIGHLIGHTTEXT)));//设置画笔的颜色
     }
     else
@@ -389,12 +394,9 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
     // Draw lines only when wanted
     if (isFixed() && pGrid->gridLines() != GVL_NONE)
     {
-        //HCellID FocusCell = pGrid->focusCell();
-
         painter->save();
         QPen lightpen(QColor(QCOLOR_3DHIGHLIGHT),1,Qt::SolidLine);
         QPen darkpen(QColor(QCOLOR_3DDKSHADOW),1,Qt::SolidLine);
-
 
         painter->setPen(lightpen);
         QPainterPath fixPath;
@@ -402,7 +404,6 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         fixPath.lineTo(rect.left(), rect.top());
         fixPath.lineTo(rect.left(), rect.bottom());
         painter->drawPath(fixPath);
-
 
         painter->setPen(darkpen);
         QPainterPath fix1Path;
@@ -427,7 +428,6 @@ bool HGridCellBase::textRect( QRect& rect)
 {
     if (image() >= 0)
     {
-
        HGridCtrl* pGrid = grid();
        QImageList* pImageList = pGrid->imageList();
        if(pImageList)

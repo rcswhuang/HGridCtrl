@@ -1555,6 +1555,7 @@ void HGridCtrl::onDraw(QPainter* painter)
         }
     }
 */
+
 	// draw top-left cells 0..m_nFixedRows-1, 0..m_nFixedCols-1
     rect.setBottom(-1);
 	for (row = 0; row < m_nFixedRows; row++)
@@ -2811,17 +2812,12 @@ bool HGridCtrl::setScrollPos32(int nBar, int nPos, bool bRedraw )
     //其实完全改动为Qt滚动条的方法可能会简单一点
     if(QSB_HORZ == nBar)
     {
-        //disconnect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
         horizontalScrollBar()->setValue(nPos);
-        //connect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
-
     }
     else if(QSB_VERT == nBar)
     {
-        disconnect(verticalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onVerticalScrollBarChanged);
         verticalScrollBar()->setValue(nPos);
-        connect(verticalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onVerticalScrollBarChanged);
-    }
+     }
 
     return true;
 }
@@ -3309,10 +3305,9 @@ bool HGridCtrl::setRowCount(int nRows)
         bResult = false;
     }
 
-    //----huangw
-    //setModified();
+    setModified();
     resetScrollBars();
-    //refresh();
+    refresh();
 
     return bResult;
 }
@@ -3427,8 +3422,7 @@ bool HGridCtrl::setFixedColumnCount(int nFixedCols)
         
     m_nFixedCols = nFixedCols;
         
-    refresh(); //huangw
-        
+    refresh();
     return true;
 }
 
@@ -3492,11 +3486,9 @@ bool HGridCtrl::setColumnCount(int nCols)
 
     m_nCols = nCols;
 
-    //--huangw
     setModified();
     resetScrollBars();
     refresh();
-
     return bResult;
 }
 
@@ -3581,9 +3573,8 @@ int HGridCtrl::insertColumn(const QString& strHeading, uint nFormat,int nColumn 
         m_idCurrentCell.col++;
     
     //ResetScrollBars();//刷新滚动条
-
     setModified();
-    
+
     return nColumn;
 }
 
@@ -5310,15 +5301,46 @@ bool HGridCtrl::invalidateCellRect(const HCellRange& cellRange)
 #include <QDebug>
 void  HGridCtrl::onHorizontalScrollBarChanged(int value)
 {
-    //setScrollPos32(QSB_HORZ,value);
-    //connect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
     setScrollBarValue(QWM_HSCROLL,QSB_THUMBPOSITION,value);
-    //disconnect(horizontalScrollBar(),&QScrollBar::valueChanged,this,&HGridCtrl::onHorizontalScrollBarChanged);
 }
 
 void  HGridCtrl::onVerticalScrollBarChanged(int value)
 {
     setScrollBarValue(QWM_VSCROLL,QSB_THUMBPOSITION,value);
+}
+
+
+void HGridCtrl::wheelEvent(QWheelEvent *event)
+{
+    int numDegrees = event->delta() / 8;//滚动的角度，*8就是鼠标滚动的距离
+    int numSteps = numDegrees / 15;//滚动的步数，*15就是鼠标滚动的角度
+    if (event->orientation() == Qt::Horizontal)
+    {
+        qDebug()<<"Horizontal";
+    }
+    else
+    {
+        qDebug()<<"Hor left:"<<horizontalScrollBar()->rect().left() << "Hor top:"<<horizontalScrollBar()->rect().top();
+        qDebug()<<"Hor bottom:"<<horizontalScrollBar()->rect().bottom() << "Hor right:"<<horizontalScrollBar()->rect().right();
+    }
+    event->accept(); //接收该事件
+}
+
+void HGridCtrl::resizeEvent(QResizeEvent *event)
+{
+    static bool bAlreadyInsideThisProcedure = false;
+    if (bAlreadyInsideThisProcedure)
+        return;
+
+    // Start re-entry blocking
+    bAlreadyInsideThisProcedure = true;
+
+    endEditing();        // destroy any InPlaceEdit's
+    QAbstractScrollArea::resizeEvent(event);
+    resetScrollBars();
+
+    // End re-entry blocking
+    bAlreadyInsideThisProcedure = false;
 }
 
 // CGridCtrl Mouse stuff
