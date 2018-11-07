@@ -44,7 +44,7 @@ const Q_DECL_UNUSED QRgb  QCOLOR_INACTIVEBORDER             = 0xC0C0C0;    //Ina
 const Q_DECL_UNUSED QRgb  QCOLOR_APPWORKSPACE               = 0x808080;    //AppWorkspace
 const Q_DECL_UNUSED QRgb  QCOLOR_HIGHLIGHT                  = 0x000080;    //Highlight
 const Q_DECL_UNUSED QRgb  QCOLOR_HIGHLIGHTTEXT              = 0xFFFFFF;    //HighlightText
-const Q_DECL_UNUSED QRgb  QCOLOR_BTNFACE                    = 0xC0C0C0;    //ButtonFace
+const Q_DECL_UNUSED QRgb  QCOLOR_BTNFACE                    = 0xF0F0F0;    //ButtonFace
 const Q_DECL_UNUSED QRgb  QCOLOR_BTNSHADOW                  = 0x808080;    //ButtonShadow
 const Q_DECL_UNUSED QRgb  QCOLOR_GRAYTEXT                   = 0x808080;    //GrayText
 const Q_DECL_UNUSED QRgb  QCOLOR_BTNTEXT                    = 0x000000;    //ButtonText
@@ -62,7 +62,7 @@ const Q_DECL_UNUSED QRgb  QCOLOR_MENUBAR                    = 0xF0F0F0;    //Men
 const Q_DECL_UNUSED QRgb  QCOLOR_3DHIGHLIGHT                = 0xFFFFFF;    //ButtonHighlight
 const Q_DECL_UNUSED QRgb  QCOLOR_3DHILIGHT                  = 0xFFFFFF;    //ButtonHighlight
 const Q_DECL_UNUSED QRgb  QCOLOR_3DSHADOW                   = 0x808080;    //ButtonShadow
-const Q_DECL_UNUSED QRgb  QCOLOR_3DFACE                     = 0xC0C0C0;
+const Q_DECL_UNUSED QRgb  QCOLOR_3DFACE                     = 0xF0F0F0;
 
 
 enum eMouseModes { MOUSE_NOTHING, MOUSE_SELECT_ALL, MOUSE_SELECT_COL, MOUSE_SELECT_ROW,
@@ -80,10 +80,9 @@ typedef int (*QPFNLVCOMPARE)(HLPARAM, HLPARAM, HLPARAM);
 //相关列表定义
 typedef  QList<QImage*>  QImageList;
 
-
-
-
-// Cell states
+///////////////////////////////////////////////////
+///单元格状态
+//////////////////////////////////////////////////
 #define GVIS_FOCUSED            0x0001
 #define GVIS_SELECTED           0x0002
 #define GVIS_DROPHILITED        0x0004
@@ -93,13 +92,9 @@ typedef  QList<QImage*>  QImageList;
 #define GVIS_FIXEDCOL           0x0040
 #define GVIS_MODIFIED           0x0080
 
-/*
-#define LVIF_TEXT               0x0001
-#define LVIF_IMAGE              0x0002
-#define LVIF_PARAM              0x0004
-#define LVIF_STATE              0x0008
-*/
-// Cell data mask
+////////////////////////////////////////////////////////
+//单元格掩码
+///////////////////////////////////////////////////////
 #define GVIF_TEXT               0x0001
 #define GVIF_IMAGE              0x0002
 #define GVIF_PARAM              0x0004
@@ -112,7 +107,9 @@ typedef  QList<QImage*>  QImageList;
 #define GVIF_ALL                (GVIF_TEXT|GVIF_IMAGE|GVIF_PARAM|GVIF_STATE|GVIF_BKCLR|GVIF_FGCLR| \
                                  GVIF_FORMAT|GVIF_FONT|GVIF_MARGIN)
 
-// Used for Get/SetItem calls.
+/////////////////////////////////////////////////////////////
+/// 定义单元格内容
+/////////////////////////////////////////////////////////////
 typedef struct _GV_ITEM {
     int        row,col;     // Row and Column of item
     uint       mask;        // Mask for use in getting/setting cell data
@@ -121,31 +118,30 @@ typedef struct _GV_ITEM {
     int        iImage;      // index of the list view item icon
     QColor     crBkClr;     // Background colour (or CLR_DEFAULT)
     QColor     crFgClr;     // Forground colour (or CLR_DEFAULT)
-    quint32    lParam;      // 32-bit value to associate with item 选择状态
+    QVariant   lParam;      // 32-bit value to associate with item 数据
     QFont      lfFont;      // Cell font
     uint       nMargin;     // Internal cell margin
     QString    strText;     // Text in cell
 } GV_ITEM;
 
-//防windows定义类似Qt宏
+
+//单元格数据值
 #define QMAKELONG(a, b) ((long)(((ushort)(((ulong)(a)) & 0xffff)) | ((quint32)((ushort)(((quint32)(b)) & 0xffff))) << 16))
 
-
+///////////////////////////////////////////////////////////////
+///定义滚动条信息
+///////////////////////////////////////////////////////////////
 //定义滚动条相关信息
 #define QWM_HSCROLL                      0x0114
 #define QWM_VSCROLL                      0x0115
 
-/*
- * Scroll Bar Constants滚动条常量
- */
+//滚动条常量
 #define QSB_HORZ             0
 #define QSB_VERT             1
 #define QSB_CTL              2
 #define QSB_BOTH             3
 
-/*
- * Scroll Bar Commands 滚动条命令
- */
+//滚动条命令
 #define QSB_LINEUP           0
 #define QSB_LINELEFT         0
 #define QSB_LINEDOWN         1
@@ -194,9 +190,8 @@ typedef struct tagGV_CACHEHINT {
 //typedef bool (*GRIDCALLBACK)(GV_DISPINFO *, LPARAM);
 
 ///////////////////////////////////////////////////////////////////////////////////
-// Defines
+// 定义文字排列方式
 ///////////////////////////////////////////////////////////////////////////////////
-//绘制文字 仿windows----左中右对齐，上中下对齐
 #define QDT_TOP                      Qt::AlignTop
 #define QDT_LEFT                     Qt::AlignLeft
 #define QDT_HCENTER                  Qt::AlignHCenter
@@ -204,59 +199,11 @@ typedef struct tagGV_CACHEHINT {
 #define QDT_RIGHT                    Qt::AlignRight
 #define QDT_VCENTER                  Qt::AlignVCenter
 #define QDT_BOTTOM                   Qt::AlignBottom
-#define QDT_WORDBREAK                Qt::TextWrapAnywhere
+#define QDT_WORDBREAK                Qt::TextWordWrap
 #define QDT_SINGLELINE               Qt::TextSingleLine
 #define QDT_EXPANDTABS               Qt::TextExpandTabs
-#define QDT_TABSTOP                  0x00000080
-#define QDT_NOCLIP                   0x00000100
-#define QDT_EXTERNALLEADING          0x00000200
-#define QDT_CALCRECT                 0x00000400
 #define QDT_NOPREFIX                 Qt::TextHideMnemonic
-#define QDT_INTERNAL                 0x00001000
 
-/*
- *
-Qt::TextSingleLine 0x0100
-Treats all whitespace as spaces and prints just one line.
-Qt::TextDontClip 0x0200
-If it's impossible to stay within the given bounds, it prints outside.
-Qt::TextExpandTabs 0x0400
-Makes the U+0009 (ASCII tab) character move to the next tab stop.
-Qt::TextShowMnemonic 0x0800
-Displays the string "&P" as P For an ampersand, use "&&".
-Qt::TextWordWrap 0x1000
-Breaks lines at appropriate points, e.g. at word boundaries.
-Qt::TextWrapAnywhere
-0x2000
-Breaks lines anywhere, even within words.
-Qt::TextHideMnemonic
-0x8000
-Same as Qt::TextShowMnemonic but doesn't draw the underlines.
-Qt::TextDontPrint
-0x4000
-Treat this text as "hidden" and don't print it.
-Qt::TextIncludeTrailingSpaces
-0x08000000
-When this option is set, QTextLine::naturalTextWidth() and QTextLine::naturalTextRect() will return a value that includes the width of trailing spaces in the text; otherwise this width is excluded.
-Qt::TextJustificationForced
-0x10000
-Ensures that text lines are justified.
-
-*/
-/*
-#if(WINVER >= 0x0400)
-#define QDT_EDITCONTROL              0x00002000
-#define QDT_PATH_ELLIPSIS            0x00004000
-#define QDT_END_ELLIPSIS             0x00008000
-#define QDT_MODIFYSTRING             0x00010000
-#define QDT_RTLREADING               0x00020000
-#define QDT_WORD_ELLIPSIS            0x00040000
-#if(WINVER >= 0x0500)
-#define QDT_NOFULLWIDTHCHARBREAK     0x00080000
-#if(_WIN32_WINNT >= 0x0500)
-#define QDT_HIDEPREFIX               0x00100000
-#define QDT_PREFIXONLY               0x00200000
-*/
 // Grid line/scrollbar selection
 #define GVL_NONE                0L      // Neither
 #define GVL_HORZ                1L      // Horizontal line or scrollbar
@@ -295,18 +242,5 @@ Ensures that text lines are justified.
 #define GVHT_RIGHT              0x0040
 #define GVHT_ABOVE              0x0080
 #define GVHT_BELOW              0x0100
-
-// Messages sent to the grid's parent (More will be added in future)
-/*#define GVN_BEGINDRAG           LVN_BEGINDRAG        // LVN_FIRST-9
-#define GVN_BEGINLABELEDIT      LVN_BEGINLABELEDIT   // LVN_FIRST-5
-#define GVN_BEGINRDRAG          LVN_BEGINRDRAG
-#define GVN_COLUMNCLICK         LVN_COLUMNCLICK
-#define GVN_DELETEITEM          LVN_DELETEITEM
-#define GVN_ENDLABELEDIT        LVN_ENDLABELEDIT     // LVN_FIRST-6
-#define GVN_SELCHANGING         LVN_ITEMCHANGING
-#define GVN_SELCHANGED          LVN_ITEMCHANGED
-#define GVN_GETDISPINFO         LVN_GETDISPINFO
-#define GVN_ODCACHEHINT         LVN_ODCACHEHINT*/
-
 
 #endif

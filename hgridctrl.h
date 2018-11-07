@@ -237,10 +237,6 @@ public:
     void enableRowHide(bool bEnable = true)        { m_bAllowRowHide = bEnable;        }
     bool isRowHide()                               { return m_bAllowRowHide;           }
 
-    void setMulSelect(bool bMulSelect = false)     { m_bMulSelection = bMulSelect;     }
-    bool isMulSelect()                             { return m_bMulSelection;           }
-
-
 ///////////////////////////////////////////////////////////////////////////////////
 // default Grid cells. Use these for setting default values such as colors and fonts
 ///////////////////////////////////////////////////////////////////////////////////

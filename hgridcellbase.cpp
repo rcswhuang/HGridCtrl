@@ -78,7 +78,6 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
 
     // Set up text and background colours
     QColor TextClr, TextBkClr;
-    bool bMulSelect = pGrid->isMulSelect();
 
     TextClr = (textClr() == QColor(QCLR_DEFAULT))? pDefaultCell->textClr() : textClr();
     if (backClr() == QColor(QCLR_DEFAULT))
@@ -103,8 +102,7 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         }
 
         //rect.right++; rect.bottom++;    // FillRect doesn't draw RHS or bottom
-        if(!bMulSelect)
-            rect = rect.adjusted(1,1,-2,-2);
+         rect = rect.adjusted(1,1,-2,-2);
         if (bEraseBkgnd)
         {
             QBrush brush(TextBkClr);
@@ -322,7 +320,6 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
 
     // Set up text and background colours
     QColor TextClr, TextBkClr;
-    bool bMulSelect = false;
 
     TextClr = (textClr() == QColor(QCLR_DEFAULT))? pDefaultCell->textClr() : textClr();
     if (backClr() == QColor(QCLR_DEFAULT))
@@ -333,8 +330,6 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         TextBkClr = backClr();
     }
 
-    bool bF = isFocused();
-    bool bdrop = isDropHighlighted();
     if ( isFocused() || isDropHighlighted() )
     {
         // Always draw even in list mode so that we can tell where the
@@ -394,7 +389,7 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
     // Draw lines only when wanted
     if (isFixed() && pGrid->gridLines() != GVL_NONE)
     {
-        HCellID FocusCell = pGrid->focusCell();
+        //HCellID FocusCell = pGrid->focusCell();
 
         painter->save();
         QPen lightpen(QColor(QCOLOR_3DHIGHLIGHT),1,Qt::SolidLine);
@@ -419,15 +414,11 @@ bool HGridCellBase::draw(QPainter* painter, int nRow, int nCol, QRect rect, bool
         rect.adjust(-1,-1,-1,-1);
     }
 
-
-
     rect.adjust(margin(),margin(),0,0);
-
-
 
     // We want to see '&' characters so use DT_NOPREFIX
     textRect(rect);
-    painter->drawText(rect,QDT_CENTER|QDT_SINGLELINE,text());
+    painter->drawText(rect,format()|QDT_NOPREFIX,text());
     painter->restore();
     return true;
 }

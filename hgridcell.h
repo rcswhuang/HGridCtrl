@@ -18,10 +18,10 @@ public:
 
     virtual void  setText(const QString& szText)            { m_strText = szText;  }
     virtual void  setImage(int nImage)                      { m_nImage = nImage;   }
-    virtual void  setData(const QVariant& var)              { m_lParam = var;      }
+    virtual void  setData(const QVariant& var)              { m_lParam = var;      } //设置数据
     virtual void  setGrid(HGridCtrl* pGrid)                 { m_pGrid = pGrid;     }
     // virtual void SetState(const DWORD nState);  -  use base class version
-    virtual void  setFormat(quint32 nFormat)                { m_nFormat = nFormat; }
+    virtual void  setFormat(quint32 nFormat)                { m_nFormat = nFormat; }  //格式
     virtual void  setTextClr(const QColor& clr)             { m_crFgClr = clr;     }
     virtual void  setBackClr(const QColor& clr)             { m_crBkClr = clr;     }
     virtual void  setFont(const QFont& font)                { m_plfFont = font;    }
@@ -82,8 +82,8 @@ public:
     virtual	void   clearBorderTopColor()    {;}
     virtual	void   clearBorderLeftColor()   {;}
 
-    virtual bool   isDefaultFont()       const   {return false;}
-    virtual bool   isEditing() const           { return m_bEditing; }
+    virtual bool   isDefaultFont()       const               { return false; }
+    virtual bool   isEditing()           const               { return m_bEditing; }
     virtual void   reset();
 
 // editing cells
@@ -150,7 +150,7 @@ public:
     virtual void     setState(quint32 )                   { Q_ASSERT(false);          }
     virtual quint32  state() const                        { return HGridCell::state()|GVIS_READONLY; }
     virtual void     setCoords( int row, int col)         { Q_ASSERT(false);          }
-    virtual void     setFont(const QFont& plf)            { m_Font = plf;             }
+    virtual void     setFont(const QFont& plf);//            { m_Font = plf;             }
     virtual QFont    font() const                         { return m_Font;            }
 protected:
     QSize   m_Size;       // Default Size

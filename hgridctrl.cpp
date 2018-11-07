@@ -4202,8 +4202,7 @@ bool HGridCtrl::item(GV_ITEM* pItem)
     if (pItem->mask & GVIF_TEXT)
         pItem->strText = itemText(pItem->row, pItem->col);
     if (pItem->mask & GVIF_PARAM)
-    {    //pItem->lParam  = pCell->data();
-        }
+        pItem->lParam  = pCell->data();
     if (pItem->mask & GVIF_IMAGE)
         pItem->iImage  = pCell->image();
     if (pItem->mask & GVIF_STATE)
@@ -5689,14 +5688,11 @@ void HGridCtrl::mouseReleaseEvent(QMouseEvent *event)
     }
 
     m_MouseMode = MOUSE_NOTHING;
-    setMulSelect(false);
     setCursor(Qt::ArrowCursor);
 
     if (!isValid(m_LeftClickDownCell))
-    {
-        QString strtest = "ddddd";
         return;
-    }
+
 }
 
 
@@ -7703,7 +7699,6 @@ void HGridCtrl::endEditing()
 }
 
 // virtual
-
 void HGridCtrl::onEndEditCell(int nRow, int nCol, QString str)
 {
     QString strCurrentText = itemText(nRow, nCol);

@@ -62,7 +62,14 @@ void HGridCell::reset()
 // GridCell Operations
 quint32 HGridCell::format()  const
 {
-    return 0;
+    if (m_nFormat == (quint32)-1)
+    {
+        HGridDefaultCell *pDefaultCell = (HGridDefaultCell*) defaultCell();
+        if (!pDefaultCell)
+            return 0;
+        return pDefaultCell->format();
+   }
+    return m_nFormat;
 }
 /*
  * 编辑的时候是生成一个QLineEdit 移动到对应的rect里面
@@ -108,7 +115,7 @@ void HGridCell::OnEndEdit()
 HGridDefaultCell::HGridDefaultCell()
 {
 
-    m_nFormat = QDT_LEFT|QDT_VCENTER|QDT_SINGLELINE|QDT_NOPREFIX;
+    m_nFormat = QDT_CENTER|QDT_SINGLELINE|QDT_NOPREFIX;
     m_crFgClr = QColor(QCLR_DEFAULT);
     m_crBkClr = QColor(QCLR_DEFAULT);
     m_Size    = QSize(100,25);
@@ -118,4 +125,14 @@ HGridDefaultCell::HGridDefaultCell()
 
 HGridDefaultCell::~HGridDefaultCell()
 {
+}
+
+void HGridDefaultCell::setFont(const QFont& plf)
+{
+    HGridCell::setFont(plf);
+    // Get the font size and hence the default cell size
+    QFontMetrics fontMetrics(plf);
+    setMargin(fontMetrics.size(Qt::TextSingleLine,tr(" ")).width());
+    m_Size = fontMetrics.size(Qt::TextSingleLine,tr(" XXXXXXXXXXXX "));
+    m_Size.setHeight(m_Size.height() * 3/2);
 }
